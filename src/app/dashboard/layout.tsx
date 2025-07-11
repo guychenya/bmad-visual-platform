@@ -1,8 +1,8 @@
 'use client'
 
-import { useAuth } from '@/contexts/AuthContext'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { useAuth } from '../../contexts/AuthContext'
+import { Button } from '../../components/ui/button'
+import { Card, CardContent } from '../../components/ui/card'
 import { Users, Home, FileText, Settings, LogOut } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'

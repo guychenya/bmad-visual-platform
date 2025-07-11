@@ -1,6 +1,6 @@
 'use client'
 
-import { AgentHub } from '@/components/agents/AgentHub'
+import { AgentHub } from '../../../components/agents/AgentHub'
 
 export default function AgentsPage() {
   return (
