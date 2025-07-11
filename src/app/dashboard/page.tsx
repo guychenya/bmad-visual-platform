@@ -17,12 +17,12 @@ export default function Dashboard() {
       buttonIcon: MessageSquare
     },
     {
-      title: 'New Project',
-      description: 'Start a new project with AI-guided planning and architecture',
+      title: 'Create Project',
+      description: 'Upload your PRD and watch AI agents build your app automatically',
       icon: Rocket,
-      href: '/dashboard/projects',
+      href: '/dashboard/create',
       gradient: 'from-blue-500 to-cyan-500',
-      buttonText: 'Create Project',
+      buttonText: 'Start Building',
       buttonIcon: Plus
     },
     {
@@ -175,10 +175,10 @@ export default function Dashboard() {
                 Meet Your Agents
               </Button>
             </Link>
-            <Link href="/dashboard/projects">
+            <Link href="/dashboard/create">
               <Button variant="outline" size="lg" className="w-full sm:w-auto glass-button hover:scale-105 transition-transform">
-                <Folder className="h-5 w-5 mr-2" />
-                View Projects
+                <Plus className="h-5 w-5 mr-2" />
+                Create Project
               </Button>
             </Link>
           </div>

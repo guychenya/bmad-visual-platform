@@ -3,7 +3,7 @@
 import { useAuth } from '../../contexts/AuthContext'
 import { Button } from '../../components/ui/button'
 import { Card, CardContent } from '../../components/ui/card'
-import { Users, Home, FileText, Settings, LogOut, Sparkles, Brain, Folder } from 'lucide-react'
+import { Users, Home, FileText, Settings, LogOut, Sparkles, Brain, Folder, Plus } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -35,6 +35,7 @@ export default function DashboardLayout({
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
+    { name: 'Create Project', href: '/dashboard/create', icon: Plus },
     { name: 'AI Agents', href: '/dashboard/agents', icon: Brain },
     { name: 'Projects', href: '/dashboard/projects', icon: Folder },
     { name: 'Templates', href: '/dashboard/templates', icon: FileText },
@@ -112,7 +113,7 @@ export default function DashboardLayout({
       {/* Mobile Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 glass-nav border-t">
         <div className="flex justify-around py-2">
-          {navigation.slice(0, 4).map((item) => {
+          {navigation.slice(0, 5).map((item) => {
             const Icon = item.icon
             const isActive = pathname === item.href
             return (
