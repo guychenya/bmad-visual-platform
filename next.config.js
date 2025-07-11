@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverActions: true,
-  },
+  // Server Actions are now enabled by default in Next.js 14
   images: {
     domains: ['your-supabase-project.supabase.co'],
     // Don't use unoptimized for Netlify - it supports Next.js images
