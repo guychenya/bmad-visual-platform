@@ -2,17 +2,19 @@
 
 import { useState } from 'react'
 import { PRDUpload } from '../../../components/upload/PRDUpload'
-import { AgentCollaboration } from '../../../components/collaboration/AgentCollaboration'
-import { AppShowcase } from '../../../components/showcase/AppShowcase'
+import { BMadAgentCollaboration } from '../../../components/collaboration/BMadAgentCollaboration'
+import { BMadAppShowcase } from '../../../components/showcase/BMadAppShowcase'
 
 export default function CreateProjectPage() {
   const [currentStep, setCurrentStep] = useState<'upload' | 'collaboration' | 'showcase'>('upload')
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const [uploadedContent, setUploadedContent] = useState('')
   const [projectName, setProjectName] = useState('')
   const [appResult, setAppResult] = useState<any>(null)
 
   const handleFileUploaded = (file: File, content: string) => {
     setUploadedFile(file)
+    setUploadedContent(content)
     // Extract project name from file name or content
     const name = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, ' ')
     setProjectName(name || 'New Project')
@@ -30,6 +32,7 @@ export default function CreateProjectPage() {
   const handleNewProject = () => {
     setCurrentStep('upload')
     setUploadedFile(null)
+    setUploadedContent('')
     setProjectName('')
     setAppResult(null)
   }
@@ -42,8 +45,8 @@ export default function CreateProjectPage() {
           <div className="flex items-center justify-center space-x-4">
             {[
               { id: 'upload', name: 'Upload PRD', step: 1 },
-              { id: 'collaboration', name: 'AI Collaboration', step: 2 },
-              { id: 'showcase', name: 'App Preview', step: 3 }
+              { id: 'collaboration', name: 'BMad Methodology', step: 2 },
+              { id: 'showcase', name: 'Generated App', step: 3 }
             ].map((item, index) => (
               <div key={item.id} className="flex items-center">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium ${
@@ -81,14 +84,15 @@ export default function CreateProjectPage() {
         )}
 
         {currentStep === 'collaboration' && (
-          <AgentCollaboration
+          <BMadAgentCollaboration
             projectName={projectName}
+            uploadedContent={uploadedContent}
             onComplete={handleCollaborationComplete}
           />
         )}
 
         {currentStep === 'showcase' && appResult && (
-          <AppShowcase
+          <BMadAppShowcase
             result={appResult}
             onNewProject={handleNewProject}
           />
