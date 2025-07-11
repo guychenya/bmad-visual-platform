@@ -5,7 +5,7 @@ import { supabase } from '../../../src/lib/supabase'
 import { Button } from '../../../src/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../src/components/ui/card'
 import { Input } from '../../../src/components/ui/input'
-import { Label } from '../../../src/components/ui/label'
+import { Label } from '../../../components/ui/label'
 import { Loader2 } from 'lucide-react'
 
 export default function SignupPage() {
