@@ -11,11 +11,12 @@ export async function middleware(req: NextRequest) {
   } = await supabase.auth.getSession()
 
   // Protected routes
-  if (req.nextUrl.pathname.startsWith('/dashboard')) {
-    if (!session) {
-      return NextResponse.redirect(new URL('/auth/login', req.url))
-    }
-  }
+  // Temporarily bypass authentication for dashboard routes
+  // if (req.nextUrl.pathname.startsWith('/dashboard')) {
+  //   if (!session) {
+  //     return NextResponse.redirect(new URL('/auth/login', req.url))
+  //   }
+  // }
 
   // Auth routes (redirect if already logged in)
   if (req.nextUrl.pathname.startsWith('/auth')) {
