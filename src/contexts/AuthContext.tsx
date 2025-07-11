@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Check if authentication is bypassed
-    const bypassAuth = process.env.BYPASS_AUTH === 'true'
+    const bypassAuth = process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true'
     
     if (bypassAuth) {
       // Create mock user data for development

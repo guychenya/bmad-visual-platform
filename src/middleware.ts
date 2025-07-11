@@ -6,7 +6,7 @@ export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
   
   // Check if authentication is bypassed
-  const bypassAuth = process.env.BYPASS_AUTH === 'true'
+  const bypassAuth = process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true'
   
   if (bypassAuth) {
     // Redirect root to dashboard when auth is bypassed
