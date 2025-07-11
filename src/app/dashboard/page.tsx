@@ -2,171 +2,185 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
-import { Plus, Users, MessageSquare, FileText, BarChart3, Zap } from 'lucide-react'
+import { Plus, Users, MessageSquare, FileText, BarChart3, Zap, Brain, Sparkles, ArrowRight, Rocket, Template, Folder } from 'lucide-react'
 import Link from 'next/link'
 
 export default function Dashboard() {
+  const quickActions = [
+    {
+      title: 'AI Agents Hub',
+      description: 'Chat with specialized AI agents for every aspect of development',
+      icon: Brain,
+      href: '/dashboard/agents',
+      gradient: 'from-purple-500 to-pink-500',
+      buttonText: 'Start Chatting',
+      buttonIcon: MessageSquare
+    },
+    {
+      title: 'New Project',
+      description: 'Start a new project with AI-guided planning and architecture',
+      icon: Rocket,
+      href: '/dashboard/projects',
+      gradient: 'from-blue-500 to-cyan-500',
+      buttonText: 'Create Project',
+      buttonIcon: Plus
+    },
+    {
+      title: 'Templates',
+      description: 'Browse pre-built templates for common project types',
+      icon: Template,
+      href: '/dashboard/templates',
+      gradient: 'from-green-500 to-emerald-500',
+      buttonText: 'Browse Templates',
+      buttonIcon: FileText
+    }
+  ]
+
+  const features = [
+    {
+      title: 'Viby Coding Experience',
+      description: 'Fluid, creative development that feels natural',
+      icon: Zap,
+      color: 'text-yellow-400',
+      items: [
+        'Beautiful agent personalities',
+        'Smooth animations and transitions',
+        'Intuitive chat interfaces',
+        'Real-time collaboration'
+      ]
+    },
+    {
+      title: 'AI-Powered Development',
+      description: 'Structured AI development methodology',
+      icon: BarChart3,
+      color: 'text-blue-400',
+      items: [
+        'Strategic planning with Analyst',
+        'Architecture design with Architect',
+        'Story management with Scrum Master',
+        'Quality assurance with QA'
+      ]
+    }
+  ]
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-20 md:pb-8">
       {/* Welcome Section */}
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          Welcome to BMad Visual Platform
+      <div className="text-center space-y-4">
+        <div className="flex items-center justify-center mb-6">
+          <div className="relative">
+            <div className="w-20 h-20 bg-gradient-viby rounded-full flex items-center justify-center animate-float">
+              <Sparkles className="w-10 h-10 text-white" />
+            </div>
+            <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-accent rounded-full animate-ping"></div>
+          </div>
+        </div>
+        <h1 className="text-4xl md:text-6xl font-bold gradient-text mb-4">
+          Welcome to Viby.ai
         </h1>
-        <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+        <p className="text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed">
           Experience the power of AI-driven development with beautiful, intuitive interfaces. 
-          Your BMad Method agents are ready to transform your development workflow.
+          Your intelligent agents are ready to transform your development workflow.
         </p>
       </div>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
-                <Users className="h-6 w-6 text-blue-600" />
-              </div>
-              <span>Meet Your Agents</span>
-            </CardTitle>
-            <CardDescription>
-              Chat with specialized AI agents for every aspect of development
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/dashboard/agents">
-              <Button className="w-full">
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Start Chatting
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-3">
-              <div className="p-2 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors">
-                <Plus className="h-6 w-6 text-green-600" />
-              </div>
-              <span>New Project</span>
-            </CardTitle>
-            <CardDescription>
-              Start a new project with AI-guided planning and architecture
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button variant="outline" className="w-full">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Project
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-3">
-              <div className="p-2 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors">
-                <FileText className="h-6 w-6 text-purple-600" />
-              </div>
-              <span>Templates</span>
-            </CardTitle>
-            <CardDescription>
-              Browse pre-built templates for common project types
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button variant="outline" className="w-full">
-              <FileText className="h-4 w-4 mr-2" />
-              Browse Templates
-            </Button>
-          </CardContent>
-        </Card>
+        {quickActions.map((action, index) => (
+          <Card key={action.title} className="agent-card group animate-slide-up" style={{ animationDelay: `${index * 0.1}s` }}>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-3">
+                <div className={`p-3 bg-gradient-to-r ${action.gradient} rounded-xl group-hover:scale-110 transition-transform`}>
+                  <action.icon className="h-6 w-6 text-white" />
+                </div>
+                <span className="text-white">{action.title}</span>
+              </CardTitle>
+              <CardDescription className="text-slate-400">
+                {action.description}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href={action.href}>
+                <Button className="w-full gradient-button group-hover:scale-105 transition-transform">
+                  <action.buttonIcon className="h-4 w-4 mr-2" />
+                  {action.buttonText}
+                  <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Features Showcase */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Zap className="h-5 w-5 text-yellow-500" />
-              <span>Vibe Coding Experience</span>
-            </CardTitle>
-            <CardDescription>
-              Fluid, creative development that feels natural
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm">Beautiful agent personalities</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm">Smooth animations and transitions</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm">Intuitive chat interfaces</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm">Real-time collaboration</span>
-            </div>
+        {features.map((feature, index) => (
+          <Card key={feature.title} className="glass-card animate-fade-in" style={{ animationDelay: `${index * 0.2}s` }}>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-3">
+                <feature.icon className={`h-6 w-6 ${feature.color}`} />
+                <span className="text-white">{feature.title}</span>
+              </CardTitle>
+              <CardDescription className="text-slate-400">
+                {feature.description}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {feature.items.map((item, itemIndex) => (
+                <div key={itemIndex} className="flex items-center space-x-3 group">
+                  <div className="w-2 h-2 bg-gradient-viby rounded-full group-hover:scale-150 transition-transform"></div>
+                  <span className="text-sm text-slate-300 group-hover:text-white transition-colors">{item}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Stats Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="glass-card text-center">
+          <CardContent className="p-6">
+            <div className="text-3xl font-bold gradient-text mb-2">7+</div>
+            <div className="text-slate-400">AI Agents</div>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <BarChart3 className="h-5 w-5 text-blue-500" />
-              <span>BMad Method Power</span>
-            </CardTitle>
-            <CardDescription>
-              Structured AI development methodology
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="text-sm">Strategic planning with Analyst</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="text-sm">Architecture design with Architect</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="text-sm">Story management with Scrum Master</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="text-sm">Quality assurance with QA</span>
-            </div>
+        <Card className="glass-card text-center">
+          <CardContent className="p-6">
+            <div className="text-3xl font-bold gradient-text mb-2">100+</div>
+            <div className="text-slate-400">Templates</div>
+          </CardContent>
+        </Card>
+        <Card className="glass-card text-center">
+          <CardContent className="p-6">
+            <div className="text-3xl font-bold gradient-text mb-2">∞</div>
+            <div className="text-slate-400">Possibilities</div>
           </CardContent>
         </Card>
       </div>
 
       {/* Getting Started */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Ready to Get Started?</CardTitle>
-          <CardDescription>
+      <Card className="glass-card">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl text-white">Ready to Get Started?</CardTitle>
+          <CardDescription className="text-slate-400">
             Your AI development team is ready to help you build amazing projects
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/dashboard/agents">
-              <Button size="lg" className="w-full sm:w-auto">
-                <Users className="h-5 w-5 mr-2" />
+              <Button size="lg" className="w-full sm:w-auto gradient-button hover:scale-105 transition-transform">
+                <Brain className="h-5 w-5 mr-2" />
                 Meet Your Agents
               </Button>
             </Link>
-            <Button variant="outline" size="lg" className="w-full sm:w-auto">
-              <FileText className="h-5 w-5 mr-2" />
-              View Documentation
-            </Button>
+            <Link href="/dashboard/projects">
+              <Button variant="outline" size="lg" className="w-full sm:w-auto glass-button hover:scale-105 transition-transform">
+                <Folder className="h-5 w-5 mr-2" />
+                View Projects
+              </Button>
+            </Link>
           </div>
         </CardContent>
       </Card>
