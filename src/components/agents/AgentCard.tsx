@@ -1,12 +1,12 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
+import { Badge } from '../ui/badge'
+import { Button } from '../ui/button'
 import { MessageSquare, Star } from 'lucide-react'
-import { AgentPersonality } from '@/types/agents'
+import { AgentPersonality } from '../../types/agents'
 
 interface AgentCardProps {
   agent: AgentPersonality

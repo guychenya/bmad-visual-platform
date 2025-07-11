@@ -1,11 +1,11 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Card, CardContent } from '@/components/ui/card'
-import { AgentPersonality, Message } from '@/types/agents'
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
+import { Card, CardContent } from '../ui/card'
+import { AgentPersonality, Message } from '../../types/agents'
 import { TypingIndicator } from './TypingIndicator'
-import { formatTimeAgo } from '@/lib/utils'
+import { formatTimeAgo } from '../../lib/utils'
 
 interface MessageListProps {
   messages: Message[]

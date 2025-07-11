@@ -2,12 +2,12 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
+import { Button } from '../ui/button'
+import { Card, CardContent } from '../ui/card'
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
+import { Badge } from '../ui/badge'
 import { ChevronDown, Users } from 'lucide-react'
-import { AgentPersonality, AGENT_PERSONALITIES } from '@/types/agents'
+import { AgentPersonality, AGENT_PERSONALITIES } from '../../types/agents'
 
 interface AgentSwitcherProps {
   currentAgent: AgentPersonality
