@@ -88,7 +88,7 @@ export default function ProjectsPage() {
   ])
 
   const [selectedStatus, setSelectedStatus] = useState('All')
-  const [selectedProject, setSelectedProject] = useState(null)
+  const [selectedProject, setSelectedProject] = useState<any>(null)
 
   const statuses = ['All', 'Active', 'Paused', 'Completed', 'Planning']
 
@@ -96,7 +96,7 @@ export default function ProjectsPage() {
     ? projects 
     : projects.filter(project => project.status === selectedStatus.toLowerCase())
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'active': return 'bg-green-400 animate-pulse'
       case 'paused': return 'bg-yellow-400'
@@ -106,7 +106,7 @@ export default function ProjectsPage() {
     }
   }
 
-  const getPriorityColor = (priority) => {
+  const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high': return 'text-red-400'
       case 'medium': return 'text-yellow-400'
@@ -296,7 +296,7 @@ export default function ProjectsPage() {
                   <div>
                     <h3 className="text-lg font-semibold text-white mb-3">Team</h3>
                     <div className="flex flex-wrap gap-2">
-                      {selectedProject.team.map((member, idx) => (
+                      {selectedProject.team.map((member: string, idx: number) => (
                         <span key={idx} className="bg-white/10 text-slate-300 px-3 py-1 rounded-full text-sm">
                           {member}
                         </span>

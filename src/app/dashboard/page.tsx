@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
-import { Plus, Users, MessageSquare, FileText, BarChart3, Zap, Brain, Sparkles, ArrowRight, Rocket, Template, Folder } from 'lucide-react'
+import { Plus, Users, MessageSquare, FileText, BarChart3, Zap, Brain, Sparkles, ArrowRight, Rocket, Folder } from 'lucide-react'
 import Link from 'next/link'
 
 export default function Dashboard() {
@@ -28,7 +28,7 @@ export default function Dashboard() {
     {
       title: 'Templates',
       description: 'Browse pre-built templates for common project types',
-      icon: Template,
+      icon: FileText,
       href: '/dashboard/templates',
       gradient: 'from-green-500 to-emerald-500',
       buttonText: 'Browse Templates',

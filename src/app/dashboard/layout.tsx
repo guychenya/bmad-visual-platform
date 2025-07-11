@@ -3,7 +3,7 @@
 import { useAuth } from '../../contexts/AuthContext'
 import { Button } from '../../components/ui/button'
 import { Card, CardContent } from '../../components/ui/card'
-import { Users, Home, FileText, Settings, LogOut, Sparkles, Brain, Template, Folder } from 'lucide-react'
+import { Users, Home, FileText, Settings, LogOut, Sparkles, Brain, Folder } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -37,7 +37,7 @@ export default function DashboardLayout({
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'AI Agents', href: '/dashboard/agents', icon: Brain },
     { name: 'Projects', href: '/dashboard/projects', icon: Folder },
-    { name: 'Templates', href: '/dashboard/templates', icon: Template },
+    { name: 'Templates', href: '/dashboard/templates', icon: FileText },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ]
 

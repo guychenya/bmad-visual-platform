@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
 import { Button } from '../../../components/ui/button'
-import { Plus, Template, Code, Palette, Database, Globe, Smartphone, Server, Download, Eye } from 'lucide-react'
+import { Plus, FileText, Code, Palette, Database, Globe, Smartphone, Server, Download, Eye } from 'lucide-react'
 import { useState } from 'react'
 
 export default function TemplatesPage() {
@@ -56,7 +56,7 @@ export default function TemplatesPage() {
       name: 'Dashboard Template',
       description: 'Modern admin dashboard with charts, tables, and analytics',
       category: 'Dashboard',
-      icon: Template,
+      icon: FileText,
       color: 'from-indigo-500 to-purple-500',
       tags: ['React', 'Chart.js', 'Material-UI', 'Redux'],
       downloads: 3421,
@@ -98,7 +98,7 @@ export default function TemplatesPage() {
   ])
 
   const [selectedCategory, setSelectedCategory] = useState('All')
-  const [selectedTemplate, setSelectedTemplate] = useState(null)
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null)
 
   const categories = ['All', 'Web App', 'E-commerce', 'Mobile', 'Backend', 'Dashboard', 'Portfolio', 'Content', 'Marketing']
 
@@ -211,7 +211,7 @@ export default function TemplatesPage() {
                 <div>
                   <h3 className="text-lg font-semibold text-white mb-3">Technologies</h3>
                   <div className="flex flex-wrap gap-2">
-                    {selectedTemplate.tags.map((tag, idx) => (
+                    {selectedTemplate.tags.map((tag: string, idx: number) => (
                       <span key={idx} className="bg-white/10 text-slate-300 px-3 py-1 rounded-full text-sm">
                         {tag}
                       </span>

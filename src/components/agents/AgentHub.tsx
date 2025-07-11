@@ -86,7 +86,7 @@ export function AgentHub() {
     }
   ])
 
-  const [selectedAgent, setSelectedAgent] = useState(null)
+  const [selectedAgent, setSelectedAgent] = useState<any>(null)
 
   const activeAgents = agents.filter(agent => agent.status === 'active').length
   const totalTasks = 247
@@ -225,7 +225,7 @@ export function AgentHub() {
                 <div>
                   <h3 className="text-lg font-semibold text-white mb-3">Expertise</h3>
                   <div className="flex flex-wrap gap-2">
-                    {selectedAgent.expertise.map((skill, idx) => (
+                    {selectedAgent.expertise.map((skill: string, idx: number) => (
                       <span key={idx} className="bg-white/10 text-slate-300 px-3 py-1 rounded-full text-sm">
                         {skill}
                       </span>
