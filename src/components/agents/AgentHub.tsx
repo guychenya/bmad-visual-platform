@@ -150,7 +150,15 @@ export function AgentHub() {
                 <span>Last used: {agent.lastUsed}</span>
               </div>
               <div className="flex space-x-2">
-                <Button variant="outline" size="sm" className="flex-1 glass-button">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1 glass-button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    window.location.href = `/dashboard/agents/${agent.id}`
+                  }}
+                >
                   <MessageSquare className="h-4 w-4 mr-1" />
                   Chat
                 </Button>
@@ -237,7 +245,13 @@ export function AgentHub() {
                   <p className="text-slate-400">{selectedAgent.personality}</p>
                 </div>
                 <div className="flex space-x-4">
-                  <Button className="gradient-button flex-1">
+                  <Button 
+                    className="gradient-button flex-1"
+                    onClick={() => {
+                      setSelectedAgent(null)
+                      window.location.href = `/dashboard/agents/${selectedAgent.id}`
+                    }}
+                  >
                     <MessageSquare className="h-4 w-4 mr-2" />
                     Start Conversation
                   </Button>

@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui
 import { Button } from '../../../components/ui/button'
 import { Plus, Folder, Clock, Users, Star, MoreHorizontal, Play, Pause, Archive, Settings } from 'lucide-react'
 import { useState } from 'react'
+import { CreateProjectModal } from '../../../components/projects/CreateProjectModal'
 
 export default function ProjectsPage() {
-  const [projects] = useState([
+  const [projects, setProjects] = useState([
     {
       id: 1,
       name: 'Viby.ai Platform',
@@ -89,6 +90,7 @@ export default function ProjectsPage() {
 
   const [selectedStatus, setSelectedStatus] = useState('All')
   const [selectedProject, setSelectedProject] = useState<any>(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
 
   const statuses = ['All', 'Active', 'Paused', 'Completed', 'Planning']
 
@@ -124,7 +126,10 @@ export default function ProjectsPage() {
             Manage and track your development projects
           </p>
         </div>
-        <Button className="gradient-button hover:scale-105 transition-transform">
+        <Button 
+          className="gradient-button hover:scale-105 transition-transform"
+          onClick={() => setShowCreateModal(true)}
+        >
           <Plus className="h-4 w-4 mr-2" />
           New Project
         </Button>
@@ -331,6 +336,16 @@ export default function ProjectsPage() {
           </Card>
         </div>
       )}
+
+      {/* Create Project Modal */}
+      <CreateProjectModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onProjectCreated={(project) => {
+          setProjects(prev => [...prev, project])
+          // Show success message or animation here
+        }}
+      />
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui
 import { Button } from '../../../components/ui/button'
 import { Plus, FileText, Code, Palette, Database, Globe, Smartphone, Server, Download, Eye } from 'lucide-react'
 import { useState } from 'react'
+import { UseTemplateModal } from '../../../components/templates/UseTemplateModal'
 
 export default function TemplatesPage() {
   const [templates] = useState([
@@ -99,6 +100,8 @@ export default function TemplatesPage() {
 
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null)
+  const [showUseTemplateModal, setShowUseTemplateModal] = useState(false)
+  const [templateToUse, setTemplateToUse] = useState<any>(null)
 
   const categories = ['All', 'Web App', 'E-commerce', 'Mobile', 'Backend', 'Dashboard', 'Portfolio', 'Content', 'Marketing']
 
@@ -173,7 +176,16 @@ export default function TemplatesPage() {
                 <span>{template.downloads} downloads</span>
               </div>
               <div className="flex space-x-2">
-                <Button variant="outline" size="sm" className="flex-1 glass-button">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1 glass-button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setTemplateToUse(template)
+                    setShowUseTemplateModal(true)
+                  }}
+                >
                   <Download className="h-4 w-4 mr-1" />
                   Use
                 </Button>
@@ -232,7 +244,14 @@ export default function TemplatesPage() {
                   </div>
                 </div>
                 <div className="flex space-x-4">
-                  <Button className="gradient-button flex-1">
+                  <Button 
+                    className="gradient-button flex-1"
+                    onClick={() => {
+                      setSelectedTemplate(null)
+                      setTemplateToUse(selectedTemplate)
+                      setShowUseTemplateModal(true)
+                    }}
+                  >
                     <Download className="h-4 w-4 mr-2" />
                     Use This Template
                   </Button>
@@ -246,6 +265,21 @@ export default function TemplatesPage() {
           </Card>
         </div>
       )}
+
+      {/* Use Template Modal */}
+      <UseTemplateModal
+        isOpen={showUseTemplateModal}
+        onClose={() => {
+          setShowUseTemplateModal(false)
+          setTemplateToUse(null)
+        }}
+        template={templateToUse}
+        onProjectCreated={(project) => {
+          // You could redirect to projects page or show success message
+          console.log('Project created from template:', project)
+          window.location.href = '/dashboard/projects'
+        }}
+      />
     </div>
   )
 }
