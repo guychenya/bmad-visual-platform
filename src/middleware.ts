@@ -4,6 +4,24 @@ import type { NextRequest } from 'next/server'
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
+  
+  // Check if authentication is bypassed
+  const bypassAuth = process.env.BYPASS_AUTH === 'true'
+  
+  if (bypassAuth) {
+    // Redirect root to dashboard when auth is bypassed
+    if (req.nextUrl.pathname === '/') {
+      return NextResponse.redirect(new URL('/dashboard', req.url))
+    }
+    
+    // Skip auth routes when bypassed
+    if (req.nextUrl.pathname.startsWith('/auth')) {
+      return NextResponse.redirect(new URL('/dashboard', req.url))
+    }
+    
+    return res
+  }
+
   const supabase = createMiddlewareClient({ req, res })
 
   const {
@@ -11,12 +29,11 @@ export async function middleware(req: NextRequest) {
   } = await supabase.auth.getSession()
 
   // Protected routes
-  // Temporarily bypass authentication for dashboard routes
-  // if (req.nextUrl.pathname.startsWith('/dashboard')) {
-  //   if (!session) {
-  //     return NextResponse.redirect(new URL('/auth/login', req.url))
-  //   }
-  // }
+  if (req.nextUrl.pathname.startsWith('/dashboard')) {
+    if (!session) {
+      return NextResponse.redirect(new URL('/auth/login', req.url))
+    }
+  }
 
   // Auth routes (redirect if already logged in)
   if (req.nextUrl.pathname.startsWith('/auth')) {

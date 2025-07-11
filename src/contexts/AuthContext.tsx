@@ -25,6 +25,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Check if authentication is bypassed
+    const bypassAuth = process.env.BYPASS_AUTH === 'true'
+    
+    if (bypassAuth) {
+      // Create mock user data for development
+      const mockUser = {
+        id: 'mock-user-id',
+        email: 'demo@bmad.dev',
+        user_metadata: { full_name: 'Demo User' },
+        app_metadata: {},
+        aud: 'authenticated',
+        created_at: new Date().toISOString(),
+        role: 'authenticated'
+      } as User
+
+      const mockSession = {
+        user: mockUser,
+        access_token: 'mock-token',
+        refresh_token: 'mock-refresh-token',
+        expires_in: 3600,
+        expires_at: Date.now() + 3600 * 1000,
+        token_type: 'bearer'
+      } as Session
+
+      const mockProfile = {
+        id: 'mock-profile-id',
+        user_id: 'mock-user-id',
+        username: 'demo-user',
+        full_name: 'Demo User',
+        avatar_url: null,
+        bio: 'Demo user for development',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      } as Profile
+
+      setUser(mockUser)
+      setSession(mockSession)
+      setProfile(mockProfile)
+      setLoading(false)
+      return
+    }
+
     // Get initial session
     const getInitialSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
