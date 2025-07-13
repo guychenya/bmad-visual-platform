@@ -36,6 +36,7 @@ import {
   Briefcase
 } from 'lucide-react'
 import Link from 'next/link'
+import { routes } from '../../lib/routes'
 import { TypingIndicator } from '../agents/TypingIndicator'
 import { aiService } from '../../lib/ai/aiService'
 import { BMAD_AGENTS, BMadAgent } from '../../lib/bmad/agents'
@@ -676,7 +677,7 @@ export function AgentTabWorkspace({ projectId, templateId, onWorkflowComplete }:
                     <p className="text-slate-400 mb-4 text-sm">
                       Configure your API keys to start chatting with AI agents.
                     </p>
-                    <Link href="/dashboard/settings?tab=api">
+                    <Link href={routes.dashboard.settings + '?tab=api'}>
                       <Button className="gradient-button">
                         <Settings className="h-4 w-4 mr-2" />
                         Configure API Keys
