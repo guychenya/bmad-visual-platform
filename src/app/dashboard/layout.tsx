@@ -14,10 +14,31 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { user, profile, signOut } = useAuth()
+  const { user, profile, signOut, loading } = useAuth()
   const pathname = usePathname()
 
-  if (!user) {
+  // Check if auth is bypassed
+  const bypassAuth = process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true'
+  
+  // Show loading while auth context is initializing
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <Card className="glass-card animate-scale-in">
+          <CardContent className="p-8 text-center">
+            <div className="flex items-center justify-center mb-4">
+              <Sparkles className="w-8 h-8 text-purple-400 animate-pulse-slow" />
+            </div>
+            <h2 className="text-2xl font-bold mb-4 gradient-text">Loading...</h2>
+            <p className="text-slate-400">Setting up your dashboard</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // Only show login prompt if auth is not bypassed and no user
+  if (!user && !bypassAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
         <Card className="glass-card animate-scale-in">
