@@ -133,8 +133,8 @@ export function AgentHub() {
               const newCustomAgents = customAgents.filter((agent: any) => !existingIds.includes(agent.id))
             return [...prev, ...newCustomAgents.map((agent: any) => ({
               ...agent,
-              icon: agentIcons[agent.icon as keyof typeof agentIcons],
-              color: agentColors[agent.color as keyof typeof agentColors]
+              icon: agentIcons[agent.icon as keyof typeof agentIcons] || agentIcons.Brain, // Fallback to Brain icon
+              color: agentColors[agent.color as keyof typeof agentColors] || agentColors.Blue // Fallback to Blue color
             }))]
           })
         } catch (error) {
