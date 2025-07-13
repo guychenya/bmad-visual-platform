@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../../components
 import { Button } from '../../../../components/ui/button'
 import { ArrowLeft, Edit, Download, FileText, Users, Calendar, Star, Folder, Play, Pause, Archive, Settings, Eye, MessageSquare, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
+import { routes } from '../../../../lib/routes'
 import { useParams } from 'next/navigation'
 
 interface Project {
@@ -109,7 +110,7 @@ export default function ProjectDetailPage() {
           <CardContent>
             <h3 className="text-xl font-semibold text-white mb-2">Project Not Found</h3>
             <p className="text-slate-400 mb-4">The requested project doesn't exist.</p>
-            <Link href="/dashboard/projects">
+            <Link href={routes.dashboard.projects}>
               <Button className="gradient-button">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Projects
@@ -135,8 +136,8 @@ export default function ProjectDetailPage() {
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-start justify-between">
-          <div className="flex items-start space-x-6">
-            <Link href="/dashboard/projects">
+            <div className="flex items-start space-x-6">
+              <Link href={routes.dashboard.projects}>
               <Button variant="outline" className="glass-button">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
@@ -537,7 +538,7 @@ export default function ProjectDetailPage() {
                     <div className="flex flex-wrap gap-2">
                       <Button 
                         className="gradient-button"
-                        onClick={() => window.location.href = '/dashboard/agents/bmad-orchestrator'}
+                        onClick={() => window.location.href = routes.dashboard.agentDetail('bmad-orchestrator')}
                       >
                         <MessageSquare className="h-4 w-4 mr-2" />
                         Chat with Orchestra
@@ -545,14 +546,14 @@ export default function ProjectDetailPage() {
                       <Button 
                         variant="outline" 
                         className="glass-button"
-                        onClick={() => window.location.href = '/dashboard/agents/1'}
+                        onClick={() => window.location.href = routes.dashboard.agentDetail('analyst')}
                       >
                         Talk to Analyst
                       </Button>
                       <Button 
                         variant="outline" 
                         className="glass-button"
-                        onClick={() => window.location.href = '/dashboard/agents/2'}
+                        onClick={() => window.location.href = routes.dashboard.agentDetail('architect')}
                       >
                         Talk to Architect
                       </Button>
