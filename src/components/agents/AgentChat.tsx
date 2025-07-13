@@ -7,6 +7,7 @@ import { Input } from '../ui/input'
 import { Send, Loader2, ArrowLeft, Brain, Code, TestTube, Users, User, Palette, Settings, Key, ExternalLink, Plus, MessageSquare, ChevronLeft, Menu, History, MoreHorizontal, Crown } from 'lucide-react'
 import Link from 'next/link'
 import { routes } from '../../lib/routes'
+import { useRouter } from 'next/navigation'
 import { TypingIndicator } from './TypingIndicator'
 import { aiService } from '../../lib/ai/aiService'
 
@@ -134,6 +135,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
   
   // Load all agents (built-in + custom)
   useEffect(() => {
@@ -429,7 +431,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
       
       // If switching to different agent, update URL
       if (conversation.agentId !== agentId) {
-        window.location.href = routes.dashboard.agentDetail(conversation.agentId)
+        router.push(routes.dashboard.agentDetail(conversation.agentId))
       }
     }
   }
