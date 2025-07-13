@@ -6,7 +6,7 @@ import { Button } from '../../../../components/ui/button'
 import { ArrowLeft, Edit, Download, FileText, Users, Calendar, Star, Folder, Play, Pause, Archive, Settings, Eye, MessageSquare, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
 import { routes } from '../../../../lib/routes'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 
 interface Project {
   id: number
@@ -29,6 +29,7 @@ interface Project {
 export default function ProjectDetailPage() {
   const params = useParams()
   const projectId = params.id
+  const router = useRouter()
   const [project, setProject] = useState<Project | null>(null)
   const [activeTab, setActiveTab] = useState('overview')
   const [isLoading, setIsLoading] = useState(true)
@@ -538,7 +539,7 @@ export default function ProjectDetailPage() {
                     <div className="flex flex-wrap gap-2">
                       <Button 
                         className="gradient-button"
-                        onClick={() => window.location.href = routes.dashboard.agentDetail('bmad-orchestrator')}
+                        onClick={() => router.push(routes.dashboard.agentDetail('bmad-orchestrator'))}
                       >
                         <MessageSquare className="h-4 w-4 mr-2" />
                         Chat with Orchestra
@@ -546,14 +547,14 @@ export default function ProjectDetailPage() {
                       <Button 
                         variant="outline" 
                         className="glass-button"
-                        onClick={() => window.location.href = routes.dashboard.agentDetail('analyst')}
+                        onClick={() => router.push(routes.dashboard.agentDetail('analyst'))}
                       >
                         Talk to Analyst
                       </Button>
                       <Button 
                         variant="outline" 
                         className="glass-button"
-                        onClick={() => window.location.href = routes.dashboard.agentDetail('architect')}
+                        onClick={() => router.push(routes.dashboard.agentDetail('architect'))}
                       >
                         Talk to Architect
                       </Button>
@@ -617,7 +618,7 @@ export default function ProjectDetailPage() {
                         <Button 
                           variant="outline" 
                           className="w-full glass-button text-left justify-start"
-                          onClick={() => window.location.href = '/dashboard/create'}
+                          onClick={() => router.push(routes.dashboard.create)}
                         >
                           🚀 Start New BMad Workflow
                         </Button>
