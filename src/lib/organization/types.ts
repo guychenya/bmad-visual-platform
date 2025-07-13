@@ -15,6 +15,8 @@ export interface AgentRole {
 }
 
 export interface OrganizationNode {
+  id: string
+  name: string
   agentId: string
   role: AgentRole
   reportsTo?: string
@@ -24,6 +26,8 @@ export interface OrganizationNode {
   responsibilities: string[]
   delegationRules: DelegationRule[]
   collaborationPreferences: string[]
+  availability: 'available' | 'busy' | 'offline'
+  workload: 'light' | 'normal' | 'heavy'
 }
 
 export interface DelegationRule {
