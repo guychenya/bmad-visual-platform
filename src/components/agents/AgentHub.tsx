@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
 import { Plus, Settings, Activity, Users, Brain, Code, Database, Palette, TestTube, User, FileText, MessageSquare, Sparkles } from 'lucide-react'
 import { AddAgentModal } from './AddAgentModal'
+import { agentIcons, agentColors } from '../../lib/agent-utils'
 
 export function AgentHub() {
   const [agents, setAgents] = useState([
@@ -14,8 +15,8 @@ export function AgentHub() {
       description: 'Strategic planning and requirements analysis expert',
       status: 'active',
       lastUsed: '2 hours ago',
-      icon: Brain,
-      color: 'from-blue-500 to-cyan-500',
+      icon: agentIcons.Brain,
+      color: agentColors.Blue,
       expertise: ['Project Planning', 'Requirements Analysis', 'Strategic Insights'],
       personality: 'Analytical and thorough'
     },
@@ -25,8 +26,8 @@ export function AgentHub() {
       description: 'System architecture and technical design specialist',
       status: 'active',
       lastUsed: '1 hour ago',
-      icon: Code,
-      color: 'from-green-500 to-emerald-500',
+      icon: agentIcons.Code,
+      color: agentColors.Green,
       expertise: ['System Design', 'Architecture Patterns', 'Technical Strategy'],
       personality: 'Structured and visionary'
     },
@@ -36,8 +37,8 @@ export function AgentHub() {
       description: 'Full-stack development and implementation expert',
       status: 'active',
       lastUsed: '30 minutes ago',
-      icon: Code,
-      color: 'from-purple-500 to-pink-500',
+      icon: agentIcons.Code,
+      color: agentColors.Purple,
       expertise: ['Frontend', 'Backend', 'DevOps', 'Code Quality'],
       personality: 'Pragmatic and efficient'
     },
@@ -47,8 +48,8 @@ export function AgentHub() {
       description: 'Quality assurance and testing specialist',
       status: 'idle',
       lastUsed: '3 hours ago',
-      icon: TestTube,
-      color: 'from-yellow-500 to-orange-500',
+      icon: agentIcons.TestTube,
+      color: agentColors.Yellow,
       expertise: ['Test Automation', 'Quality Assurance', 'Bug Detection'],
       personality: 'Detail-oriented and methodical'
     },
@@ -58,8 +59,8 @@ export function AgentHub() {
       description: 'Agile project management and story coordination',
       status: 'active',
       lastUsed: '45 minutes ago',
-      icon: Users,
-      color: 'from-red-500 to-pink-500',
+      icon: agentIcons.Users,
+      color: agentColors.Red,
       expertise: ['Agile Methodology', 'Sprint Planning', 'Team Coordination'],
       personality: 'Organized and collaborative'
     },
@@ -69,8 +70,8 @@ export function AgentHub() {
       description: 'User experience and interface design expert',
       status: 'idle',
       lastUsed: '2 days ago',
-      icon: Palette,
-      color: 'from-indigo-500 to-purple-500',
+      icon: agentIcons.Palette,
+      color: agentColors.Indigo,
       expertise: ['User Research', 'UI/UX Design', 'Prototyping'],
       personality: 'Creative and user-focused'
     },
@@ -80,8 +81,8 @@ export function AgentHub() {
       description: 'Product strategy and feature prioritization',
       status: 'active',
       lastUsed: '1 day ago',
-      icon: User,
-      color: 'from-teal-500 to-blue-500',
+      icon: agentIcons.User,
+      color: agentColors.Teal,
       expertise: ['Product Strategy', 'Feature Planning', 'User Stories'],
       personality: 'Strategic and customer-oriented'
     }
@@ -130,9 +131,13 @@ export function AgentHub() {
               // Only add custom agents that aren't already in the list
               const existingIds = prev.map(agent => agent.id)
               const newCustomAgents = customAgents.filter((agent: any) => !existingIds.includes(agent.id))
-              return [...prev, ...newCustomAgents]
-            })
-          } catch (error) {
+            return [...prev, ...newCustomAgents.map((agent: any) => ({
+              ...agent,
+              icon: agentIcons[agent.icon as keyof typeof agentIcons],
+              color: agentColors[agent.color as keyof typeof agentColors]
+            }))]
+          })
+        } catch (error) {
             console.error('Failed to load custom agents:', error)
           }
         }

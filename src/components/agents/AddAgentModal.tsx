@@ -5,38 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
-import { X, Plus, Brain, Code, TestTube, Users, User, Palette, Database, Globe, Smartphone, Server, FileText, Settings } from 'lucide-react'
+import { X, Plus } from 'lucide-react'
+import { agentIcons, agentColors } from '../../lib/agent-utils'
 
 interface AddAgentModalProps {
   isOpen: boolean
   onClose: () => void
   onAgentCreated: (agent: any) => void
-}
-
-const agentIcons = {
-  'Brain': Brain,
-  'Code': Code,
-  'TestTube': TestTube,
-  'Users': Users,
-  'User': User,
-  'Palette': Palette,
-  'Database': Database,
-  'Globe': Globe,
-  'Smartphone': Smartphone,
-  'Server': Server,
-  'FileText': FileText,
-  'Settings': Settings
-}
-
-const agentColors = {
-  'Blue': 'from-blue-500 to-cyan-500',
-  'Green': 'from-green-500 to-emerald-500',
-  'Purple': 'from-purple-500 to-pink-500',
-  'Yellow': 'from-yellow-500 to-orange-500',
-  'Red': 'from-red-500 to-pink-500',
-  'Indigo': 'from-indigo-500 to-purple-500',
-  'Teal': 'from-teal-500 to-blue-500',
-  'Orange': 'from-orange-500 to-red-500'
 }
 
 export function AddAgentModal({ isOpen, onClose, onAgentCreated }: AddAgentModalProps) {
