@@ -63,12 +63,6 @@ export function BMadAgentCollaboration({
     Crown, TrendingUp, Target, Palette, Building, CheckSquare, List, Code, TestTube
   }
 
-  useEffect(() => {
-    if (workflow) {
-      initializeAgentStates();
-    }
-  }, [workflow, initializeAgentStates]);
-
   const initializeAgentStates = useCallback(() => {
     if (!workflow) return;
     const initialStates: Record<string, AgentState> = {};
@@ -90,6 +84,12 @@ export function BMadAgentCollaboration({
 
     setAgentStates(initialStates);
   }, [workflow, setAgentStates]);
+
+  useEffect(() => {
+    if (workflow) {
+      initializeAgentStates();
+    }
+  }, [workflow, initializeAgentStates]);
 
   const addMessage = (message: Omit<AgentMessage, 'id' | 'timestamp'>) => {
     const newMessage: AgentMessage = {

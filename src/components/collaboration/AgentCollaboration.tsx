@@ -94,6 +94,14 @@ export function AgentCollaboration({ projectName, onComplete }: AgentCollaborati
     { name: 'Quality Assurance', duration: 2500 }
   ], [])
 
+  const addMessage = useCallback((message: Omit<typeof messages[0], 'id' | 'timestamp'>) => {
+    setMessages(prev => [...prev, {
+      ...message,
+      id: Date.now().toString(),
+      timestamp: new Date().toLocaleTimeString()
+    }])
+  }, [setMessages])
+
   const getTaskForPhase = useCallback((phase: number): string => {
     const tasks = [
       'Extracting functional requirements and user stories...',
@@ -103,7 +111,7 @@ export function AgentCollaboration({ projectName, onComplete }: AgentCollaborati
       'Running tests and validating functionality...'
     ]
     return tasks[phase] || 'Processing...'
-  }, [phases])
+  }, [])
 
   const processAgentPhase = useCallback(async (agentIndex: number) => {
     const agent = agents[agentIndex]
@@ -157,7 +165,7 @@ export function AgentCollaboration({ projectName, onComplete }: AgentCollaborati
     })
 
     setCurrentPhase(agentIndex + 1)
-  }, [agents, setAgents, addMessage, getTaskForPhase, setCurrentPhase])
+  }, [agents, setAgents, addMessage, getTaskForPhase, setCurrentPhase, phases])
 
   const simulateAgentWork = useCallback(async () => {
     for (let i = 0; i < agents.length; i++) {
@@ -180,14 +188,6 @@ export function AgentCollaboration({ projectName, onComplete }: AgentCollaborati
   useEffect(() => {
     simulateAgentWork()
   }, [simulateAgentWork])
-
-  const addMessage = useCallback((message: Omit<typeof messages[0], 'id' | 'timestamp'>) => {
-    setMessages(prev => [...prev, {
-      ...message,
-      id: Date.now().toString(),
-      timestamp: new Date().toLocaleTimeString()
-    }])
-  }, [setMessages])
 
   return (
     <div className="space-y-6">

@@ -111,31 +111,68 @@ export function AgentTabWorkspace({ projectId, templateId, onWorkflowComplete }:
     setHasApiKey(apiKeyStatus)
   }, [apiKeyStatus])
 
-  // Memoize template initialization
-  const initializeWorkflowFromTemplate = useCallback((template: ProjectTemplate) => {
-    setSelectedTemplate(template)
-    setShowTemplateSelector(false)
-    
-    // Find the workflow definition
-    const workflow = BMAD_WORKFLOWS.find(w => w.id === template.workflow.id)
-    if (workflow) {
-      setCurrentWorkflow(workflow)
-      initializeAgentTabs(workflow, template)
-    }
-  }, [initializeAgentTabs])
+  const generateContextualResponse = useCallback((userMessage: string, tab: AgentTab, agent?: BMadAgent): string => {
+    if (!agent) return "I'm working on your request..."
 
-  useEffect(() => {
-    // Load template if provided
-    if (templateId) {
-      const template = PROJECT_TEMPLATES.find(t => t.id === templateId)
-      if (template) {
-        console.log('Loading template:', template.name)
-        initializeWorkflowFromTemplate(template)
-      } else {
-        console.error('Template not found:', templateId)
-      }
+    const taskResponses = {
+      analyst: `Based on my analysis of your requirements for "${selectedTemplate?.name}", I recommend focusing on user needs and market positioning. Let me break down the key business requirements...`,
+      pm: `From a product management perspective, I'll help prioritize the features for "${selectedTemplate?.name}". Let's define the MVP scope and user stories...`,
+      'ux-expert': `For the user experience design of "${selectedTemplate?.name}", I suggest we start with user journey mapping and wireframes. The design should be intuitive and accessible...`,
+      architect: `Looking at the technical architecture for "${selectedTemplate?.name}", I recommend a scalable design using ${selectedTemplate?.techStack.join(', ')}. Here's my proposed system structure...`,
+      dev: `I'm ready to implement the code for "${selectedTemplate?.name}". Based on the architecture and requirements, I'll start with the core functionality and follow best practices...`,
+      qa: `For quality assurance of "${selectedTemplate?.name}", I'll create a comprehensive testing strategy covering functional, performance, and security aspects...`
     }
-  }, [templateId, initializeWorkflowFromTemplate])
+
+    const agentType = agent.id.includes('analyst') ? 'analyst' :
+                     agent.id.includes('pm') ? 'pm' :
+                     agent.id.includes('ux') ? 'ux-expert' :
+                     agent.id.includes('architect') ? 'architect' :
+                     agent.id.includes('dev') ? 'dev' : 'qa'
+
+    return taskResponses[agentType as keyof typeof taskResponses] || 
+           `As ${agent.name}, I'm working on the ${tab.currentTask} for "${selectedTemplate?.name}". ${agent.persona}`
+  }, [selectedTemplate])
+
+  const checkTaskCompletion = useCallback((tab: AgentTab, lastMessage: Message) => {
+    // Simple completion detection - in a real app, this would be more sophisticated
+    const completionKeywords = ['completed', 'finished', 'done', 'ready', 'delivered', 'complete']
+    const hasCompletionIndicator = completionKeywords.some(keyword => 
+      lastMessage.content.toLowerCase().includes(keyword)
+    )
+
+    if (hasCompletionIndicator && tab.status === 'active') {
+      console.log('Task completion detected for:', tab.name)
+      
+      // Mark current tab as completed and enable next agent
+      setAgentTabs(prev => {
+        const currentIndex = prev.findIndex(t => t.id === tab.id)
+        const updatedTabs = prev.map((t, index) => {
+          if (t.id === tab.id) {
+            return { ...t, status: 'completed' as const }
+          }
+          // Enable next agent
+          if (index === currentIndex + 1) {
+            return { ...t, status: 'active' as const, isEnabled: true }
+          }
+          return t
+        })
+        
+        // Switch to next tab if available
+        if (currentIndex < prev.length - 1) {
+          const nextTab = updatedTabs[currentIndex + 1]
+          setTimeout(() => setActiveTabId(nextTab.id), 500)
+        } else {
+          // All agents completed
+          setTimeout(() => {
+            setWorkflowStatus('completed')
+            onWorkflowComplete?.()
+          }, 1000)
+        }
+        
+        return updatedTabs
+      })
+    }
+  }, [setAgentTabs, setActiveTabId, setWorkflowStatus, onWorkflowComplete])
 
   const initializeAgentTabs = useCallback((workflow: Workflow, template: ProjectTemplate) => {
     console.log('Initializing agent tabs for workflow:', workflow.id)
@@ -181,6 +218,32 @@ export function AgentTabWorkspace({ projectId, templateId, onWorkflowComplete }:
       setActiveTabId(tabs[0].id)
     }
   }, [])
+
+  // Memoize template initialization
+  const initializeWorkflowFromTemplate = useCallback((template: ProjectTemplate) => {
+    setSelectedTemplate(template)
+    setShowTemplateSelector(false)
+    
+    // Find the workflow definition
+    const workflow = BMAD_WORKFLOWS.find(w => w.id === template.workflow.id)
+    if (workflow) {
+      setCurrentWorkflow(workflow)
+      initializeAgentTabs(workflow, template)
+    }
+  }, [])
+
+  useEffect(() => {
+    // Load template if provided
+    if (templateId) {
+      const template = PROJECT_TEMPLATES.find(t => t.id === templateId)
+      if (template) {
+        console.log('Loading template:', template.name)
+        initializeWorkflowFromTemplate(template)
+      } else {
+        console.error('Template not found:', templateId)
+      }
+    }
+  }, [templateId, initializeWorkflowFromTemplate])
 
   const getAgentIcon = (agentId: string) => {
     const iconMap: Record<string, any> = {
@@ -296,70 +359,7 @@ Please provide detailed, actionable guidance specific to this ${selectedTemplate
       setIsTyping(false)
       setIsLoading(false)
     }
-  }, [message, isLoading, hasApiKey, agentTabs, activeTabId, selectedTemplate, generateContextualResponse, checkTaskCompletion])
-
-  const generateContextualResponse = useCallback((userMessage: string, tab: AgentTab, agent?: BMadAgent): string => {
-    if (!agent) return "I'm working on your request..."
-
-    const taskResponses = {
-      analyst: `Based on my analysis of your requirements for "${selectedTemplate?.name}", I recommend focusing on user needs and market positioning. Let me break down the key business requirements...`,
-      pm: `From a product management perspective, I'll help prioritize the features for "${selectedTemplate?.name}". Let's define the MVP scope and user stories...`,
-      'ux-expert': `For the user experience design of "${selectedTemplate?.name}", I suggest we start with user journey mapping and wireframes. The design should be intuitive and accessible...`,
-      architect: `Looking at the technical architecture for "${selectedTemplate?.name}", I recommend a scalable design using ${selectedTemplate?.techStack.join(', ')}. Here's my proposed system structure...`,
-      dev: `I'm ready to implement the code for "${selectedTemplate?.name}". Based on the architecture and requirements, I'll start with the core functionality and follow best practices...`,
-      qa: `For quality assurance of "${selectedTemplate?.name}", I'll create a comprehensive testing strategy covering functional, performance, and security aspects...`
-    }
-
-    const agentType = agent.id.includes('analyst') ? 'analyst' :
-                     agent.id.includes('pm') ? 'pm' :
-                     agent.id.includes('ux') ? 'ux-expert' :
-                     agent.id.includes('architect') ? 'architect' :
-                     agent.id.includes('dev') ? 'dev' : 'qa'
-
-    return taskResponses[agentType as keyof typeof taskResponses] || 
-           `As ${agent.name}, I'm working on the ${tab.currentTask} for "${selectedTemplate?.name}". ${agent.persona}`
-  }, [selectedTemplate, templateId, projectId, BMAD_AGENTS])
-
-  const checkTaskCompletion = useCallback((tab: AgentTab, lastMessage: Message) => {
-    // Simple completion detection - in a real app, this would be more sophisticated
-    const completionKeywords = ['completed', 'finished', 'done', 'ready', 'delivered', 'complete']
-    const hasCompletionIndicator = completionKeywords.some(keyword => 
-      lastMessage.content.toLowerCase().includes(keyword)
-    )
-
-    if (hasCompletionIndicator && tab.status === 'active') {
-      console.log('Task completion detected for:', tab.name)
-      
-      // Mark current tab as completed and enable next agent
-      setAgentTabs(prev => {
-        const currentIndex = prev.findIndex(t => t.id === tab.id)
-        const updatedTabs = prev.map((t, index) => {
-          if (t.id === tab.id) {
-            return { ...t, status: 'completed' as const }
-          }
-          // Enable next agent
-          if (index === currentIndex + 1) {
-            return { ...t, status: 'active' as const, isEnabled: true }
-          }
-          return t
-        })
-        
-        // Switch to next tab if available
-        if (currentIndex < prev.length - 1) {
-          const nextTab = updatedTabs[currentIndex + 1]
-          setTimeout(() => setActiveTabId(nextTab.id), 500)
-        } else {
-          // All agents completed
-          setTimeout(() => {
-            setWorkflowStatus('completed')
-            onWorkflowComplete?.()
-          }, 1000)
-        }
-        
-        return updatedTabs
-      })
-    }
-  }, [setAgentTabs, setActiveTabId, setWorkflowStatus, onWorkflowComplete])
+  }, [message, isLoading, hasApiKey, agentTabs, activeTabId, selectedTemplate, projectId, templateId, generateContextualResponse, checkTaskCompletion])
 
   const getStatusIcon = (status: AgentTab['status']) => {
     switch (status) {
