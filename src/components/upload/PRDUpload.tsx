@@ -8,9 +8,10 @@ import { Upload, FileText, Image, FileX, Check, Loader2, Bot, Sparkles } from 'l
 interface PRDUploadProps {
   onFileUploaded: (file: File, content: string) => void
   onProjectStart: () => void
+  allowSkip?: boolean
 }
 
-export function PRDUpload({ onFileUploaded, onProjectStart }: PRDUploadProps) {
+export function PRDUpload({ onFileUploaded, onProjectStart, allowSkip = false }: PRDUploadProps) {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [processedContent, setProcessedContent] = useState<string>('')
@@ -120,6 +121,32 @@ export function PRDUpload({ onFileUploaded, onProjectStart }: PRDUploadProps) {
               accept=".pdf,.md,.png,.jpg,.jpeg,.webp"
               onChange={handleFileSelect}
             />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Skip Option */}
+      {!uploadedFile && allowSkip && (
+        <Card className="glass-card">
+          <CardContent className="p-6 text-center">
+            <h3 className="text-lg font-semibold text-white mb-2">
+              Start Without Document
+            </h3>
+            <p className="text-slate-400 mb-4">
+              Skip the document upload and proceed directly to the BMad workflow. 
+              Our AI agents will help you define requirements through the collaborative process.
+            </p>
+            <Button 
+              onClick={() => {
+                onFileUploaded(new File([], ''), '')
+                onProjectStart()
+              }}
+              variant="outline" 
+              className="glass-button"
+            >
+              <Bot className="h-4 w-4 mr-2" />
+              Skip & Start Workflow
+            </Button>
           </CardContent>
         </Card>
       )}

@@ -166,7 +166,7 @@ export default function ProjectsPage() {
         </div>
         <Button 
           className="gradient-button hover:scale-105 transition-transform"
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => window.location.href = '/dashboard/projects/new'}
         >
           <Plus className="h-4 w-4 mr-2" />
           New Project
@@ -360,11 +360,24 @@ export default function ProjectsPage() {
                   </div>
                 </div>
                 <div className="flex space-x-4">
-                  <Button className="gradient-button flex-1">
+                  <Button 
+                    className="gradient-button flex-1"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      window.location.href = `/dashboard/projects/${selectedProject.id}`
+                    }}
+                  >
                     <Play className="h-4 w-4 mr-2" />
                     Open Project
                   </Button>
-                  <Button variant="outline" className="glass-button">
+                  <Button 
+                    variant="outline" 
+                    className="glass-button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      // TODO: Add edit functionality
+                    }}
+                  >
                     <Settings className="h-4 w-4 mr-2" />
                     Settings
                   </Button>
