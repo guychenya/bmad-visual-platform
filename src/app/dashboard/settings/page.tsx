@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
 import { Button } from '../../../components/ui/button'
 import { Input } from '../../../components/ui/input'
@@ -8,6 +9,7 @@ import { Label } from '../../../components/ui/label'
 import { Settings, User, Bell, Shield, Palette, Save, Eye, EyeOff, Check, AlertCircle } from 'lucide-react'
 
 export default function SettingsPage() {
+  const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState('profile')
   const [showApiKey, setShowApiKey] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -37,6 +39,14 @@ export default function SettingsPage() {
     { id: 'notifications', name: 'Notifications', icon: Bell },
     { id: 'api', name: 'API Keys', icon: Shield }
   ]
+
+  // Check URL parameters and set active tab
+  useEffect(() => {
+    const tab = searchParams?.get('tab')
+    if (tab && ['profile', 'preferences', 'notifications', 'api'].includes(tab)) {
+      setActiveTab(tab)
+    }
+  }, [searchParams])
 
   // Load settings from localStorage on component mount
   useEffect(() => {

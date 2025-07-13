@@ -241,19 +241,17 @@ export function AgentChat({ agentId }: AgentChatProps) {
       // Create AI service instance with the user's API key
       const aiService = new (await import('../../lib/ai/openai')).OpenAIService({ apiKey })
       
-      // Call the AI service with agent context
-      const response = await aiService.processAgentTask(
+      // Call the AI service chat method
+      const responseContent = await aiService.chatWithAgent(
         agentId,
-        'chat-conversation',
-        [`Respond to user message: "${userMessage.content}"`],
-        `You are having a conversation with a user. Stay in character as ${agent.name} (${agent.title}). Be helpful, professional, and provide valuable insights based on your expertise in ${agent.expertise.join(', ')}.`,
-        messages.map(m => `${m.role}: ${m.content}`)
+        userMessage.content,
+        messages.map(m => ({ role: m.role, content: m.content }))
       )
       
       const agentMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: response.content || generateAgentResponse(userMessage.content, agent),
+        content: responseContent || generateAgentResponse(userMessage.content, agent),
         timestamp: new Date().toISOString()
       }
 
@@ -340,7 +338,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
             </div>
 
             <div className="flex flex-col space-y-3">
-              <Link href="/dashboard/settings">
+              <Link href="/dashboard/settings?tab=api">
                 <Button className="gradient-button w-full">
                   <Settings className="h-4 w-4 mr-2" />
                   Configure API Keys
@@ -501,7 +499,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
               <p className="text-xs text-slate-400">
                 <Key className="h-3 w-3 inline mr-1" />
                 Chat requires API key configuration. 
-                <Link href="/dashboard/settings" className="text-blue-400 hover:text-blue-300 underline ml-1">
+                <Link href="/dashboard/settings?tab=api" className="text-blue-400 hover:text-blue-300 underline ml-1">
                   Add API keys in Settings
                 </Link>
               </p>

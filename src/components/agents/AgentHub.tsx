@@ -89,6 +89,8 @@ export function AgentHub() {
 
   const [selectedAgent, setSelectedAgent] = useState<any>(null)
   const [showAddAgentModal, setShowAddAgentModal] = useState(false)
+  const [showConfigModal, setShowConfigModal] = useState(false)
+  const [agentToConfig, setAgentToConfig] = useState<any>(null)
   const [hasApiKey, setHasApiKey] = useState(false)
 
   const activeAgents = agents.filter(agent => agent.status === 'active').length
@@ -124,6 +126,14 @@ export function AgentHub() {
 
   const handleAgentCreated = (newAgent: any) => {
     setAgents(prev => [...prev, newAgent])
+  }
+
+  const handleConfigureAgent = (agent: any, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation()
+    }
+    setAgentToConfig(agent)
+    setShowConfigModal(true)
   }
 
   const getAgentStatus = (agent: any) => {
@@ -213,7 +223,12 @@ export function AgentHub() {
                   <MessageSquare className="h-4 w-4 mr-1" />
                   Chat
                 </Button>
-                <Button variant="outline" size="sm" className="glass-button">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="glass-button"
+                  onClick={(e) => handleConfigureAgent(agent, e)}
+                >
                   <Settings className="h-4 w-4" />
                 </Button>
               </div>
@@ -307,7 +322,11 @@ export function AgentHub() {
                     <MessageSquare className="h-4 w-4 mr-2" />
                     Start Conversation
                   </Button>
-                  <Button variant="outline" className="glass-button">
+                  <Button 
+                    variant="outline" 
+                    className="glass-button"
+                    onClick={() => handleConfigureAgent(selectedAgent)}
+                  >
                     <Settings className="h-4 w-4 mr-2" />
                     Configure
                   </Button>
@@ -324,6 +343,46 @@ export function AgentHub() {
         onClose={() => setShowAddAgentModal(false)}
         onAgentCreated={handleAgentCreated}
       />
+
+      {/* Agent Configuration Modal */}
+      {showConfigModal && agentToConfig && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowConfigModal(false)}>
+          <Card className="glass-card max-w-md w-full mx-4 animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className={`p-3 bg-gradient-to-r ${agentToConfig.color} rounded-xl`}>
+                    <agentToConfig.icon className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl text-white">Configure {agentToConfig.name}</CardTitle>
+                    <p className="text-slate-400">Agent settings and preferences</p>
+                  </div>
+                </div>
+                <Button variant="outline" onClick={() => setShowConfigModal(false)} className="glass-button">
+                  ×
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-slate-300 text-center py-8">
+                  Agent configuration features are coming soon! 
+                </p>
+                <p className="text-slate-400 text-sm text-center">
+                  This will include personality adjustments, custom instructions, and behavior settings.
+                </p>
+                <Button 
+                  className="gradient-button w-full"
+                  onClick={() => setShowConfigModal(false)}
+                >
+                  Got it
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }
