@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
 import { Button } from '../../../components/ui/button'
-import { Plus, Folder, Clock, Users, Star, MoreHorizontal, Play, Pause, Archive, Settings } from 'lucide-react'
+import { Plus, Folder, Clock, Users, Star, MoreHorizontal, Play, Pause, Archive, Settings, Zap } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { CreateProjectModal } from '../../../components/projects/CreateProjectModal'
 
@@ -19,6 +19,7 @@ interface Project {
   category: string
   color: string
   template?: string
+  templateName?: string
   tags?: string[]
 }
 
@@ -166,7 +167,7 @@ export default function ProjectsPage() {
         </div>
         <Button 
           className="gradient-button hover:scale-105 transition-transform"
-          onClick={() => window.location.href = '/dashboard/create'}
+          onClick={() => setShowCreateModal(true)}
         >
           <Plus className="h-4 w-4 mr-2" />
           New Project
@@ -245,9 +246,17 @@ export default function ProjectsPage() {
                     {project.priority}
                   </span>
                 </div>
-                <span className="text-xs bg-white/10 text-slate-300 px-2 py-1 rounded-full">
-                  {project.category}
-                </span>
+                <div className="flex items-center space-x-2">
+                  {project.template && (
+                    <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full flex items-center space-x-1">
+                      <Zap className="h-3 w-3" />
+                      <span>Template</span>
+                    </span>
+                  )}
+                  <span className="text-xs bg-white/10 text-slate-300 px-2 py-1 rounded-full">
+                    {project.category}
+                  </span>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -334,6 +343,12 @@ export default function ProjectsPage() {
                         <span className="text-slate-400">Category:</span>
                         <span className="text-white">{selectedProject.category}</span>
                       </div>
+                      {selectedProject.templateName && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Template:</span>
+                          <span className="text-blue-300">{selectedProject.templateName}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div>
@@ -364,11 +379,16 @@ export default function ProjectsPage() {
                     className="gradient-button flex-1"
                     onClick={(e) => {
                       e.stopPropagation()
-                      window.location.href = `/dashboard/projects/${selectedProject.id}`
+                      // If project has a template, go to workspace, otherwise go to project detail
+                      if (selectedProject.template) {
+                        window.location.href = `/dashboard/workspace?template=${selectedProject.template}&project=${selectedProject.id}`
+                      } else {
+                        window.location.href = `/dashboard/projects/${selectedProject.id}`
+                      }
                     }}
                   >
                     <Play className="h-4 w-4 mr-2" />
-                    Open Project
+                    {selectedProject.template ? 'Open Workspace' : 'Open Project'}
                   </Button>
                   <Button 
                     variant="outline" 

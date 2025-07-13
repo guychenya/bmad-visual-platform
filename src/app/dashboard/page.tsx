@@ -246,6 +246,12 @@ export default function Dashboard() {
                 Meet Your Agents
               </Button>
             </Link>
+            <Link href="/dashboard/workspace">
+              <Button size="lg" className="w-full sm:w-auto gradient-button hover:scale-105 transition-transform">
+                <Users className="h-5 w-5 mr-2" />
+                Try Workspace
+              </Button>
+            </Link>
             <Link href="/dashboard/create">
               <Button variant="outline" size="lg" className="w-full sm:w-auto glass-button hover:scale-105 transition-transform">
                 <Plus className="h-5 w-5 mr-2" />

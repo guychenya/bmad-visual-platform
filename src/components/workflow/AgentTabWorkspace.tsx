@@ -110,7 +110,10 @@ export function AgentTabWorkspace({ projectId, templateId, onWorkflowComplete }:
     if (templateId) {
       const template = PROJECT_TEMPLATES.find(t => t.id === templateId)
       if (template) {
+        console.log('Loading template:', template.name)
         initializeWorkflowFromTemplate(template)
+      } else {
+        console.error('Template not found:', templateId)
       }
     }
   }, [templateId])
@@ -128,9 +131,15 @@ export function AgentTabWorkspace({ projectId, templateId, onWorkflowComplete }:
   }
 
   const initializeAgentTabs = (workflow: Workflow, template: ProjectTemplate) => {
+    console.log('Initializing agent tabs for workflow:', workflow.id)
+    console.log('Workflow steps:', workflow.steps)
+    
     const tabs: AgentTab[] = workflow.steps.map((step, index) => {
       const agent = BMAD_AGENTS.find(a => a.id === step.agentId)
-      if (!agent) return null
+      if (!agent) {
+        console.warn('Agent not found:', step.agentId)
+        return null
+      }
 
       const tab: AgentTab = {
         id: `tab-${step.agentId}`,
@@ -146,16 +155,15 @@ export function AgentTabWorkspace({ projectId, templateId, onWorkflowComplete }:
           timestamp: new Date().toISOString(),
           agentId: step.agentId
         }],
-        currentTask: step.tasks[0]?.name,
+        currentTask: step.tasks[0]?.name || step.description,
         deliverables: step.outputs,
         dependencies: step.dependencies,
-        isEnabled: index === 0 || step.dependencies.every(dep => 
-          workflow.steps.slice(0, index).some(prevStep => prevStep.outputs.includes(dep))
-        )
+        isEnabled: index === 0 // Enable first tab immediately, others will be enabled as workflow progresses
       }
       return tab
     }).filter(Boolean) as AgentTab[]
 
+    console.log('Created agent tabs:', tabs.map(t => ({ name: t.name, enabled: t.isEnabled })))
     setAgentTabs(tabs)
     if (tabs.length > 0) {
       setActiveTabId(tabs[0].id)
@@ -283,34 +291,42 @@ export function AgentTabWorkspace({ projectId, templateId, onWorkflowComplete }:
 
   const checkTaskCompletion = (tab: AgentTab, lastMessage: Message) => {
     // Simple completion detection - in a real app, this would be more sophisticated
-    const completionKeywords = ['completed', 'finished', 'done', 'ready', 'delivered']
+    const completionKeywords = ['completed', 'finished', 'done', 'ready', 'delivered', 'complete']
     const hasCompletionIndicator = completionKeywords.some(keyword => 
       lastMessage.content.toLowerCase().includes(keyword)
     )
 
     if (hasCompletionIndicator && tab.status === 'active') {
-      // Mark current tab as completed
-      setAgentTabs(prev => prev.map(t => 
-        t.id === tab.id 
-          ? { ...t, status: 'completed' }
-          : t
-      ))
-
-      // Enable next agent
-      const currentIndex = agentTabs.findIndex(t => t.id === tab.id)
-      if (currentIndex < agentTabs.length - 1) {
-        const nextTab = agentTabs[currentIndex + 1]
-        setAgentTabs(prev => prev.map(t => 
-          t.id === nextTab.id 
-            ? { ...t, status: 'active', isEnabled: true }
-            : t
-        ))
-        setActiveTabId(nextTab.id)
-      } else {
-        // All agents completed
-        setWorkflowStatus('completed')
-        onWorkflowComplete?.()
-      }
+      console.log('Task completion detected for:', tab.name)
+      
+      // Mark current tab as completed and enable next agent
+      setAgentTabs(prev => {
+        const currentIndex = prev.findIndex(t => t.id === tab.id)
+        const updatedTabs = prev.map((t, index) => {
+          if (t.id === tab.id) {
+            return { ...t, status: 'completed' as const }
+          }
+          // Enable next agent
+          if (index === currentIndex + 1) {
+            return { ...t, status: 'active' as const, isEnabled: true }
+          }
+          return t
+        })
+        
+        // Switch to next tab if available
+        if (currentIndex < prev.length - 1) {
+          const nextTab = updatedTabs[currentIndex + 1]
+          setTimeout(() => setActiveTabId(nextTab.id), 500)
+        } else {
+          // All agents completed
+          setTimeout(() => {
+            setWorkflowStatus('completed')
+            onWorkflowComplete?.()
+          }, 1000)
+        }
+        
+        return updatedTabs
+      })
     }
   }
 
@@ -669,31 +685,59 @@ export function AgentTabWorkspace({ projectId, templateId, onWorkflowComplete }:
                   </div>
                 </div>
               ) : (
-                <form onSubmit={handleSendMessage} className="flex space-x-3">
-                  <Input
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder={(() => {
-                      const activeTab = agentTabs.find(tab => tab.id === activeTabId)
-                      return activeTab?.isEnabled 
-                        ? `Message ${activeTab.name}...`
-                        : 'Complete previous tasks to continue...'
-                    })()}
-                    disabled={isLoading || !agentTabs.find(tab => tab.id === activeTabId)?.isEnabled}
-                    className="flex-1 glass-input border-input text-foreground placeholder-muted-foreground rounded-xl px-4 py-3"
-                  />
-                  <Button 
-                    type="submit" 
-                    disabled={isLoading || !message.trim() || !agentTabs.find(tab => tab.id === activeTabId)?.isEnabled}
-                    className="gradient-button px-6 py-3 rounded-xl"
-                  >
-                    {isLoading ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <Send className="h-5 w-5" />
-                    )}
-                  </Button>
-                </form>
+                <div className="space-y-3">
+                  {/* Task Completion Button */}
+                  {(() => {
+                    const activeTab = agentTabs.find(tab => tab.id === activeTabId)
+                    return activeTab?.isEnabled && activeTab.status === 'active' && (
+                      <div className="flex justify-center">
+                        <Button 
+                          onClick={() => {
+                            const dummyMessage: Message = {
+                              id: Date.now().toString(),
+                              role: 'assistant',
+                              content: 'Task completed! Moving to the next agent...',
+                              timestamp: new Date().toISOString(),
+                              agentId: activeTab.agentId
+                            }
+                            checkTaskCompletion(activeTab, dummyMessage)
+                          }}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Mark Task as Complete
+                        </Button>
+                      </div>
+                    )
+                  })()}
+
+                  {/* Message Form */}
+                  <form onSubmit={handleSendMessage} className="flex space-x-3">
+                    <Input
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      placeholder={(() => {
+                        const activeTab = agentTabs.find(tab => tab.id === activeTabId)
+                        return activeTab?.isEnabled 
+                          ? `Message ${activeTab.name}...`
+                          : 'Complete previous tasks to continue...'
+                      })()}
+                      disabled={isLoading || !agentTabs.find(tab => tab.id === activeTabId)?.isEnabled}
+                      className="flex-1 glass-input border-input text-foreground placeholder-muted-foreground rounded-xl px-4 py-3"
+                    />
+                    <Button 
+                      type="submit" 
+                      disabled={isLoading || !message.trim() || !agentTabs.find(tab => tab.id === activeTabId)?.isEnabled}
+                      className="gradient-button px-6 py-3 rounded-xl"
+                    >
+                      {isLoading ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <Send className="h-5 w-5" />
+                      )}
+                    </Button>
+                  </form>
+                </div>
               )}
             </div>
           </>
