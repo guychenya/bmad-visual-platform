@@ -315,6 +315,27 @@
   .animate-scale-in {
     animation: scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
+
+  /* Performance optimizations */
+  .hover\\:scale-102:hover {
+    transform: scale(1.02);
+  }
+
+  /* Reduce animations on slower devices */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-float,
+    .animate-pulse-slow,
+    .animate-slide-up,
+    .animate-fade-in,
+    .animate-scale-in {
+      animation: none;
+    }
+    
+    .hover\\:scale-105:hover,
+    .hover\\:scale-102:hover {
+      transform: none;
+    }
+  }
   
   /* Gradient utilities */
   .bg-gradient-viby {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -90,25 +90,41 @@ export function AgentTabWorkspace({ projectId, templateId, onWorkflowComplete }:
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
-  useEffect(() => {
-    // Check for API key
-    const checkApiKey = () => {
-      const savedSettings = localStorage.getItem('viby-settings')
-      if (savedSettings) {
-        try {
-          const settings = JSON.parse(savedSettings)
-          const hasValidApiKey = settings.apiKeys?.openai?.trim() || 
-                                 settings.apiKeys?.claude?.trim() || 
-                                 settings.apiKeys?.gemini?.trim()
-          setHasApiKey(!!hasValidApiKey)
-        } catch (error) {
-          setHasApiKey(false)
-        }
+  // Memoize API key check to prevent unnecessary localStorage reads
+  const apiKeyStatus = useMemo(() => {
+    if (typeof window === 'undefined') return false
+    const savedSettings = localStorage.getItem('viby-settings')
+    if (savedSettings) {
+      try {
+        const settings = JSON.parse(savedSettings)
+        return !!(settings.apiKeys?.openai?.trim() || 
+                 settings.apiKeys?.claude?.trim() || 
+                 settings.apiKeys?.gemini?.trim())
+      } catch (error) {
+        return false
       }
     }
+    return false
+  }, [])
 
-    checkApiKey()
+  useEffect(() => {
+    setHasApiKey(apiKeyStatus)
+  }, [apiKeyStatus])
 
+  // Memoize template initialization
+  const initializeWorkflowFromTemplate = useCallback((template: ProjectTemplate) => {
+    setSelectedTemplate(template)
+    setShowTemplateSelector(false)
+    
+    // Find the workflow definition
+    const workflow = BMAD_WORKFLOWS.find(w => w.id === template.workflow.id)
+    if (workflow) {
+      setCurrentWorkflow(workflow)
+      initializeAgentTabs(workflow, template)
+    }
+  }, [])
+
+  useEffect(() => {
     // Load template if provided
     if (templateId) {
       const template = PROJECT_TEMPLATES.find(t => t.id === templateId)
@@ -119,23 +135,10 @@ export function AgentTabWorkspace({ projectId, templateId, onWorkflowComplete }:
         console.error('Template not found:', templateId)
       }
     }
-  }, [templateId])
+  }, [templateId, initializeWorkflowFromTemplate])
 
-  const initializeWorkflowFromTemplate = (template: ProjectTemplate) => {
-    setSelectedTemplate(template)
-    setShowTemplateSelector(false)
-    
-    // Find the workflow definition
-    const workflow = BMAD_WORKFLOWS.find(w => w.id === template.workflow.id)
-    if (workflow) {
-      setCurrentWorkflow(workflow)
-      initializeAgentTabs(workflow, template)
-    }
-  }
-
-  const initializeAgentTabs = (workflow: Workflow, template: ProjectTemplate) => {
+  const initializeAgentTabs = useCallback((workflow: Workflow, template: ProjectTemplate) => {
     console.log('Initializing agent tabs for workflow:', workflow.id)
-    console.log('Workflow steps:', workflow.steps)
     
     const urlParams = new URLSearchParams(window.location.search);
     const selectedAgentIdsParam = urlParams.get('agents');
@@ -152,7 +155,7 @@ export function AgentTabWorkspace({ projectId, templateId, onWorkflowComplete }:
         return null
       }
 
-      const tab: AgentTab = {
+      return {
         id: `tab-${step.agentId}`,
         agentId: step.agentId,
         name: agent.name,
@@ -169,17 +172,15 @@ export function AgentTabWorkspace({ projectId, templateId, onWorkflowComplete }:
         currentTask: step.tasks[0]?.name || step.description,
         deliverables: step.outputs,
         dependencies: step.dependencies,
-        isEnabled: index === 0 // Enable first tab immediately, others will be enabled as workflow progresses
-      }
-      return tab
+        isEnabled: index === 0
+      } as AgentTab
     }).filter(Boolean) as AgentTab[]
 
-    console.log('Created agent tabs:', tabs.map(t => ({ name: t.name, enabled: t.isEnabled })))
     setAgentTabs(tabs)
     if (tabs.length > 0) {
       setActiveTabId(tabs[0].id)
     }
-  }
+  }, [])
 
   const getAgentIcon = (agentId: string) => {
     const iconMap: Record<string, any> = {
@@ -212,7 +213,7 @@ export function AgentTabWorkspace({ projectId, templateId, onWorkflowComplete }:
     }
   }
 
-  const handleSendMessage = async (e: React.FormEvent) => {
+  const handleSendMessage = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
     if (!message.trim() || isLoading || !hasApiKey) return
 
@@ -244,13 +245,32 @@ export function AgentTabWorkspace({ projectId, templateId, onWorkflowComplete }:
       const contextMessages = activeTab.messages.map(m => ({ role: m.role, content: m.content }))
       
       // Add context to the message for better responses
-      const contextualMessage = `${userMessage.content}\n\nContext: Working on "${selectedTemplate?.name}" project. Current task: ${activeTab.currentTask}. Expected deliverables: ${activeTab.deliverables.join(', ')}.`
+      const contextualMessage = `Project: "${selectedTemplate?.name}" (Template: ${templateId}, Project: ${projectId})
+Current Task: ${activeTab.currentTask}
+Expected Deliverables: ${activeTab.deliverables.join(', ')}
+Agent Role: ${agent?.role || 'Assistant'}
+
+User Message: ${userMessage.content}
+
+Please provide detailed, actionable guidance specific to this ${selectedTemplate?.name} project.`
+      
+      console.log('Sending message to agent:', {
+        agentId: activeTab.agentId,
+        agentName: agent?.name,
+        messageLength: contextualMessage.length,
+        hasApiKey
+      })
       
       const responseContent = await aiService.chatWithAgent(
         activeTab.agentId,
         contextualMessage,
         contextMessages
       )
+      
+      console.log('Agent response received:', {
+        agentId: activeTab.agentId,
+        responseLength: responseContent?.length || 0
+      })
 
       const agentMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -276,7 +296,7 @@ export function AgentTabWorkspace({ projectId, templateId, onWorkflowComplete }:
       setIsTyping(false)
       setIsLoading(false)
     }
-  }
+  }, [message, isLoading, hasApiKey, agentTabs, activeTabId, selectedTemplate])
 
   const generateContextualResponse = (userMessage: string, tab: AgentTab, agent?: BMadAgent): string => {
     if (!agent) return "I'm working on your request..."
@@ -371,40 +391,51 @@ export function AgentTabWorkspace({ projectId, templateId, onWorkflowComplete }:
     scrollToBottom()
   }, [agentTabs, activeTabId])
 
+  // Memoize template categories to prevent recalculation
+  const templateCategories = useMemo(() => {
+    if (!showTemplateSelector) return []
+    return getAllCategories()
+  }, [showTemplateSelector])
+
+  // Memoize category templates
+  const categorizedTemplates = useMemo(() => {
+    return templateCategories.reduce((acc, category) => {
+      acc[category] = getTemplatesByCategory(category)
+      return acc
+    }, {} as Record<string, typeof PROJECT_TEMPLATES>)
+  }, [templateCategories])
+
   // Template selector view
   if (showTemplateSelector) {
-    const categories = getAllCategories()
-    
     return (
       <div className="h-full bg-background overflow-y-auto">
         <div className="p-6">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-8">
-              <h1 className="text-4xl font-bold gradient-text mb-4">Choose Your Project Template</h1>
-              <p className="text-slate-300 text-lg">
+              <h1 className="responsive-text-4xl font-bold gradient-text mb-4">Choose Your Project Template</h1>
+              <p className="text-slate-300 responsive-text-lg">
                 Select a template to get started with a predefined workflow and agent team
               </p>
             </div>
 
-            {categories.map((category, categoryIndex) => {
-              const categoryTemplates = getTemplatesByCategory(category)
+            {templateCategories.map((category, categoryIndex) => {
+              const categoryTemplates = categorizedTemplates[category]
               return (
                 <div key={category} className="mb-12">
                   <div className="flex items-center space-x-3 mb-6">
-                    <h2 className="text-2xl font-bold text-white">{category}</h2>
+                    <h2 className="responsive-text-2xl font-bold text-white">{category}</h2>
                     <Badge variant="outline" className="text-slate-400 border-slate-600">
                       {categoryTemplates.length} templates
                     </Badge>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {categoryTemplates.map((template, index) => {
+                    {categoryTemplates.slice(0, 6).map((template, index) => {
                       const IconComponent = template.icon
                       return (
                         <Card 
                           key={template.id}
-                          className="agent-card group cursor-pointer animate-slide-up hover:scale-105 transition-all"
-                          style={{ animationDelay: `${(categoryIndex * 3 + index) * 0.1}s` }}
+                          className="agent-card group cursor-pointer hover:scale-102 transition-all duration-200"
                           onClick={() => handleTemplateSelect(template)}
                         >
                           <CardHeader className="pb-3">
@@ -622,7 +653,9 @@ export function AgentTabWorkspace({ projectId, templateId, onWorkflowComplete }:
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {(() => {
                 const activeTab = agentTabs.find(tab => tab.id === activeTabId)
-                return activeTab?.messages.map((msg: Message) => (
+                if (!activeTab) return null
+                
+                return activeTab.messages.map((msg: Message) => (
                   <div
                     key={msg.id}
                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
