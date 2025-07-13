@@ -124,11 +124,52 @@
     --glass-shadow: rgba(0, 0, 0, 0.1);
   }
   
+  /* Light theme text overrides for better contrast */
+  .light-theme .text-white {
+    color: rgb(30, 41, 59) !important; /* slate-800 */
+  }
+  
+  .light-theme .text-slate-300 {
+    color: rgb(71, 85, 105) !important; /* slate-600 */
+  }
+  
+  .light-theme .text-slate-400 {
+    color: rgb(100, 116, 139) !important; /* slate-500 */
+  }
+  
+  .light-theme .text-slate-500 {
+    color: rgb(100, 116, 139) !important; /* slate-500 */
+  }
+  
   .light-theme .gradient-text {
     background: linear-gradient(135deg, #7C3AED 0%, #DB2777 50%, #059669 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+  
+  /* Light theme glass components */
+  .light-theme .glass-card {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: rgb(30, 41, 59);
+  }
+  
+  .light-theme .glass-button {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: rgb(30, 41, 59);
+  }
+  
+  .light-theme .glass-input {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    color: rgb(30, 41, 59);
+  }
+  
+  .light-theme .glass-nav {
+    background: rgba(255, 255, 255, 0.9);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   }
 }
 

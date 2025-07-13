@@ -504,7 +504,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
               </Link>
             </div>
 
-            <div className="mt-6 p-4 bg-slate-800/50 rounded-lg">
+            <div className="mt-6 p-4 glass-card rounded-lg">
               <p className="text-xs text-slate-400 mb-2">
                 <strong>Need an API key?</strong>
               </p>
@@ -544,12 +544,12 @@ export function AgentChat({ agentId }: AgentChatProps) {
   }
 
   return (
-    <div className="flex h-full bg-slate-900 overflow-hidden">
+    <div className="flex h-full bg-background overflow-hidden">
       {/* Sidebar */}
-      <div className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 overflow-hidden border-r border-slate-700/50 bg-slate-800/30 backdrop-blur-sm`}>
+      <div className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 overflow-hidden border-r border-border glass-sidebar`}>
         <div className="flex flex-col h-full">
           {/* Sidebar Header */}
-          <div className="p-4 border-b border-slate-700/50">
+          <div className="p-4 border-b border-border">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-3">
                 <div className={`p-2 bg-gradient-to-r ${agent.color} rounded-lg`}>
@@ -642,7 +642,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
         {/* Top Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-700/50 bg-slate-800/30 backdrop-blur-sm">
+        <div className="flex items-center justify-between p-4 border-b border-border glass-nav">
           <div className="flex items-center space-x-4">
             <Button
               variant="ghost"
@@ -703,7 +703,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
                     className={`p-4 rounded-2xl ${
                       msg.role === 'user'
                         ? 'bg-blue-600 text-white rounded-br-md'
-                        : 'bg-slate-800/80 text-slate-200 rounded-bl-md'
+                        : 'glass-card text-foreground rounded-bl-md'
                     }`}
                   >
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
@@ -727,7 +727,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
                   <div className={`p-2 bg-gradient-to-r ${agent.color} rounded-lg flex-shrink-0`}>
                     <agent.icon className="h-4 w-4 text-white" />
                   </div>
-                  <div className="bg-slate-800/80 p-4 rounded-2xl rounded-bl-md">
+                  <div className="glass-card p-4 rounded-2xl rounded-bl-md">
                     <TypingIndicator />
                   </div>
                 </div>
@@ -738,7 +738,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
           </div>
           
           {/* Message Input */}
-          <div className="p-4 border-t border-slate-700/50 bg-slate-800/30 backdrop-blur-sm">
+          <div className="p-4 border-t border-border glass-nav">
             {!hasApiKey ? (
               <div className="text-center py-8">
                 <div className="max-w-md mx-auto">
@@ -764,7 +764,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder={`Message ${agent.name}...`}
                   disabled={isLoading}
-                  className="flex-1 bg-slate-700/50 border-slate-600 text-white placeholder-slate-400 rounded-xl px-4 py-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                  className="flex-1 glass-input border-input text-foreground placeholder-muted-foreground rounded-xl px-4 py-3 focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
                 />
                 <Button 
                   type="submit" 

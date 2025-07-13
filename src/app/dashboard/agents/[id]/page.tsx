@@ -16,7 +16,7 @@ export default function AgentChatPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-120px)] -mx-4 -my-8 bg-slate-900">
+    <div className="h-[calc(100vh-120px)] -mx-4 -my-8">
       <AgentChat agentId={agentId} />
     </div>
   )
