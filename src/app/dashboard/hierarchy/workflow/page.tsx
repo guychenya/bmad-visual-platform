@@ -485,7 +485,7 @@ export default function WorkflowScreen() {
                 <CardContent className="p-12 text-center">
                   <Shield className="w-16 h-16 text-slate-400 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-white mb-2">No Authorizations Required</h3>
-                  <p className="text-slate-400">This workflow doesn't require any special authorizations.</p>
+                  <p className="text-slate-400">This workflow doesn&apos;t require any special authorizations.</p>
                 </CardContent>
               </Card>
             ) : (

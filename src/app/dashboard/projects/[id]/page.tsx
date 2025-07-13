@@ -110,7 +110,7 @@ export default function ProjectDetailPage() {
         <Card className="glass-card p-8 text-center">
           <CardContent>
             <h3 className="text-xl font-semibold text-white mb-2">Project Not Found</h3>
-            <p className="text-slate-400 mb-4">The requested project doesn't exist.</p>
+            <p className="text-slate-400 mb-4">The requested project doesn&apos;t exist.</p>
             <Link href={routes.dashboard.projects}>
               <Button className="gradient-button">
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -534,7 +534,7 @@ export default function ProjectDetailPage() {
                     <h3 className="text-blue-300 font-medium mb-2">BMad Orchestra Integration</h3>
                     <p className="text-slate-300 text-sm mb-4">
                       Chat with the BMad Orchestra agent about this project. The Orchestra can coordinate with specific agents, 
-                      help with planning, and provide strategic guidance for "{project.name}".
+                      help with planning, and provide strategic guidance for &quot;{project.name}&quot;.
                     </p>
                     <div className="flex flex-wrap gap-2">
                       <Button 

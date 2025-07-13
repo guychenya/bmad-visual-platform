@@ -454,7 +454,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
         <Card className="glass-card p-8 text-center">
           <CardContent>
             <h3 className="text-xl font-semibold text-white mb-2">Agent Not Found</h3>
-            <p className="text-slate-400 mb-4">The requested agent doesn't exist.</p>
+            <p className="text-slate-400 mb-4">The requested agent doesn&apos;t exist.</p>
             <Link href={routes.dashboard.agents}>
               <Button className="gradient-button">
                 <ArrowLeft className="h-4 w-4 mr-2" />

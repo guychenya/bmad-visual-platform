@@ -268,7 +268,7 @@ export function LoginForm() {
           </form>
           
           <div className="text-center text-sm text-slate-400">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <a href="/auth/signup" className="text-purple-400 hover:text-purple-300 transition-colors">
               Sign up
             </a>

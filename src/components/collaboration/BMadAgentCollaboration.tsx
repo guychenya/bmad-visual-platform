@@ -683,7 +683,7 @@ export function BMadAgentCollaboration({
             
             {allMessages.length === 0 && (
               <div className="text-center text-slate-400 py-8">
-                No activity yet. Click "Start BMad Workflow" to begin the collaboration process.
+                No activity yet. Click &quot;Start BMad Workflow&quot; to begin the collaboration process.
               </div>
             )}
           </div>

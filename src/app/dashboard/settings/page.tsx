@@ -340,7 +340,7 @@ export default function SettingsPage() {
                 <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4">
                   <p className="text-yellow-300 text-sm">
                     <Shield className="h-4 w-4 inline mr-2" />
-                    API keys are encrypted and stored securely. They're only used to communicate with AI services.
+                    API keys are encrypted and stored securely. They&apos;re only used to communicate with AI services.
                   </p>
                 </div>
                 

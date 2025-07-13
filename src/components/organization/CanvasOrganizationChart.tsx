@@ -508,7 +508,7 @@ export default function CanvasOrganizationChart({
             </Button>
             {editMode && (
               <div className="px-3 py-2 bg-green-100 text-green-800 rounded-md text-sm font-medium">
-                ✏️ Edit Mode - Click "Add" to add subordinates • Drag agents to reassign reporting relationships
+                ✏️ Edit Mode - Click &quot;Add&quot; to add subordinates • Drag agents to reassign reporting relationships
               </div>
             )}
             <Button variant="outline" className="glass-button">
