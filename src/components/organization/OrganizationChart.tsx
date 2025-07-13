@@ -103,7 +103,13 @@ export default function OrganizationChart({
   }
 
   const handleAddAgent = (parentId: string) => {
-    setNewAgentData({ ...newAgentData, parentId })
+    console.log('Adding agent with parent:', parentId)
+    setNewAgentData({ 
+      name: '', 
+      role: '', 
+      department: '', 
+      parentId 
+    })
     setShowAddDialog(true)
   }
 
@@ -162,7 +168,7 @@ export default function OrganizationChart({
       <div key={node.id} className="flex flex-col items-center">
         {/* Connection Lines */}
         {node.level > 0 && (
-          <div className="w-px h-8 bg-slate-300 dark:bg-slate-600 mb-2"></div>
+          <div className="w-0.5 h-8 bg-slate-400 dark:bg-slate-300 mb-2"></div>
         )}
         
         {/* Agent Circle */}
@@ -228,6 +234,21 @@ export default function OrganizationChart({
         <div className="mt-3 text-center">
           <p className="font-medium text-white text-sm">{node.agent.name}</p>
           <p className="text-xs text-slate-400">{node.agent.role.title}</p>
+          
+          {/* Add Agent Button - More Prominent */}
+          {editable && editMode && (
+            <Button
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation()
+                handleAddAgent(node.id)
+              }}
+              className="mt-2 bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1 h-6"
+            >
+              <Plus className="w-3 h-3 mr-1" />
+              Add Agent
+            </Button>
+          )}
         </div>
 
         {/* Expand/Collapse Button */}
@@ -248,8 +269,16 @@ export default function OrganizationChart({
         {/* Children */}
         {hasChildren && isExpanded && (
           <div className="mt-6">
-            {/* Horizontal Line */}
-            <div className="w-px h-6 bg-slate-300 dark:bg-slate-600 mx-auto mb-6"></div>
+            {/* Vertical connector to children */}
+            <div className="w-0.5 h-6 bg-slate-400 dark:bg-slate-300 mx-auto"></div>
+            
+            {/* Horizontal line connecting children */}
+            {node.children.length > 1 && (
+              <div className="relative flex justify-center mb-6">
+                <div className="h-0.5 bg-slate-400 dark:bg-slate-300" 
+                     style={{ width: `${(node.children.length - 1) * 144}px` }}></div>
+              </div>
+            )}
             
             {/* Children Container */}
             <div className="flex gap-12 items-start">
@@ -308,11 +337,16 @@ export default function OrganizationChart({
             <Button
               variant={editMode ? "default" : "outline"}
               onClick={() => setEditMode(!editMode)}
-              className={editMode ? "bg-blue-600 hover:bg-blue-700" : "glass-button"}
+              className={editMode ? "bg-green-600 hover:bg-green-700 text-white" : "glass-button"}
             >
               {editMode ? <Save className="w-4 h-4 mr-2" /> : <Edit3 className="w-4 h-4 mr-2" />}
-              {editMode ? 'Save' : 'Edit'}
+              {editMode ? 'Exit Edit Mode' : 'Edit Organization'}
             </Button>
+            {editMode && (
+              <div className="px-3 py-2 bg-green-100 text-green-800 rounded-md text-sm font-medium">
+                ✏️ Edit Mode Active - Click + icons to add agents
+              </div>
+            )}
             <Button variant="outline" className="glass-button">
               <Download className="w-4 h-4 mr-2" />
               Export

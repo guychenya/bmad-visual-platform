@@ -320,7 +320,12 @@ export function AgentChat({ agentId }: AgentChatProps) {
     setIsLoading(true)
 
     try {
-      console.log('Sending message to AI service:', { agentId, messageLength: userMessage.content.length })
+      console.log('Sending message to AI service:', { 
+        agentId, 
+        messageLength: userMessage.content.length,
+        hasApiKey,
+        isCustomAgent: !Object.keys(BUILT_IN_AGENTS).includes(agentId)
+      })
       
       // Call the AI service chat method - it will auto-detect the available provider
       const responseContent = await aiService.chatWithAgent(
@@ -328,6 +333,12 @@ export function AgentChat({ agentId }: AgentChatProps) {
         userMessage.content,
         messages.map(m => ({ role: m.role, content: m.content }))
       )
+      
+      console.log('AI service response:', { 
+        responseLength: responseContent?.length,
+        isEmpty: !responseContent,
+        willUseFallback: !responseContent
+      })
       
       const agentMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -748,6 +759,22 @@ export function AgentChat({ agentId }: AgentChatProps) {
             <div ref={messagesEndRef} />
           </div>
           
+          {/* Debug Info Panel */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="p-4 bg-slate-800 border-t border-slate-700">
+              <details className="text-xs text-slate-400">
+                <summary className="cursor-pointer hover:text-white">🔧 Debug Info</summary>
+                <div className="mt-2 space-y-1">
+                  <div>Agent ID: {agentId}</div>
+                  <div>Has API Key: {hasApiKey ? '✅' : '❌'}</div>
+                  <div>Is Custom Agent: {!Object.keys(BUILT_IN_AGENTS).includes(agentId) ? '✅' : '❌'}</div>
+                  <div>Agent Loaded: {agent ? '✅' : '❌'}</div>
+                  <div>Conversations: {conversations.length}</div>
+                </div>
+              </details>
+            </div>
+          )}
+
           {/* Message Input */}
           <div className="p-4 border-t border-border glass-nav">
             {!hasApiKey ? (
