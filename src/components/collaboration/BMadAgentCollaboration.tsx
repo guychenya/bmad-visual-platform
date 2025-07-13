@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
 import { 
@@ -67,9 +67,9 @@ export function BMadAgentCollaboration({
     if (workflow) {
       initializeAgentStates();
     }
-  }, [workflow]);
+  }, [workflow, initializeAgentStates]);
 
-  const initializeAgentStates = () => {
+  const initializeAgentStates = useCallback(() => {
     if (!workflow) return;
     const initialStates: Record<string, AgentState> = {};
     
@@ -89,7 +89,7 @@ export function BMadAgentCollaboration({
     }
 
     setAgentStates(initialStates);
-  };
+  }, [workflow, setAgentStates]);
 
   const addMessage = (message: Omit<AgentMessage, 'id' | 'timestamp'>) => {
     const newMessage: AgentMessage = {

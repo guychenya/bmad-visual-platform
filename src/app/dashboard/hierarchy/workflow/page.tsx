@@ -39,28 +39,27 @@ export default function WorkflowScreen() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    const loadWorkflowData = async () => {
+      if (!state.currentWorkflow) return
+      
+      setIsLoading(true)
+      try {
+        const workflowData = await hierarchyService.getWorkflow(state.currentWorkflow.id)
+        if (workflowData) {
+          setWorkflow(workflowData)
+          setDeliverables(workflowData.deliverables)
+          setAuthorizations(workflowData.authorizations)
+        }
+      } catch (error) {
+        console.error('Failed to load workflow data:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
     if (state.currentWorkflow) {
       loadWorkflowData()
     }
-  }, [state.currentWorkflow])
-
-  const loadWorkflowData = async () => {
-    if (!state.currentWorkflow) return
-    
-    setIsLoading(true)
-    try {
-      const workflowData = await hierarchyService.getWorkflow(state.currentWorkflow.id)
-      if (workflowData) {
-        setWorkflow(workflowData)
-        setDeliverables(workflowData.deliverables)
-        setAuthorizations(workflowData.authorizations)
-      }
-    } catch (error) {
-      console.error('Failed to load workflow data:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  }, [state.currentWorkflow, setIsLoading, setWorkflow, setDeliverables, setAuthorizations])
 
   const updateWorkflowStatus = async (status: 'active' | 'paused' | 'completed') => {
     if (!workflow) return

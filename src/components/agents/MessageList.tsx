@@ -45,10 +45,10 @@ export function MessageList({ messages, agent, isTyping }: MessageListProps) {
               
               <div className="flex flex-col">
                 <Card 
-                  className={`${
+                  className={`p-3 rounded-2xl ${
                     message.role === 'user' 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-muted'
+                      ? 'glass-card bg-blue-500/20 text-white rounded-br-none' 
+                      : 'glass-card text-foreground rounded-bl-none'
                   }`}
                 >
                   <CardContent className="p-3">
@@ -87,8 +87,8 @@ export function MessageList({ messages, agent, isTyping }: MessageListProps) {
                 {agent.name.charAt(0)}
               </AvatarFallback>
             </Avatar>
-            <Card className="bg-muted">
-              <CardContent className="p-3">
+            <Card className="glass-card p-3 rounded-2xl rounded-bl-none">
+              <CardContent className="p-0">
                 <TypingIndicator />
               </CardContent>
             </Card>

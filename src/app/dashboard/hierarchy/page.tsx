@@ -48,31 +48,30 @@ export default function HierarchicalDashboard() {
 
   // Load data based on current context
   useEffect(() => {
-    loadData()
-  }, [state.currentOrganization, state.currentProject])
-
-  const loadData = async () => {
-    setIsLoading(true)
-    try {
-      if (!isInOrganization()) {
-        // Load organizations
-        const orgs = await hierarchyService.getOrganizations('current-user') // TODO: Get actual user ID
-        setOrganizations(orgs)
-      } else if (isInOrganization() && !isInProject()) {
-        // Load projects for current organization
-        const projs = await hierarchyService.getProjectsByOrganization(state.currentOrganization!.id)
-        setProjects(projs)
-      } else if (state.currentProject) {
-        // Load workflows for current project
-        const wfs = await hierarchyService.getWorkflowsByProject(state.currentProject.id)
-        setWorkflows(wfs)
+    const loadData = async () => {
+      setIsLoading(true)
+      try {
+        if (!isInOrganization()) {
+          // Load organizations
+          const orgs = await hierarchyService.getOrganizations('current-user') // TODO: Get actual user ID
+          setOrganizations(orgs)
+        } else if (isInOrganization() && !isInProject()) {
+          // Load projects for current organization
+          const projs = await hierarchyService.getProjectsByOrganization(state.currentOrganization!.id)
+          setProjects(projs)
+        } else if (state.currentProject) {
+          // Load workflows for current project
+          const wfs = await hierarchyService.getWorkflowsByProject(state.currentProject.id)
+          setWorkflows(wfs)
+        }
+      } catch (error) {
+        console.error('Failed to load data:', error)
+      } finally {
+        setIsLoading(false)
       }
-    } catch (error) {
-      console.error('Failed to load data:', error)
-    } finally {
-      setIsLoading(false)
     }
-  }
+    loadData()
+  }, [state.currentOrganization, state.currentProject, isInOrganization, isInProject, setOrganizations, setProjects, setWorkflows, setIsLoading])
 
   const handleCreate = async (name: string) => {
     try {

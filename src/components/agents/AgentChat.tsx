@@ -407,7 +407,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
     
     const newConversation: Conversation = {
       id: `conv-${Date.now()}`,
-      title: `New Chat with ${agent.name}`,
+      title: `Chat with ${agent.name}`,
       agentId: agentId,
       agentName: agent.name,
       lastMessage: agent.greeting.substring(0, 50) + '...',
@@ -727,8 +727,8 @@ export function AgentChat({ agentId }: AgentChatProps) {
                   <div
                     className={`p-4 rounded-2xl ${
                       msg.role === 'user'
-                        ? 'bg-blue-600 text-white rounded-br-md'
-                        : 'glass-card text-foreground rounded-bl-md'
+                        ? 'glass-card bg-blue-500/20 text-white rounded-xl rounded-br-none'
+                        : 'glass-card text-foreground rounded-xl rounded-bl-none'
                     }`}
                   >
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>

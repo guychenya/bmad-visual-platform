@@ -8,6 +8,7 @@ import { Users, Home, FileText, Settings, LogOut, Sparkles, Brain, Folder, Plus,
 import Link from 'next/link'
 import { routes } from '../../lib/routes'
 import { usePathname } from 'next/navigation'
+import ContextSwitcher from '../../components/ui/context-switcher'
 
 export default function DashboardLayout({
   children,
@@ -74,17 +75,17 @@ export default function DashboardLayout({
         Skip to main content
       </a>
       
-      {/* Navigation Header */}
-      <header className="glass-nav sticky top-0 z-50">
+      {/* Enhanced Navigation Header */}
+      <header className="glass-nav sticky top-0 z-50 animate-slide-up">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-8">
-              <Link href={routes.dashboard.home} className="flex items-center space-x-3">
-                <div className="relative">
-                  <Sparkles className="w-8 h-8 text-purple-400" />
+              <Link href={routes.dashboard.home} className="flex items-center space-x-3 interactive-lift">
+                <div className="relative animate-float">
+                  <Sparkles className="w-8 h-8 text-purple-400 interactive-glow" />
                   <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-viby rounded-full animate-ping"></div>
                 </div>
-                <div className="text-2xl font-bold gradient-text">
+                <div className="text-2xl font-bold gradient-text animate-shimmer">
                   Viby.ai
                 </div>
               </Link>
@@ -113,6 +114,22 @@ export default function DashboardLayout({
             </div>
             
             <div className="flex items-center space-x-4">
+              {/* Context Switcher */}
+              <div className="relative">
+                <select
+                  className="glass-input px-3 py-2 rounded-md text-sm text-white bg-transparent appearance-none pr-8 cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                  defaultValue="personal"
+                  aria-label="Select context"
+                >
+                  <option value="personal" className="bg-slate-800 text-white">Personal</option>
+                  <option value="team" className="bg-slate-800 text-white">Team</option>
+                  <option value="enterprise" className="bg-slate-800 text-white">Enterprise</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white">
+                  <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                </div>
+              </div>
+
               <div className="hidden sm:flex items-center space-x-2 text-sm text-slate-300">
                 <div className="w-8 h-8 bg-gradient-viby rounded-full flex items-center justify-center">
                   <span className="text-white font-medium">
@@ -156,7 +173,7 @@ export default function DashboardLayout({
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex flex-col items-center space-y-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 min-h-[48px] min-w-[48px] ${
+                className={`flex flex-col items-center justify-center space-y-1 px-4 py-3 rounded-lg text-xs font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 min-h-[56px] min-w-[56px] touch-target ${
                   isActive
                     ? 'text-purple-400'
                     : 'text-slate-400 hover:text-white'

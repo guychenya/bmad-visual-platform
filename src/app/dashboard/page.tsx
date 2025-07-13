@@ -100,6 +100,7 @@ export default function Dashboard() {
         <h1 className="responsive-text-6xl font-bold gradient-text mb-4">
           Welcome to Viby.ai
         </h1>
+        <p className="text-lg text-slate-400 mb-4">Viewing: Personal Dashboard</p>
         <p className="responsive-text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed">
           Experience the power of AI-driven development with beautiful, intuitive interfaces. 
           Your intelligent agents are ready to transform your development workflow.

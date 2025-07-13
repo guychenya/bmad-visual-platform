@@ -122,7 +122,7 @@ export function AgentTabWorkspace({ projectId, templateId, onWorkflowComplete }:
       setCurrentWorkflow(workflow)
       initializeAgentTabs(workflow, template)
     }
-  }, [])
+  }, [initializeAgentTabs])
 
   useEffect(() => {
     // Load template if provided
@@ -296,9 +296,9 @@ Please provide detailed, actionable guidance specific to this ${selectedTemplate
       setIsTyping(false)
       setIsLoading(false)
     }
-  }, [message, isLoading, hasApiKey, agentTabs, activeTabId, selectedTemplate])
+  }, [message, isLoading, hasApiKey, agentTabs, activeTabId, selectedTemplate, generateContextualResponse, checkTaskCompletion])
 
-  const generateContextualResponse = (userMessage: string, tab: AgentTab, agent?: BMadAgent): string => {
+  const generateContextualResponse = useCallback((userMessage: string, tab: AgentTab, agent?: BMadAgent): string => {
     if (!agent) return "I'm working on your request..."
 
     const taskResponses = {
@@ -318,9 +318,9 @@ Please provide detailed, actionable guidance specific to this ${selectedTemplate
 
     return taskResponses[agentType as keyof typeof taskResponses] || 
            `As ${agent.name}, I'm working on the ${tab.currentTask} for "${selectedTemplate?.name}". ${agent.persona}`
-  }
+  }, [selectedTemplate, templateId, projectId, BMAD_AGENTS])
 
-  const checkTaskCompletion = (tab: AgentTab, lastMessage: Message) => {
+  const checkTaskCompletion = useCallback((tab: AgentTab, lastMessage: Message) => {
     // Simple completion detection - in a real app, this would be more sophisticated
     const completionKeywords = ['completed', 'finished', 'done', 'ready', 'delivered', 'complete']
     const hasCompletionIndicator = completionKeywords.some(keyword => 
@@ -359,7 +359,7 @@ Please provide detailed, actionable guidance specific to this ${selectedTemplate
         return updatedTabs
       })
     }
-  }
+  }, [setAgentTabs, setActiveTabId, setWorkflowStatus, onWorkflowComplete])
 
   const getStatusIcon = (status: AgentTab['status']) => {
     switch (status) {

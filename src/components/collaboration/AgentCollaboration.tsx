@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
 import { Bot, MessageCircle, CheckCircle, Clock, ArrowRight, Sparkles, Code, Palette, TestTube, Rocket } from 'lucide-react'
@@ -86,37 +86,26 @@ export function AgentCollaboration({ projectName, onComplete }: AgentCollaborati
     type: 'info' | 'success' | 'collaboration'
   }>>([])
 
-  const phases = [
+  const phases = useMemo(() => [
     { name: 'Requirements Analysis', duration: 3000 },
     { name: 'System Architecture', duration: 4000 },
     { name: 'UI/UX Design', duration: 3500 },
     { name: 'Development', duration: 5000 },
     { name: 'Quality Assurance', duration: 2500 }
-  ]
+  ], [])
 
-  useEffect(() => {
-    simulateAgentWork()
-  }, [])
+  const getTaskForPhase = useCallback((phase: number): string => {
+    const tasks = [
+      'Extracting functional requirements and user stories...',
+      'Designing system architecture and data models...',
+      'Creating wireframes and visual design system...',
+      'Implementing components and business logic...',
+      'Running tests and validating functionality...'
+    ]
+    return tasks[phase] || 'Processing...'
+  }, [phases])
 
-  const simulateAgentWork = async () => {
-    for (let i = 0; i < agents.length; i++) {
-      await processAgentPhase(i)
-    }
-    setIsComplete(true)
-    
-    // Simulate final result
-    setTimeout(() => {
-      onComplete({
-        appName: projectName,
-        framework: 'React + Next.js',
-        features: ['Authentication', 'Dashboard', 'API Integration', 'Responsive Design'],
-        deploymentUrl: 'https://your-app.netlify.app',
-        codeRepository: 'https://github.com/your-repo/project'
-      })
-    }, 1000)
-  }
-
-  const processAgentPhase = async (agentIndex: number) => {
+  const processAgentPhase = useCallback(async (agentIndex: number) => {
     const agent = agents[agentIndex]
     const phase = phases[agentIndex]
     
@@ -168,26 +157,37 @@ export function AgentCollaboration({ projectName, onComplete }: AgentCollaborati
     })
 
     setCurrentPhase(agentIndex + 1)
-  }
+  }, [agents, setAgents, addMessage, getTaskForPhase, setCurrentPhase])
 
-  const getTaskForPhase = (phase: number): string => {
-    const tasks = [
-      'Extracting functional requirements and user stories...',
-      'Designing system architecture and data models...',
-      'Creating wireframes and visual design system...',
-      'Implementing components and business logic...',
-      'Running tests and validating functionality...'
-    ]
-    return tasks[phase] || 'Processing...'
-  }
+  const simulateAgentWork = useCallback(async () => {
+    for (let i = 0; i < agents.length; i++) {
+      await processAgentPhase(i)
+    }
+    setIsComplete(true)
+    
+    // Simulate final result
+    setTimeout(() => {
+      onComplete({
+        appName: projectName,
+        framework: 'React + Next.js',
+        features: ['Authentication', 'Dashboard', 'API Integration', 'Responsive Design'],
+        deploymentUrl: 'https://your-app.netlify.app',
+        codeRepository: 'https://github.com/your-repo/project'
+      })
+    }, 1000)
+  }, [agents, onComplete, processAgentPhase, projectName])
 
-  const addMessage = (message: Omit<typeof messages[0], 'id' | 'timestamp'>) => {
+  useEffect(() => {
+    simulateAgentWork()
+  }, [simulateAgentWork])
+
+  const addMessage = useCallback((message: Omit<typeof messages[0], 'id' | 'timestamp'>) => {
     setMessages(prev => [...prev, {
       ...message,
       id: Date.now().toString(),
       timestamp: new Date().toLocaleTimeString()
     }])
-  }
+  }, [setMessages])
 
   return (
     <div className="space-y-6">

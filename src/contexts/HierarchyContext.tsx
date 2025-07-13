@@ -259,7 +259,7 @@ export function HierarchyProvider({ children }: { children: ReactNode }) {
   const getRecentProjects = useCallback((): Project[] => {
     // TODO: Implement recent projects logic based on navigation history
     return []
-  }, [state.navigationHistory])
+  }, [])
   
   const getActiveWorkflows = useCallback((): WorkflowInstance[] => {
     // TODO: Implement active workflows logic
