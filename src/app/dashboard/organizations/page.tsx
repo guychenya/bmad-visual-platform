@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui
 import { Button } from '../../../components/ui/button'
 import { Badge } from '../../../components/ui/badge'
 import OrganizationChart from '../../../components/organization/OrganizationChart'
+import CanvasOrganizationChart from '../../../components/organization/CanvasOrganizationChart'
 import { 
   Plus, 
   Building, 
@@ -124,17 +125,13 @@ export default function OrganizationsPage() {
           </div>
         </div>
 
-        <OrganizationChart 
+        <CanvasOrganizationChart 
           organization={selectedOrg}
           editable={true}
           onAgentClick={(agentId, agent) => {
             console.log('Agent clicked:', agentId, agent)
             // Navigate to agent chat or details
             window.location.href = `/dashboard/agents/${agentId}`
-          }}
-          onDepartmentClick={(departmentId) => {
-            console.log('Department clicked:', departmentId)
-            // Show department details
           }}
           onOrganizationUpdate={(updatedOrg) => {
             organizationService.updateOrganization(updatedOrg.id, updatedOrg)

@@ -114,7 +114,14 @@ export default function OrganizationChart({
   }
 
   const saveNewAgent = useCallback(() => {
-    if (!newAgentData.name || !newAgentData.role || !onOrganizationUpdate) return
+    if (!newAgentData.name || !newAgentData.role || !onOrganizationUpdate) {
+      console.log('Validation failed:', { 
+        name: newAgentData.name, 
+        role: newAgentData.role, 
+        hasUpdateCallback: !!onOrganizationUpdate 
+      })
+      return
+    }
     
     // Create new agent and update organization
     const newAgent: OrganizationNode = {
@@ -134,7 +141,7 @@ export default function OrganizationChart({
         personality: 'Helpful and professional',
         communicationStyle: 'casual'
       },
-      department: newAgentData.department,
+      department: newAgentData.department || Object.keys(organization.departments)[0] || 'general',
       reportsTo: newAgentData.parentId,
       directReports: [],
       responsibilities: ['General task handling', 'Domain expertise'],
@@ -404,17 +411,20 @@ export default function OrganizationChart({
                 />
               </div>
               <div>
-                <label className="text-sm text-slate-300 mb-2 block">Department</label>
+                <label className="text-sm text-slate-300 mb-2 block">Department (Optional)</label>
                 <select 
                   value={newAgentData.department}
                   onChange={(e) => setNewAgentData({...newAgentData, department: e.target.value})}
                   className="w-full glass-input"
                 >
-                  <option value="">Select Department</option>
+                  <option value="">Auto-assign Department</option>
                   {Object.entries(organization.departments).map(([id, dept]) => (
                     <option key={id} value={id}>{dept.name}</option>
                   ))}
                 </select>
+              </div>
+              <div className="text-sm text-slate-400 bg-slate-800 p-3 rounded">
+                <strong>Will report to:</strong> {organization.agents[newAgentData.parentId]?.name || 'Unknown'}
               </div>
               <div className="flex gap-2">
                 <Button onClick={saveNewAgent} className="gradient-button flex-1">
