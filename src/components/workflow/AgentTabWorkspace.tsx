@@ -37,6 +37,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { routes } from '../../lib/routes'
+import { useRouter } from 'next/navigation'
 import { TypingIndicator } from '../agents/TypingIndicator'
 import { aiService } from '../../lib/ai/aiService'
 import { BMAD_AGENTS, BMadAgent } from '../../lib/bmad/agents'
@@ -87,6 +88,7 @@ export function AgentTabWorkspace({ projectId, templateId, onWorkflowComplete }:
   const [currentWorkflow, setCurrentWorkflow] = useState<Workflow | null>(null)
   const [globalMessages, setGlobalMessages] = useState<Message[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
 
   useEffect(() => {
     // Check for API key
