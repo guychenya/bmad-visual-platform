@@ -143,7 +143,7 @@ export function WorkflowPipeline({ workflowId, onComplete, onPause, onCancel, se
     <BMadAgentCollaboration 
       projectName={projectContext.name}
       uploadedContent={projectContext.description}
-      onComplete={onComplete}
+      onComplete={onComplete || (() => {})}
       selectedAgentIds={selectedAgentIds}
     />
   );
