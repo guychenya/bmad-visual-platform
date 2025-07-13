@@ -11,6 +11,15 @@ export default function Dashboard() {
   
   const quickActions = [
     {
+      title: 'Agent Workspace',
+      description: 'GitHub Copilot-style tabbed interface with AI agents working together',
+      icon: Users,
+      href: '/dashboard/workspace',
+      gradient: 'from-orange-500 to-red-500',
+      buttonText: 'Open Workspace',
+      buttonIcon: Users
+    },
+    {
       title: 'AI Agents Hub',
       description: 'Chat with specialized AI agents for every aspect of development',
       icon: Brain,
@@ -97,7 +106,7 @@ export default function Dashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
         {quickActions.map((action, index) => (
           <Card key={action.title} className="agent-card group animate-slide-up" style={{ animationDelay: `${index * 0.1}s` }}>
             <CardHeader>

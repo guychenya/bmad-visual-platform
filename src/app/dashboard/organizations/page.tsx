@@ -111,9 +111,9 @@ export default function OrganizationsPage() {
     setSelectedAgents([])
   }
 
-  const loadProjectsForOrganization = (orgId: string) => {
+  const getMockProjectsForOrg = (orgId: string): Project[] => {
     // Mock projects data for now - in real app, load from hierarchy service
-    const mockProjects: Project[] = [
+    return [
       {
         id: 'proj-1',
         name: 'Customer Portal Redesign',
@@ -161,8 +161,36 @@ export default function OrganizationsPage() {
         assignedTo: [],
         tags: ['analytics', 'backend'],
         settings: { visibility: 'internal', allowExternalCollaborators: false, requireApprovals: true, autoArchive: false, notifications: { email: true, slack: false, inApp: true, frequency: 'daily' }, integrations: [] }
+      },
+      {
+        id: 'proj-3',
+        name: 'Mobile App',
+        description: 'Cross-platform mobile application',
+        organizationId: orgId,
+        type: 'greenfield',
+        status: 'completed',
+        priority: 'low',
+        workflows: [],
+        teams: [],
+        deliverables: [],
+        milestones: [],
+        progress: { overall: 100, byPhase: {}, byDeliverable: {}, timeline: [], velocity: 0, burndown: [], health: 'green', risks: [], blockers: [], lastUpdated: new Date().toISOString() },
+        timeline: { startDate: '2023-09-01', plannedEndDate: '2023-12-01', milestones: [], phases: [] },
+        stakeholders: [],
+        requirements: [],
+        risks: [],
+        created: '2023-09-01',
+        modified: '2023-12-01',
+        createdBy: 'user-1',
+        assignedTo: [],
+        tags: ['mobile', 'react-native'],
+        settings: { visibility: 'internal', allowExternalCollaborators: false, requireApprovals: true, autoArchive: false, notifications: { email: true, slack: false, inApp: true, frequency: 'daily' }, integrations: [] }
       }
     ]
+  }
+
+  const loadProjectsForOrganization = (orgId: string) => {
+    const mockProjects = getMockProjectsForOrg(orgId)
     setProjects(mockProjects)
   }
 
@@ -178,6 +206,18 @@ export default function OrganizationsPage() {
       setCurrentView('workflow')
       setIsGeneratingWorkflow(false)
     }, 2000)
+  }
+
+  const handleStartWorkflow = () => {
+    // Navigate to the new workspace with project context
+    const projectData = encodeURIComponent(JSON.stringify({
+      projectId: selectedProject?.id,
+      projectName: selectedProject?.name,
+      organizationId: selectedOrg?.id,
+      selectedAgents: selectedAgents
+    }))
+    
+    window.location.href = `/dashboard/workspace?project=${selectedProject?.id}&agents=${selectedAgents.join(',')}`
   }
 
   const getOrganizationIcon = (structure: string) => {
@@ -453,11 +493,18 @@ export default function OrganizationsPage() {
             Your team of {selectedAgents.length} agents is ready to work on {selectedProject?.name}
           </p>
           <div className="space-y-2">
-            <Button className="gradient-button w-full">
+            <Button 
+              className="gradient-button w-full" 
+              onClick={handleStartWorkflow}
+            >
               <Play className="h-4 w-4 mr-2" />
               Start Workflow
             </Button>
-            <Button variant="outline" className="glass-button w-full" onClick={handleBackToProjects}>
+            <Button 
+              variant="outline" 
+              className="glass-button w-full" 
+              onClick={handleBackToProjects}
+            >
               ← Back to Projects
             </Button>
           </div>
