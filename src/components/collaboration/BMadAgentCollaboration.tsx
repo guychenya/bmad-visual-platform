@@ -9,6 +9,7 @@ import {
   FileText, Users, AlertCircle, Lightbulb, Zap, Settings, Play, Pause
 } from 'lucide-react'
 import { BMAD_AGENTS, BMadAgent, getAgentsByWorkflowOrder, getNextAgent } from '../../lib/bmad/agents'
+import { WorkflowStep, WorkflowTask } from '../../lib/bmad/workflows';
 import { generateDynamicWorkflow } from '../../lib/bmad/dynamicWorkflow';
 
 interface AgentState {
