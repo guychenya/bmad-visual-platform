@@ -28,7 +28,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Check if authentication is bypassed
     const bypassAuth = process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true'
     
+    console.log('[AuthContext] Environment variable NEXT_PUBLIC_BYPASS_AUTH:', process.env.NEXT_PUBLIC_BYPASS_AUTH)
+    console.log('[AuthContext] Bypass auth status:', bypassAuth)
+    
     if (bypassAuth) {
+      console.log('[AuthContext] Setting up mock authentication')
       // Create mock user data for development
       const mockUser = {
         id: 'mock-user-id',
