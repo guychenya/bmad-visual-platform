@@ -126,7 +126,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
   // Load all agents (built-in + custom)
   useEffect(() => {
     const loadAllAgents = () => {
-      const agents = { ...BUILT_IN_AGENTS }
+      const agents: Record<string, any> = { ...BUILT_IN_AGENTS }
       
       // Load custom agents from localStorage
       const savedCustomAgents = localStorage.getItem('viby-custom-agents')
@@ -134,7 +134,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
         try {
           const customAgents = JSON.parse(savedCustomAgents)
           customAgents.forEach((agent: any) => {
-            agents[agent.id] = {
+            agents[agent.id as string] = {
               ...agent,
               title: agent.description, // Use description as title for custom agents
               greeting: `Hello! I'm ${agent.name}. ${agent.description} How can I help you today?`
@@ -599,7 +599,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
               <div className="space-y-1">
                 {conversations
                   .filter(conv => conv.agentId === agentId)
-                  .map((conversation) => (
+                  .map((conversation: Conversation) => (
                     <div
                       key={conversation.id}
                       onClick={() => loadConversation(conversation.id)}
@@ -677,7 +677,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
           <div className="flex items-center space-x-4">
             {/* Expertise Tags */}
             <div className="hidden md:flex flex-wrap gap-2">
-              {agent.expertise.slice(0, 3).map((skill, idx) => (
+              {agent.expertise?.slice(0, 3).map((skill: string, idx: number) => (
                 <span key={idx} className="text-xs bg-white/10 text-slate-300 px-2 py-1 rounded-full">
                   {skill}
                 </span>
@@ -698,7 +698,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
         {/* Chat Messages */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((msg) => (
+            {messages.map((msg: Message) => (
               <div
                 key={msg.id}
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
