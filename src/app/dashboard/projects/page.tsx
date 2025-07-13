@@ -3,90 +3,112 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
 import { Button } from '../../../components/ui/button'
 import { Plus, Folder, Clock, Users, Star, MoreHorizontal, Play, Pause, Archive, Settings } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { CreateProjectModal } from '../../../components/projects/CreateProjectModal'
 
 export default function ProjectsPage() {
-  const [projects, setProjects] = useState([
-    {
-      id: 1,
-      name: 'Viby.ai Platform',
-      description: 'AI-powered development platform with glassmorphism design',
-      status: 'active',
-      progress: 75,
-      lastActivity: '2 hours ago',
-      team: ['Alice', 'Bob', 'Charlie'],
-      priority: 'high',
-      dueDate: '2024-02-15',
-      category: 'Web App',
-      color: 'from-purple-500 to-pink-500'
-    },
-    {
-      id: 2,
-      name: 'E-commerce Dashboard',
-      description: 'Modern admin dashboard for online store management',
-      status: 'active',
-      progress: 45,
-      lastActivity: '1 day ago',
-      team: ['David', 'Eve'],
-      priority: 'medium',
-      dueDate: '2024-03-01',
-      category: 'Dashboard',
-      color: 'from-blue-500 to-cyan-500'
-    },
-    {
-      id: 3,
-      name: 'Mobile Banking App',
-      description: 'Secure mobile banking application with biometric authentication',
-      status: 'paused',
-      progress: 30,
-      lastActivity: '5 days ago',
-      team: ['Frank', 'Grace', 'Henry'],
-      priority: 'high',
-      dueDate: '2024-04-10',
-      category: 'Mobile',
-      color: 'from-green-500 to-emerald-500'
-    },
-    {
-      id: 4,
-      name: 'Portfolio Website',
-      description: 'Personal portfolio with animated components and contact form',
-      status: 'completed',
-      progress: 100,
-      lastActivity: '1 week ago',
-      team: ['Ivy'],
-      priority: 'low',
-      dueDate: '2024-01-20',
-      category: 'Portfolio',
-      color: 'from-orange-500 to-red-500'
-    },
-    {
-      id: 5,
-      name: 'API Gateway',
-      description: 'Microservices API gateway with rate limiting and monitoring',
-      status: 'active',
-      progress: 60,
-      lastActivity: '3 hours ago',
-      team: ['Jack', 'Kelly'],
-      priority: 'high',
-      dueDate: '2024-02-28',
-      category: 'Backend',
-      color: 'from-indigo-500 to-purple-500'
-    },
-    {
-      id: 6,
-      name: 'Blog Platform',
-      description: 'Content management system with markdown support and SEO',
-      status: 'planning',
-      progress: 10,
-      lastActivity: '2 days ago',
-      team: ['Liam', 'Maya'],
-      priority: 'medium',
-      dueDate: '2024-03-15',
-      category: 'Content',
-      color: 'from-teal-500 to-blue-500'
+  const [projects, setProjects] = useState([])
+
+  // Load projects from localStorage on mount
+  useEffect(() => {
+    const loadProjects = () => {
+      try {
+        const savedProjects = localStorage.getItem('viby-projects')
+        if (savedProjects) {
+          const parsed = JSON.parse(savedProjects)
+          setProjects(parsed)
+        } else {
+          // Initialize with default projects if none exist
+          const defaultProjects = [
+            {
+              id: 1,
+              name: 'Viby.ai Platform',
+              description: 'AI-powered development platform with glassmorphism design',
+              status: 'active',
+              progress: 75,
+              lastActivity: '2 hours ago',
+              team: ['Alice', 'Bob', 'Charlie'],
+              priority: 'high',
+              dueDate: '2024-02-15',
+              category: 'Web App',
+              color: 'from-purple-500 to-pink-500'
+            },
+            {
+              id: 2,
+              name: 'E-commerce Dashboard',
+              description: 'Modern admin dashboard for online store management',
+              status: 'active',
+              progress: 45,
+              lastActivity: '1 day ago',
+              team: ['David', 'Eve'],
+              priority: 'medium',
+              dueDate: '2024-03-01',
+              category: 'Dashboard',
+              color: 'from-blue-500 to-cyan-500'
+            },
+            {
+              id: 3,
+              name: 'Mobile Banking App',
+              description: 'Secure mobile banking application with biometric authentication',
+              status: 'paused',
+              progress: 30,
+              lastActivity: '5 days ago',
+              team: ['Frank', 'Grace', 'Henry'],
+              priority: 'high',
+              dueDate: '2024-04-10',
+              category: 'Mobile',
+              color: 'from-green-500 to-emerald-500'
+            },
+            {
+              id: 4,
+              name: 'Portfolio Website',
+              description: 'Personal portfolio with animated components and contact form',
+              status: 'completed',
+              progress: 100,
+              lastActivity: '1 week ago',
+              team: ['Ivy'],
+              priority: 'low',
+              dueDate: '2024-01-20',
+              category: 'Portfolio',
+              color: 'from-orange-500 to-red-500'
+            },
+            {
+              id: 5,
+              name: 'API Gateway',
+              description: 'Microservices API gateway with rate limiting and monitoring',
+              status: 'active',
+              progress: 60,
+              lastActivity: '3 hours ago',
+              team: ['Jack', 'Kelly'],
+              priority: 'high',
+              dueDate: '2024-02-28',
+              category: 'Backend',
+              color: 'from-indigo-500 to-purple-500'
+            },
+            {
+              id: 6,
+              name: 'Blog Platform',
+              description: 'Content management system with markdown support and SEO',
+              status: 'planning',
+              progress: 10,
+              lastActivity: '2 days ago',
+              team: ['Liam', 'Maya'],
+              priority: 'medium',
+              dueDate: '2024-03-15',
+              category: 'Content',
+              color: 'from-teal-500 to-blue-500'
+            }
+          ]
+          setProjects(defaultProjects)
+          localStorage.setItem('viby-projects', JSON.stringify(defaultProjects))
+        }
+      } catch (error) {
+        console.error('Failed to load projects:', error)
+      }
     }
-  ])
+
+    loadProjects()
+  }, [])
 
   const [selectedStatus, setSelectedStatus] = useState('All')
   const [selectedProject, setSelectedProject] = useState<any>(null)
@@ -342,8 +364,9 @@ export default function ProjectsPage() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onProjectCreated={(project) => {
-          setProjects(prev => [...prev, project])
-          // Show success message or animation here
+          const updatedProjects = [...projects, project]
+          setProjects(updatedProjects)
+          localStorage.setItem('viby-projects', JSON.stringify(updatedProjects))
         }}
       />
     </div>

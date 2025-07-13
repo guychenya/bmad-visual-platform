@@ -43,6 +43,11 @@ export function UseTemplateModal({ isOpen, onClose, template, onProjectCreated }
         tags: template.tags
       }
 
+      // Save project to localStorage so it persists across pages
+      const existingProjects = JSON.parse(localStorage.getItem('viby-projects') || '[]')
+      const updatedProjects = [...existingProjects, newProject]
+      localStorage.setItem('viby-projects', JSON.stringify(updatedProjects))
+
       onProjectCreated(newProject)
       onClose()
       
