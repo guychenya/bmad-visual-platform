@@ -1,9 +1,10 @@
 'use client'
 
 import { useAuth } from '../../contexts/AuthContext'
+import { HierarchyProvider } from '../../contexts/HierarchyContext'
 import { Button } from '../../components/ui/button'
 import { Card, CardContent } from '../../components/ui/card'
-import { Users, Home, FileText, Settings, LogOut, Sparkles, Brain, Folder, Plus, GitBranch, Building } from 'lucide-react'
+import { Users, Home, FileText, Settings, LogOut, Sparkles, Brain, Folder, Plus, GitBranch, Building, Layers } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -35,6 +36,7 @@ export default function DashboardLayout({
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
+    { name: 'Hierarchy', href: '/dashboard/hierarchy', icon: Layers },
     { name: 'Create Project', href: '/dashboard/create', icon: Plus },
     { name: 'Organizations', href: '/dashboard/organizations', icon: Building },
     { name: 'AI Agents', href: '/dashboard/agents', icon: Brain },
@@ -45,7 +47,8 @@ export default function DashboardLayout({
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <HierarchyProvider>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Navigation Header */}
       <header className="glass-nav sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -135,6 +138,7 @@ export default function DashboardLayout({
           })}
         </div>
       </nav>
-    </div>
+      </div>
+    </HierarchyProvider>
   )
 }

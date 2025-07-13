@@ -2,10 +2,13 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
-import { Plus, Users, MessageSquare, FileText, BarChart3, Zap, Brain, Sparkles, ArrowRight, Rocket, Folder } from 'lucide-react'
+import { Plus, Users, MessageSquare, FileText, BarChart3, Zap, Brain, Sparkles, ArrowRight, Rocket, Folder, Layers, Building } from 'lucide-react'
 import Link from 'next/link'
+import { useHierarchy } from '../../contexts/HierarchyContext'
 
 export default function Dashboard() {
+  const { state } = useHierarchy()
+  
   const quickActions = [
     {
       title: 'AI Agents Hub',
@@ -15,6 +18,15 @@ export default function Dashboard() {
       gradient: 'from-purple-500 to-pink-500',
       buttonText: 'Start Chatting',
       buttonIcon: MessageSquare
+    },
+    {
+      title: 'Manage Hierarchy',
+      description: 'Navigate your organization structure and manage projects',
+      icon: Layers,
+      href: '/dashboard/hierarchy',
+      gradient: 'from-indigo-500 to-purple-500',
+      buttonText: 'View Hierarchy',
+      buttonIcon: Building
     },
     {
       title: 'Create Project',
@@ -137,8 +149,46 @@ export default function Dashboard() {
         ))}
       </div>
 
+      {/* Current Context */}
+      {state.currentOrganization && (
+        <Card className="glass-card border-l-4 border-l-purple-400">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-3">
+              <Building className="w-5 h-5 text-purple-400" />
+              Current Context
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-300">Organization:</span>
+              <span className="text-white font-medium">{state.currentOrganization.name}</span>
+            </div>
+            {state.currentProject && (
+              <div className="flex items-center justify-between">
+                <span className="text-slate-300">Project:</span>
+                <span className="text-white font-medium">{state.currentProject.name}</span>
+              </div>
+            )}
+            {state.currentWorkflow && (
+              <div className="flex items-center justify-between">
+                <span className="text-slate-300">Workflow:</span>
+                <span className="text-white font-medium">{state.currentWorkflow.name}</span>
+              </div>
+            )}
+            <div className="pt-2">
+              <Link href="/dashboard/hierarchy">
+                <Button size="sm" className="gradient-button">
+                  <Layers className="w-4 h-4 mr-2" />
+                  Manage Hierarchy
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Stats Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="glass-card text-center">
           <CardContent className="p-6">
             <div className="text-3xl font-bold gradient-text mb-2">7+</div>
@@ -149,6 +199,12 @@ export default function Dashboard() {
           <CardContent className="p-6">
             <div className="text-3xl font-bold gradient-text mb-2">100+</div>
             <div className="text-slate-400">Templates</div>
+          </CardContent>
+        </Card>
+        <Card className="glass-card text-center">
+          <CardContent className="p-6">
+            <div className="text-3xl font-bold gradient-text mb-2">{state.currentOrganization ? '1' : '0'}</div>
+            <div className="text-slate-400">Organizations</div>
           </CardContent>
         </Card>
         <Card className="glass-card text-center">
@@ -169,6 +225,12 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/dashboard/hierarchy">
+              <Button size="lg" className="w-full sm:w-auto gradient-button hover:scale-105 transition-transform">
+                <Layers className="h-5 w-5 mr-2" />
+                Explore Hierarchy
+              </Button>
+            </Link>
             <Link href="/dashboard/agents">
               <Button size="lg" className="w-full sm:w-auto gradient-button hover:scale-105 transition-transform">
                 <Brain className="h-5 w-5 mr-2" />
