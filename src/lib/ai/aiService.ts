@@ -283,7 +283,39 @@ You're having a strategic conversation focused on optimal project outcomes throu
       '7': `You are Sarah, a Product Owner focused on ensuring all deliverables meet business requirements and quality standards. You validate requirements traceability, verify acceptance criteria, and ensure alignment between business and technical teams. Your validation is thorough and ensures project success. You're having a friendly conversation with a user who may ask for your product strategy insights.`
     }
 
-    return prompts[agentId as keyof typeof prompts] || prompts['1']
+    // First check built-in prompts
+    if (prompts[agentId as keyof typeof prompts]) {
+      return prompts[agentId as keyof typeof prompts]
+    }
+
+    // If not a built-in agent, look for custom agent data
+    if (typeof window !== 'undefined') {
+      try {
+        const savedCustomAgents = localStorage.getItem('viby-custom-agents')
+        if (savedCustomAgents) {
+          const customAgents = JSON.parse(savedCustomAgents)
+          const customAgent = customAgents.find((agent: any) => agent.id === agentId)
+          
+          if (customAgent) {
+            // Create a custom prompt based on the agent's data
+            return `You are ${customAgent.name}, ${customAgent.description}. 
+
+You specialize in: ${customAgent.specialization ? customAgent.specialization.join(', ') : 'general assistance'}.
+
+Your personality: ${customAgent.personality || 'Professional and helpful'}.
+
+Your approach: ${customAgent.expertise || 'I provide thoughtful, detailed responses based on my specialization'}.
+
+You're having a friendly conversation with a user who may ask for your expertise and insights. Always respond in character and provide valuable, actionable advice based on your specialization.`
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load custom agent prompt:', error)
+      }
+    }
+
+    // Fallback to generic analyst prompt
+    return prompts['1']
   }
 
   private simulateChatResponse(agentId: string, message: string): string {
@@ -339,7 +371,36 @@ You're having a strategic conversation focused on optimal project outcomes throu
       ]
     }
 
-    const agentResponses = responses[agentId as keyof typeof responses] || responses['1']
+    // Try to find responses for this agent, otherwise create custom responses for custom agents
+    let agentResponses = responses[agentId as keyof typeof responses]
+    
+    if (!agentResponses && typeof window !== 'undefined') {
+      try {
+        const savedCustomAgents = localStorage.getItem('viby-custom-agents')
+        if (savedCustomAgents) {
+          const customAgents = JSON.parse(savedCustomAgents)
+          const customAgent = customAgents.find((agent: any) => agent.id === agentId)
+          
+          if (customAgent) {
+            // Generate custom responses based on agent's description and specialization
+            agentResponses = [
+              `Great question! As ${customAgent.name}, I'm specialized in ${customAgent.description}. Let me help you with this...`,
+              `That's exactly the kind of challenge I love tackling! Based on my expertise in ${customAgent.description}, here's my approach...`,
+              `Excellent! This aligns perfectly with my specialization. As someone focused on ${customAgent.description}, I'd recommend...`,
+              `I appreciate your question! Drawing from my experience with ${customAgent.description}, here's what I think...`
+            ]
+          }
+        }
+      } catch (error) {
+        console.error('Failed to generate custom agent responses:', error)
+      }
+    }
+    
+    // Fallback to analyst responses if no custom responses found
+    if (!agentResponses) {
+      agentResponses = responses['1']
+    }
+    
     return agentResponses[Math.floor(Math.random() * agentResponses.length)]
   }
 }

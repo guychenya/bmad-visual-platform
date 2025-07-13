@@ -126,13 +126,22 @@ export default function OrganizationsPage() {
 
         <OrganizationChart 
           organization={selectedOrg}
+          editable={true}
           onAgentClick={(agentId, agent) => {
             console.log('Agent clicked:', agentId, agent)
             // Navigate to agent chat or details
+            window.location.href = `/dashboard/agents/${agentId}`
           }}
           onDepartmentClick={(departmentId) => {
             console.log('Department clicked:', departmentId)
             // Show department details
+          }}
+          onOrganizationUpdate={(updatedOrg) => {
+            organizationService.updateOrganization(updatedOrg.id, updatedOrg)
+            setSelectedOrg(updatedOrg)
+            setOrganizations(prev => prev.map(org => 
+              org.id === updatedOrg.id ? updatedOrg : org
+            ))
           }}
         />
       </div>

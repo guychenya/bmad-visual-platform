@@ -1,9 +1,10 @@
 'use client'
 
-import React, { useMemo } from 'react'
-import { Card, CardContent } from '../ui/card'
+import React, { useState, useMemo, useCallback } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
+import { Input } from '../ui/input'
 import { 
   Users, 
   Crown, 
@@ -19,7 +20,14 @@ import {
   Settings,
   Lightbulb,
   Code2,
-  Cpu
+  Cpu,
+  Edit3,
+  Plus,
+  Trash2,
+  Save,
+  X,
+  Download,
+  Upload
 } from 'lucide-react'
 import { Organization, OrganizationNode, AgentRole } from '../../lib/organization/types'
 
@@ -27,8 +35,9 @@ interface OrganizationChartProps {
   organization: Organization
   onAgentClick?: (agentId: string, agent: OrganizationNode) => void
   onDepartmentClick?: (departmentId: string) => void
+  onOrganizationUpdate?: (updatedOrg: Organization) => void
   interactive?: boolean
-  compact?: boolean
+  editable?: boolean
 }
 
 interface ChartNode {
@@ -38,332 +47,353 @@ interface ChartNode {
   children: ChartNode[]
   x: number
   y: number
+  isExpanded?: boolean
 }
 
 const iconMap: Record<string, any> = {
-  Crown,
-  Cpu,
-  Target,
-  Code,
-  Building,
-  Lightbulb,
-  Code2,
-  Palette,
-  Shield,
-  BarChart,
-  Settings,
-  Users
+  Crown, Cpu, Target, Code, Building, Lightbulb, Code2, 
+  Palette, Shield, BarChart, Settings, Users
+}
+
+const COLORS = {
+  executive: 'from-purple-600 to-purple-700',
+  engineering: 'from-blue-600 to-blue-700', 
+  product: 'from-green-600 to-green-700',
+  design: 'from-pink-600 to-pink-700',
+  qa: 'from-orange-600 to-orange-700',
+  marketing: 'from-red-600 to-red-700',
+  default: 'from-slate-600 to-slate-700'
 }
 
 export default function OrganizationChart({ 
   organization, 
   onAgentClick, 
-  onDepartmentClick,
+  onOrganizationUpdate,
   interactive = true,
-  compact = false 
+  editable = false
 }: OrganizationChartProps) {
+  const [editMode, setEditMode] = useState(false)
+  const [selectedAgent, setSelectedAgent] = useState<string | null>(null)
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['ceo']))
+  const [showAddDialog, setShowAddDialog] = useState(false)
+  const [newAgentData, setNewAgentData] = useState({ name: '', role: '', department: '', parentId: '' })
+
   const chartData = useMemo(() => {
     return buildChartHierarchy(organization)
   }, [organization])
-
-  const maxLevel = useMemo(() => {
-    return Math.max(...chartData.map(node => node.level))
-  }, [chartData])
-
-  const departmentColors = useMemo(() => {
-    const colors: Record<string, string> = {}
-    Object.entries(organization.departments).forEach(([id, dept]) => {
-      colors[id] = dept.color
-    })
-    return colors
-  }, [organization.departments])
 
   const getAgentIcon = (role: AgentRole) => {
     const IconComponent = iconMap[role.icon] || Users
     return IconComponent
   }
 
-  const getAgentCardColor = (agent: OrganizationNode) => {
+  const getAgentColor = (agent: OrganizationNode) => {
     const dept = organization.departments[agent.department]
-    return dept?.color || 'from-slate-500 to-slate-600'
+    return dept?.color || COLORS.default
   }
 
-  const renderAgent = (node: ChartNode, index: number) => {
+  const toggleExpanded = (nodeId: string) => {
+    const newExpanded = new Set(expandedNodes)
+    if (newExpanded.has(nodeId)) {
+      newExpanded.delete(nodeId)
+    } else {
+      newExpanded.add(nodeId)
+    }
+    setExpandedNodes(newExpanded)
+  }
+
+  const handleAddAgent = (parentId: string) => {
+    setNewAgentData({ ...newAgentData, parentId })
+    setShowAddDialog(true)
+  }
+
+  const saveNewAgent = useCallback(() => {
+    if (!newAgentData.name || !newAgentData.role || !onOrganizationUpdate) return
+    
+    // Create new agent and update organization
+    const newAgent: OrganizationNode = {
+      id: `agent-${Date.now()}`,
+      name: newAgentData.name,
+      agentId: `agent-${Date.now()}`,
+      role: {
+        id: `role-${Date.now()}`,
+        name: newAgentData.role,
+        title: newAgentData.role,
+        description: `${newAgentData.role} specialist`,
+        icon: 'Users',
+        color: 'from-slate-500 to-slate-600',
+        specialization: [newAgentData.role],
+        level: 'Specialist',
+        capabilities: ['General assistance', 'Problem solving'],
+        personality: 'Helpful and professional',
+        communicationStyle: 'casual'
+      },
+      department: newAgentData.department,
+      reportsTo: newAgentData.parentId,
+      directReports: [],
+      responsibilities: ['General task handling', 'Domain expertise'],
+      delegationRules: [],
+      collaborationPreferences: ['direct_communication', 'collaborative_planning'],
+      availability: 'available',
+      workload: 'normal'
+    }
+
+    const updatedOrg = { ...organization }
+    updatedOrg.agents[newAgent.id] = newAgent
+    
+    // Update parent's direct reports
+    if (newAgentData.parentId && updatedOrg.agents[newAgentData.parentId]) {
+      updatedOrg.agents[newAgentData.parentId].directReports.push(newAgent.id)
+    }
+
+    onOrganizationUpdate(updatedOrg)
+    setShowAddDialog(false)
+    setNewAgentData({ name: '', role: '', department: '', parentId: '' })
+  }, [newAgentData, organization, onOrganizationUpdate])
+
+  const renderMicrosoftStyleNode = (node: ChartNode) => {
     const IconComponent = getAgentIcon(node.agent.role)
-    const cardColor = getAgentCardColor(node.agent)
-    const isTopLevel = node.level === 0
+    const isExpanded = expandedNodes.has(node.id)
+    const hasChildren = node.children.length > 0
+    const isSelected = selectedAgent === node.id
+    const agentColor = getAgentColor(node.agent)
 
     return (
-      <div
-        key={node.id}
-        className={`relative ${compact ? 'mb-4' : 'mb-8'}`}
-        style={{
-          marginLeft: `${node.level * (compact ? 200 : 300)}px`,
-          zIndex: maxLevel - node.level
-        }}
-      >
-        <Card 
-          className={`agent-card cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl ${
-            isTopLevel ? 'ring-2 ring-yellow-400/50' : ''
-          }`}
-          onClick={() => interactive && onAgentClick?.(node.id, node.agent)}
-        >
-          <CardContent className="p-4">
-            <div className="flex items-start space-x-4">
-              {/* Agent Avatar */}
-              <div className={`p-3 bg-gradient-to-r ${cardColor} rounded-xl flex-shrink-0`}>
-                <IconComponent className="h-6 w-6 text-white" />
-              </div>
-
-              {/* Agent Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-1">
-                  <h3 className="font-semibold text-white text-sm truncate">
-                    {node.agent.role.name}
-                  </h3>
-                  {isTopLevel && (
-                    <Crown className="h-4 w-4 text-yellow-400 flex-shrink-0" />
-                  )}
-                </div>
-                
-                <p className="text-xs text-slate-400 mb-2 truncate">
-                  {node.agent.role.title}
-                </p>
-
-                {/* Department Badge */}
-                <div className="flex items-center justify-between">
-                  <Badge 
-                    variant="outline" 
-                    className="text-xs px-2 py-0.5 border-slate-600 text-slate-300"
-                  >
-                    {organization.departments[node.agent.department]?.name || node.agent.department}
-                  </Badge>
-                  
-                  {/* Direct Reports Count */}
-                  {node.agent.directReports.length > 0 && (
-                    <div className="flex items-center space-x-1 text-xs text-slate-400">
-                      <Users className="h-3 w-3" />
-                      <span>{node.agent.directReports.length}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Specializations (compact view) */}
-                {!compact && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {node.agent.role.specialization.slice(0, 2).map((spec, idx) => (
-                      <Badge 
-                        key={idx}
-                        variant="secondary" 
-                        className="text-xs px-1.5 py-0.5 bg-white/10 text-slate-300 border-0"
-                      >
-                        {spec}
-                      </Badge>
-                    ))}
-                    {node.agent.role.specialization.length > 2 && (
-                      <Badge 
-                        variant="secondary" 
-                        className="text-xs px-1.5 py-0.5 bg-white/10 text-slate-400 border-0"
-                      >
-                        +{node.agent.role.specialization.length - 2}
-                      </Badge>
-                    )}
-                  </div>
-                )}
-
-                {/* Quick Actions */}
-                {interactive && !compact && (
-                  <div className="mt-3 flex space-x-1">
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      className="h-6 px-2 text-xs glass-button"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        // Handle chat action
-                      }}
-                    >
-                      <MessageSquare className="h-3 w-3 mr-1" />
-                      Chat
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
+      <div key={node.id} className="flex flex-col items-center">
         {/* Connection Lines */}
-        {node.children.length > 0 && (
-          <div className="absolute left-full top-1/2 w-8 border-t-2 border-slate-600 -translate-y-1/2 z-0" />
+        {node.level > 0 && (
+          <div className="w-px h-8 bg-slate-300 dark:bg-slate-600 mb-2"></div>
         )}
         
-        {/* Render Children */}
-        {node.children.map((child, childIndex) => (
-          <div key={child.id} className="relative">
-            {/* Vertical line for multiple children */}
-            {node.children.length > 1 && childIndex === 0 && (
-              <div 
-                className="absolute left-full border-l-2 border-slate-600 z-0"
-                style={{
-                  top: compact ? '24px' : '32px',
-                  height: `${(node.children.length - 1) * (compact ? 120 : 180)}px`,
-                  marginLeft: '32px'
-                }}
-              />
-            )}
+        {/* Agent Circle */}
+        <div className="relative group">
+          <div 
+            className={`
+              w-20 h-20 rounded-full bg-gradient-to-br ${agentColor} 
+              border-4 border-white dark:border-slate-800 shadow-lg
+              flex items-center justify-center cursor-pointer
+              transition-all duration-300 hover:scale-110 hover:shadow-xl
+              ${isSelected ? 'ring-4 ring-blue-400' : ''}
+              ${interactive ? 'hover:shadow-2xl' : ''}
+            `}
+            onClick={() => {
+              setSelectedAgent(node.id)
+              onAgentClick?.(node.id, node.agent)
+            }}
+          >
+            <IconComponent className="w-8 h-8 text-white" />
+          </div>
+
+          {/* Agent Info Tooltip */}
+          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity z-50">
+            <Card className="glass-card min-w-48">
+              <CardContent className="p-3">
+                <h4 className="font-semibold text-white">{node.agent.name}</h4>
+                <p className="text-sm text-slate-300">{node.agent.role.title}</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <div className={`w-2 h-2 rounded-full ${
+                    node.agent.availability === 'available' ? 'bg-green-400' : 
+                    node.agent.availability === 'busy' ? 'bg-yellow-400' : 'bg-red-400'
+                  }`}></div>
+                  <span className="text-xs text-slate-400 capitalize">{node.agent.availability}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Edit Controls */}
+          {editable && editMode && (
+            <div className="absolute -top-2 -right-2 flex gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-6 h-6 p-0 bg-blue-500 hover:bg-blue-600 border-blue-500"
+                onClick={() => handleAddAgent(node.id)}
+              >
+                <Plus className="w-3 h-3 text-white" />
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-6 h-6 p-0 bg-red-500 hover:bg-red-600 border-red-500"
+                onClick={() => {/* Handle delete */}}
+              >
+                <Trash2 className="w-3 h-3 text-white" />
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Agent Name */}
+        <div className="mt-3 text-center">
+          <p className="font-medium text-white text-sm">{node.agent.name}</p>
+          <p className="text-xs text-slate-400">{node.agent.role.title}</p>
+        </div>
+
+        {/* Expand/Collapse Button */}
+        {hasChildren && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mt-2 w-6 h-6 p-0 rounded-full bg-slate-700 hover:bg-slate-600"
+            onClick={() => toggleExpanded(node.id)}
+          >
+            {isExpanded ? 
+              <ChevronDown className="w-3 h-3 text-white" /> : 
+              <ChevronRight className="w-3 h-3 text-white" />
+            }
+          </Button>
+        )}
+
+        {/* Children */}
+        {hasChildren && isExpanded && (
+          <div className="mt-6">
+            {/* Horizontal Line */}
+            <div className="w-px h-6 bg-slate-300 dark:bg-slate-600 mx-auto mb-6"></div>
             
-            {/* Horizontal connector line */}
-            {node.children.length > 1 && (
-              <div 
-                className="absolute border-t-2 border-slate-600 z-0"
-                style={{
-                  top: compact ? '24px' : '32px',
-                  left: 'calc(100% + 32px)',
-                  width: '16px',
-                  marginTop: `${childIndex * (compact ? 120 : 180)}px`
-                }}
-              />
-            )}
-            
-            <div style={{ marginTop: childIndex > 0 ? (compact ? '120px' : '180px') : '0' }}>
-              {renderAgent(child, childIndex)}
+            {/* Children Container */}
+            <div className="flex gap-12 items-start">
+              {node.children.map((child) => renderMicrosoftStyleNode(child))}
             </div>
           </div>
-        ))}
+        )}
       </div>
     )
   }
 
-  const renderDepartmentSummary = () => {
-    if (compact) return null
-
-    return (
-      <div className="mb-8">
-        <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-          <Building className="h-5 w-5 mr-2" />
-          Departments Overview
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Object.entries(organization.departments).map(([id, dept]) => {
-            const agentCount = Object.values(organization.agents)
-              .filter(agent => agent.department === id).length
-            
-            return (
-              <Card 
-                key={id}
-                className="glass-card cursor-pointer hover:scale-105 transition-transform"
-                onClick={() => onDepartmentClick?.(id)}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <div className={`p-2 bg-gradient-to-r ${dept.color} rounded-lg`}>
-                      <Building className="h-4 w-4 text-white" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-white text-sm">{dept.name}</h4>
-                      <p className="text-xs text-slate-400">{agentCount} agents</p>
-                    </div>
-                  </div>
-                  <p className="text-xs text-slate-300 mb-2">{dept.description}</p>
-                  <div className="flex flex-wrap gap-1">
-                    {dept.focus.slice(0, 2).map((focus, idx) => (
-                      <Badge 
-                        key={idx}
-                        variant="secondary" 
-                        className="text-xs px-1.5 py-0.5 bg-white/10 text-slate-300 border-0"
-                      >
-                        {focus}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-      </div>
-    )
-  }
-
-  if (!organization || Object.keys(organization.agents).length === 0) {
-    return (
+  const renderOrgStats = () => (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
       <Card className="glass-card">
-        <CardContent className="p-8 text-center">
-          <Building className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">No Organization Structure</h3>
-          <p className="text-slate-400">Create an organization to view the hierarchy chart.</p>
+        <CardContent className="p-4 text-center">
+          <Users className="w-6 h-6 text-blue-400 mx-auto mb-2" />
+          <p className="text-2xl font-bold text-white">{Object.keys(organization.agents).length}</p>
+          <p className="text-xs text-slate-400">Total Agents</p>
         </CardContent>
       </Card>
-    )
-  }
+      <Card className="glass-card">
+        <CardContent className="p-4 text-center">
+          <Building className="w-6 h-6 text-green-400 mx-auto mb-2" />
+          <p className="text-2xl font-bold text-white">{Object.keys(organization.departments).length}</p>
+          <p className="text-xs text-slate-400">Departments</p>
+        </CardContent>
+      </Card>
+      <Card className="glass-card">
+        <CardContent className="p-4 text-center">
+          <Target className="w-6 h-6 text-purple-400 mx-auto mb-2" />
+          <p className="text-2xl font-bold text-white">{organization.workflowRules.length}</p>
+          <p className="text-xs text-slate-400">Workflows</p>
+        </CardContent>
+      </Card>
+      <Card className="glass-card">
+        <CardContent className="p-4 text-center">
+          <MessageSquare className="w-6 h-6 text-orange-400 mx-auto mb-2" />
+          <p className="text-2xl font-bold text-white">{organization.communicationChannels.length}</p>
+          <p className="text-xs text-slate-400">Channels</p>
+        </CardContent>
+      </Card>
+    </div>
+  )
 
   return (
     <div className="space-y-6">
-      {/* Organization Header */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-1">{organization.name}</h2>
+          <h2 className="text-2xl font-bold text-white">{organization.name}</h2>
           <p className="text-slate-400">{organization.description}</p>
         </div>
-        <Badge 
-          variant="outline" 
-          className="text-sm px-3 py-1 border-slate-600 text-slate-300 capitalize"
-        >
-          {organization.structure} Structure
-        </Badge>
+        
+        {editable && (
+          <div className="flex gap-2">
+            <Button
+              variant={editMode ? "default" : "outline"}
+              onClick={() => setEditMode(!editMode)}
+              className={editMode ? "bg-blue-600 hover:bg-blue-700" : "glass-button"}
+            >
+              {editMode ? <Save className="w-4 h-4 mr-2" /> : <Edit3 className="w-4 h-4 mr-2" />}
+              {editMode ? 'Save' : 'Edit'}
+            </Button>
+            <Button variant="outline" className="glass-button">
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+          </div>
+        )}
       </div>
 
-      {/* Department Summary */}
-      {renderDepartmentSummary()}
+      {/* Stats */}
+      {renderOrgStats()}
 
       {/* Organization Chart */}
-      <div className="relative">
-        <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-          <Users className="h-5 w-5 mr-2" />
-          Organization Hierarchy
-        </h3>
-        
-        <div className="relative bg-slate-900/50 rounded-lg p-6 overflow-x-auto">
-          <div className="min-w-max">
-            {chartData.map((rootNode, index) => renderAgent(rootNode, index))}
+      <Card className="glass-card p-6">
+        <div className="overflow-x-auto">
+          <div className="min-w-max py-8">
+            {chartData.map((rootNode) => renderMicrosoftStyleNode(rootNode))}
           </div>
         </div>
-      </div>
+      </Card>
 
-      {/* Organization Stats */}
-      {!compact && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="glass-card text-center">
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold gradient-text mb-1">
-                {Object.keys(organization.agents).length}
+      {/* Add Agent Dialog */}
+      {showAddDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="glass-card max-w-md w-full mx-4">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center justify-between">
+                Add New Agent
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAddDialog(false)}
+                  className="text-slate-400 hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="text-sm text-slate-300 mb-2 block">Agent Name</label>
+                <Input
+                  value={newAgentData.name}
+                  onChange={(e) => setNewAgentData({...newAgentData, name: e.target.value})}
+                  placeholder="Enter agent name"
+                  className="glass-input"
+                />
               </div>
-              <div className="text-sm text-slate-400">Total Agents</div>
-            </CardContent>
-          </Card>
-          <Card className="glass-card text-center">
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold gradient-text mb-1">
-                {Object.keys(organization.departments).length}
+              <div>
+                <label className="text-sm text-slate-300 mb-2 block">Role</label>
+                <Input
+                  value={newAgentData.role}
+                  onChange={(e) => setNewAgentData({...newAgentData, role: e.target.value})}
+                  placeholder="Enter role title"
+                  className="glass-input"
+                />
               </div>
-              <div className="text-sm text-slate-400">Departments</div>
-            </CardContent>
-          </Card>
-          <Card className="glass-card text-center">
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold gradient-text mb-1">
-                {maxLevel + 1}
+              <div>
+                <label className="text-sm text-slate-300 mb-2 block">Department</label>
+                <select 
+                  value={newAgentData.department}
+                  onChange={(e) => setNewAgentData({...newAgentData, department: e.target.value})}
+                  className="w-full glass-input"
+                >
+                  <option value="">Select Department</option>
+                  {Object.entries(organization.departments).map(([id, dept]) => (
+                    <option key={id} value={id}>{dept.name}</option>
+                  ))}
+                </select>
               </div>
-              <div className="text-sm text-slate-400">Hierarchy Levels</div>
-            </CardContent>
-          </Card>
-          <Card className="glass-card text-center">
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold gradient-text mb-1">
-                {organization.workflowRules.length}
+              <div className="flex gap-2">
+                <Button onClick={saveNewAgent} className="gradient-button flex-1">
+                  Add Agent
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowAddDialog(false)}
+                  className="glass-button"
+                >
+                  Cancel
+                </Button>
               </div>
-              <div className="text-sm text-slate-400">Workflow Rules</div>
             </CardContent>
           </Card>
         </div>
@@ -372,41 +402,43 @@ export default function OrganizationChart({
   )
 }
 
-// Helper function to build the hierarchical chart structure
 function buildChartHierarchy(organization: Organization): ChartNode[] {
-  const agentMap = new Map<string, OrganizationNode>()
-  const children = new Map<string, string[]>()
-  
-  // Build maps
-  Object.entries(organization.agents).forEach(([id, agent]) => {
-    agentMap.set(id, agent)
-    if (agent.reportsTo) {
-      if (!children.has(agent.reportsTo)) {
-        children.set(agent.reportsTo, [])
-      }
-      children.get(agent.reportsTo)!.push(id)
+  const nodes: ChartNode[] = []
+  const visited = new Set<string>()
+
+  // Find root nodes (agents with no manager or CEO)
+  const rootAgents = Object.entries(organization.agents).filter(([id, agent]) => 
+    !agent.reportsTo || id === organization.ceo
+  )
+
+  const buildNode = (agentId: string, level: number = 0): ChartNode | null => {
+    if (visited.has(agentId)) return null
+    visited.add(agentId)
+
+    const agent = organization.agents[agentId]
+    if (!agent) return null
+
+    const children: ChartNode[] = []
+    for (const reportId of agent.directReports) {
+      const childNode = buildNode(reportId, level + 1)
+      if (childNode) children.push(childNode)
     }
-  })
 
-  // Find root nodes (agents with no manager)
-  const rootAgents = Object.entries(organization.agents)
-    .filter(([id, agent]) => !agent.reportsTo)
-    .map(([id]) => id)
-
-  // Build hierarchy starting from roots
-  function buildNode(agentId: string, level: number): ChartNode {
-    const agent = agentMap.get(agentId)!
-    const agentChildren = children.get(agentId) || []
-    
     return {
       id: agentId,
       agent,
       level,
-      children: agentChildren.map(childId => buildNode(childId, level + 1)),
-      x: 0, // Will be calculated for positioning
-      y: 0  // Will be calculated for positioning
+      children,
+      x: 0,
+      y: 0,
+      isExpanded: true
     }
   }
 
-  return rootAgents.map(rootId => buildNode(rootId, 0))
+  for (const [agentId] of rootAgents) {
+    const node = buildNode(agentId)
+    if (node) nodes.push(node)
+  }
+
+  return nodes
 }
