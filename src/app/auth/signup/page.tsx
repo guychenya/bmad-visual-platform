@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Input } from '../../../components/ui/input'
 import { Label } from '../../../components/ui/label'
 import { Loader2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { routes } from '../../../lib/routes'
 
 export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -14,6 +16,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  const router = useRouter()
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -34,6 +37,7 @@ export default function SignupPage() {
 
       if (data.user) {
         setMessage('Sign-up successful! Please check your email for a confirmation link.')
+        router.push(routes.auth.login)
       } else {
         setMessage('Sign-up initiated. Please check your email for a confirmation link.')
       }
@@ -105,7 +109,7 @@ export default function SignupPage() {
           
           <div className="text-center text-sm text-muted-foreground">
             Already have an account?{' '}
-            <a href="/auth/login" className="text-primary hover:underline">
+            <a href={routes.auth.login} className="text-primary hover:underline">
               Sign in
             </a>
           </div>
