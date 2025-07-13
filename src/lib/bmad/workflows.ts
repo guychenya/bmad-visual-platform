@@ -215,7 +215,7 @@ export const BMAD_WORKFLOWS: Workflow[] = [
               'Validate wireframes against functional requirements'
             ],
             estimatedTime: 100,
-            outputs: ['wireframes', 'responsive-layouts']
+            outputs: ['wireframes', 'responsive-layouts', 'ui-specifications']
           },
           {
             id: 'design-system',
