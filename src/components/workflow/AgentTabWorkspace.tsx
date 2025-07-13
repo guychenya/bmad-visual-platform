@@ -137,7 +137,15 @@ export function AgentTabWorkspace({ projectId, templateId, onWorkflowComplete }:
     console.log('Initializing agent tabs for workflow:', workflow.id)
     console.log('Workflow steps:', workflow.steps)
     
-    const tabs: AgentTab[] = workflow.steps.map((step, index) => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const selectedAgentIdsParam = urlParams.get('agents');
+    const selectedAgentIds = selectedAgentIdsParam ? selectedAgentIdsParam.split(',') : [];
+
+    const filteredSteps = selectedAgentIds.length > 0
+      ? workflow.steps.filter(step => selectedAgentIds.includes(step.agentId))
+      : workflow.steps;
+
+    const tabs: AgentTab[] = filteredSteps.map((step, index) => {
       const agent = BMAD_AGENTS.find(a => a.id === step.agentId)
       if (!agent) {
         console.warn('Agent not found:', step.agentId)
