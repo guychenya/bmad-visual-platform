@@ -186,6 +186,7 @@ export function BMadAgentCollaboration({
   }
 
   const executeAgentStep = async (stepIndex: number) => {
+    if (!workflow) return;
     const step = workflow.steps[stepIndex]
     const agent = BMAD_AGENTS.find(a => a.id === step.agentId)
     if (!agent) return
