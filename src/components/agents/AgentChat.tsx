@@ -416,8 +416,12 @@ export function AgentChat({ agentId }: AgentChatProps) {
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-              <span className="text-sm text-slate-400">Online</span>
+              <div className={`w-3 h-3 rounded-full ${
+                hasApiKey ? 'bg-green-400 animate-pulse' : 'bg-slate-500'
+              }`}></div>
+              <span className="text-sm text-slate-400">
+                {hasApiKey ? 'Online' : 'Offline'}
+              </span>
             </div>
           </div>
           

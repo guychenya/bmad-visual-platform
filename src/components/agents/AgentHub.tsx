@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
 import { Plus, Settings, Activity, Users, Brain, Code, Database, Palette, TestTube, User, FileText, MessageSquare, Sparkles } from 'lucide-react'
+import { AddAgentModal } from './AddAgentModal'
 
 export function AgentHub() {
-  const [agents] = useState([
+  const [agents, setAgents] = useState([
     {
       id: 1,
       name: 'Analyst',
@@ -87,10 +88,54 @@ export function AgentHub() {
   ])
 
   const [selectedAgent, setSelectedAgent] = useState<any>(null)
+  const [showAddAgentModal, setShowAddAgentModal] = useState(false)
+  const [hasApiKey, setHasApiKey] = useState(false)
 
   const activeAgents = agents.filter(agent => agent.status === 'active').length
   const totalTasks = 247
   const successRate = 98
+
+  // Check for API key on component mount
+  useEffect(() => {
+    const checkApiKey = () => {
+      const savedSettings = localStorage.getItem('viby-settings')
+      if (savedSettings) {
+        try {
+          const settings = JSON.parse(savedSettings)
+          const hasValidApiKey = settings.apiKeys?.openai?.trim() || 
+                                 settings.apiKeys?.claude?.trim() || 
+                                 settings.apiKeys?.gemini?.trim()
+          setHasApiKey(!!hasValidApiKey)
+        } catch (error) {
+          console.error('Failed to parse settings:', error)
+          setHasApiKey(false)
+        }
+      } else {
+        setHasApiKey(false)
+      }
+    }
+
+    checkApiKey()
+    
+    // Listen for storage changes (when settings are updated)
+    window.addEventListener('storage', checkApiKey)
+    return () => window.removeEventListener('storage', checkApiKey)
+  }, [])
+
+  const handleAgentCreated = (newAgent: any) => {
+    setAgents(prev => [...prev, newAgent])
+  }
+
+  const getAgentStatus = (agent: any) => {
+    // If no API key is configured, all agents are offline
+    if (!hasApiKey) return 'offline'
+    
+    // For custom agents, they're idle until first used
+    if (agent.isCustom && agent.lastUsed === 'Never') return 'idle'
+    
+    // Return the original status
+    return agent.status
+  }
 
   return (
     <div className="space-y-8">
@@ -101,7 +146,10 @@ export function AgentHub() {
             Your intelligent development team, ready to transform your workflow
           </p>
         </div>
-        <Button className="gradient-button hover:scale-105 transition-transform">
+        <Button 
+          className="gradient-button hover:scale-105 transition-transform"
+          onClick={() => setShowAddAgentModal(true)}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Create Agent
         </Button>
@@ -109,27 +157,30 @@ export function AgentHub() {
 
       {/* Agent Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {agents.map((agent, index) => (
-          <Card 
-            key={agent.id} 
-            className="agent-card group cursor-pointer animate-slide-up"
-            style={{ animationDelay: `${index * 0.1}s` }}
-            onClick={() => setSelectedAgent(agent)}
-          >
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between mb-3">
-                <div className={`p-3 bg-gradient-to-r ${agent.color} rounded-xl group-hover:scale-110 transition-transform`}>
-                  <agent.icon className="h-6 w-6 text-white" />
+        {agents.map((agent, index) => {
+          const agentStatus = getAgentStatus(agent)
+          return (
+            <Card 
+              key={agent.id} 
+              className="agent-card group cursor-pointer animate-slide-up"
+              style={{ animationDelay: `${index * 0.1}s` }}
+              onClick={() => setSelectedAgent(agent)}
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between mb-3">
+                  <div className={`p-3 bg-gradient-to-r ${agent.color} rounded-xl group-hover:scale-110 transition-transform`}>
+                    <agent.icon className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className={`w-3 h-3 rounded-full ${
+                      agentStatus === 'active' ? 'bg-green-400 animate-pulse' : 
+                      agentStatus === 'idle' ? 'bg-yellow-400' : 'bg-slate-500'
+                    }`} />
+                    <span className="text-sm text-slate-400 capitalize">
+                      {agentStatus === 'offline' ? 'Offline' : agentStatus}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <div className={`w-3 h-3 rounded-full ${
-                    agent.status === 'active' ? 'bg-green-400 animate-pulse' : 'bg-slate-500'
-                  }`} />
-                  <span className="text-sm text-slate-400 capitalize">
-                    {agent.status}
-                  </span>
-                </div>
-              </div>
               <CardTitle className="text-lg text-white">{agent.name}</CardTitle>
             </CardHeader>
             <CardContent>
@@ -168,7 +219,8 @@ export function AgentHub() {
               </div>
             </CardContent>
           </Card>
-        ))}
+        )
+        })}
       </div>
 
       {/* Stats Section */}
@@ -265,6 +317,13 @@ export function AgentHub() {
           </Card>
         </div>
       )}
+
+      {/* Add Agent Modal */}
+      <AddAgentModal
+        isOpen={showAddAgentModal}
+        onClose={() => setShowAddAgentModal(false)}
+        onAgentCreated={handleAgentCreated}
+      />
     </div>
   )
 }
