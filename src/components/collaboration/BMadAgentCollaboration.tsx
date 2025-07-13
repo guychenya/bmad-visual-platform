@@ -9,7 +9,7 @@ import {
   FileText, Users, AlertCircle, Lightbulb, Zap, Settings, Play, Pause
 } from 'lucide-react'
 import { BMAD_AGENTS, BMadAgent, getAgentsByWorkflowOrder, getNextAgent } from '../../lib/bmad/agents'
-import { BMAD_WORKFLOWS, WorkflowStep, WorkflowTask } from '../../lib/bmad/workflows'
+import { generateDynamicWorkflow } from '../../lib/bmad/dynamicWorkflow';
 
 interface AgentState {
   id: string
@@ -35,14 +35,21 @@ interface AgentMessage {
 }
 
 interface BMadAgentCollaborationProps {
-  projectName: string
-  uploadedContent: string
-  onComplete: (result: any) => void
-  showDownloads?: boolean
+  projectName: string;
+  uploadedContent: string;
+  onComplete: (result: any) => void;
+  showDownloads?: boolean;
+  selectedAgentIds: string[]; // Add this line
 }
 
-export function BMadAgentCollaboration({ projectName, uploadedContent, onComplete, showDownloads = false }: BMadAgentCollaborationProps) {
-  const [workflow] = useState(BMAD_WORKFLOWS[0]) // Greenfield complete workflow
+export function BMadAgentCollaboration({ 
+  projectName, 
+  uploadedContent, 
+  onComplete, 
+  showDownloads = false, 
+  selectedAgentIds 
+}: BMadAgentCollaborationProps) {
+  const [workflow, setWorkflow] = useState(generateDynamicWorkflow(selectedAgentIds));
   const [agentStates, setAgentStates] = useState<Record<string, AgentState>>({})
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [allMessages, setAllMessages] = useState<AgentMessage[]>([])
@@ -56,11 +63,14 @@ export function BMadAgentCollaboration({ projectName, uploadedContent, onComplet
   }
 
   useEffect(() => {
-    initializeAgentStates()
-  }, [])
+    if (workflow) {
+      initializeAgentStates();
+    }
+  }, [workflow]);
 
   const initializeAgentStates = () => {
-    const initialStates: Record<string, AgentState> = {}
+    if (!workflow) return;
+    const initialStates: Record<string, AgentState> = {};
     
     workflow.steps.forEach(step => {
       initialStates[step.agentId] = {
@@ -70,16 +80,15 @@ export function BMadAgentCollaboration({ projectName, uploadedContent, onComplet
         currentTaskIndex: 0,
         outputs: [],
         messages: []
-      }
-    })
+      };
+    });
 
-    // Set first agent as ready to start
     if (workflow.steps.length > 0) {
-      initialStates[workflow.steps[0].agentId].status = 'active'
+      initialStates[workflow.steps[0].agentId].status = 'active';
     }
 
-    setAgentStates(initialStates)
-  }
+    setAgentStates(initialStates);
+  };
 
   const addMessage = (message: Omit<AgentMessage, 'id' | 'timestamp'>) => {
     const newMessage: AgentMessage = {
@@ -265,6 +274,10 @@ export function BMadAgentCollaboration({ projectName, uploadedContent, onComplet
   }
 
   const startWorkflow = async () => {
+    if (!workflow) {
+      console.error("Cannot start workflow: no valid workflow generated.");
+      return;
+    }
     setIsRunning(true)
     setIsPaused(false)
 
@@ -339,6 +352,14 @@ export function BMadAgentCollaboration({ projectName, uploadedContent, onComplet
 
   const getCurrentStepAgent = () => {
     return workflow.steps[currentStepIndex]?.agentId
+  }
+
+if (!workflow) {
+    return (
+      <div className="text-center text-red-500">
+        Failed to generate a valid workflow. Please check the agent selections and dependencies.
+      </div>
+    );
   }
 
   return (
