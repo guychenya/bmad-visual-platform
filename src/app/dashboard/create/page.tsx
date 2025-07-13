@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
 import { Button } from '../../../components/ui/button'
 import { Upload, MessageSquare, FileText, Download, CheckCircle, Sparkles, Users, ArrowRight, Bot } from 'lucide-react'
-import { PRDUpload } from '../../../components/upload/PRDUpload'
+import { PRDUpload } from '../../../components/upload/PRDUpload';
+import { BMadAgentCollaboration } from '../../../components/collaboration/BMadAgentCollaboration';
 import { AgentSelector } from '../../../components/workflow/AgentSelector';
 
 export default function CreateProjectPage() {

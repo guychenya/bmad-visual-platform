@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/button'
 import { Card, CardContent } from '../../components/ui/card'
 import { Users, Home, FileText, Settings, LogOut, Sparkles, Brain, Folder, Plus, GitBranch, Building, Layers } from 'lucide-react'
 import Link from 'next/link'
+import { routes } from '../../lib/routes'
 import { usePathname } from 'next/navigation'
 
 export default function DashboardLayout({
@@ -25,7 +26,7 @@ export default function DashboardLayout({
               <Sparkles className="w-8 h-8 text-purple-400 animate-pulse-slow" />
             </div>
             <h2 className="text-2xl font-bold mb-4 gradient-text">Please sign in</h2>
-            <Link href="/auth/login">
+            <Link href={routes.auth.login}>
               <Button className="gradient-button">Go to Login</Button>
             </Link>
           </CardContent>
@@ -35,10 +36,10 @@ export default function DashboardLayout({
   }
 
   const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: 'Organizations', href: '/dashboard/organizations', icon: Building },
-    { name: 'Templates', href: '/dashboard/templates', icon: FileText },
-    { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+    { name: 'Dashboard', href: routes.dashboard.home, icon: Home },
+    { name: 'Organizations', href: routes.dashboard.organizations, icon: Building },
+    { name: 'Templates', href: routes.dashboard.templates, icon: FileText },
+    { name: 'Settings', href: routes.dashboard.settings, icon: Settings },
   ]
 
   return (
@@ -49,7 +50,7 @@ export default function DashboardLayout({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-8">
-              <Link href="/dashboard" className="flex items-center space-x-3">
+              <Link href={routes.dashboard.home} className="flex items-center space-x-3">
                 <div className="relative">
                   <Sparkles className="w-8 h-8 text-purple-400" />
                   <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-viby rounded-full animate-ping"></div>
