@@ -353,7 +353,7 @@ export function BMadAgentCollaboration({
   }
 
   const getCurrentStepAgent = () => {
-    return workflow.steps[currentStepIndex]?.agentId
+    return workflow?.steps[currentStepIndex]?.agentId
   }
 
   if (!workflow) {
