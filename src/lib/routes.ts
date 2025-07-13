@@ -16,6 +16,7 @@ export const routes = {
     workflow: '/dashboard/workflow',
     projectDetail: (id: string) => `/dashboard/projects/${id}`,
     agentDetail: (id: string) => `/dashboard/agents/${id}`,
+    workspace: '/dashboard/workspace',
   },
   // Add other top-level routes as needed
 };
