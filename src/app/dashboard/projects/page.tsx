@@ -6,8 +6,24 @@ import { Plus, Folder, Clock, Users, Star, MoreHorizontal, Play, Pause, Archive,
 import { useState, useEffect } from 'react'
 import { CreateProjectModal } from '../../../components/projects/CreateProjectModal'
 
+interface Project {
+  id: number
+  name: string
+  description: string
+  status: string
+  progress: number
+  lastActivity: string
+  team: string[]
+  priority: string
+  dueDate: string
+  category: string
+  color: string
+  template?: string
+  tags?: string[]
+}
+
 export default function ProjectsPage() {
-  const [projects, setProjects] = useState([])
+  const [projects, setProjects] = useState<Project[]>([])
 
   // Load projects from localStorage on mount
   useEffect(() => {
@@ -111,7 +127,7 @@ export default function ProjectsPage() {
   }, [])
 
   const [selectedStatus, setSelectedStatus] = useState('All')
-  const [selectedProject, setSelectedProject] = useState<any>(null)
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
 
   const statuses = ['All', 'Active', 'Paused', 'Completed', 'Planning']
@@ -363,7 +379,7 @@ export default function ProjectsPage() {
       <CreateProjectModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        onProjectCreated={(project) => {
+        onProjectCreated={(project: Project) => {
           const updatedProjects = [...projects, project]
           setProjects(updatedProjects)
           localStorage.setItem('viby-projects', JSON.stringify(updatedProjects))
