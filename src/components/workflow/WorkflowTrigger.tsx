@@ -20,6 +20,7 @@ import {
   Zap
 } from 'lucide-react'
 import Link from 'next/link'
+import { routes } from '../../lib/routes'
 
 interface WorkflowTemplate {
   id: string
@@ -96,7 +97,7 @@ export function WorkflowTrigger({ onStartWorkflow, className = '' }: WorkflowTri
       onStartWorkflow(templateId, projectName)
     } else {
       // Navigate to workflow page with parameters
-      window.location.href = `/dashboard/workflow?template=${templateId}&project=${encodeURIComponent(projectName)}`
+      window.location.href = `${routes.dashboard.workflow}?template=${templateId}&project=${encodeURIComponent(projectName)}`
     }
   }
 
@@ -240,7 +241,7 @@ export function WorkflowTrigger({ onStartWorkflow, className = '' }: WorkflowTri
                     <Play className="h-4 w-4 mr-2" />
                     Start Workflow
                   </Button>
-                  <Link href={`/dashboard/workflow?template=${template.id}`}>
+                  <Link href={`${routes.dashboard.workflow}?template=${template.id}`}>
                     <Button variant="outline" size="sm" className="glass-button">
                       <GitBranch className="h-4 w-4" />
                     </Button>
