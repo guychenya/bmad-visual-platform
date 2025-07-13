@@ -1,15 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
 import { Button } from '../../../components/ui/button'
 import { Input } from '../../../components/ui/input'
 import { Label } from '../../../components/ui/label'
-import { Settings, User, Bell, Shield, Palette, Save, Eye, EyeOff } from 'lucide-react'
+import { Settings, User, Bell, Shield, Palette, Save, Eye, EyeOff, Check, AlertCircle } from 'lucide-react'
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile')
   const [showApiKey, setShowApiKey] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [settings, setSettings] = useState({
     profile: {
       fullName: 'Demo User',
@@ -36,10 +38,43 @@ export default function SettingsPage() {
     { id: 'api', name: 'API Keys', icon: Shield }
   ]
 
-  const handleSave = () => {
-    // Simulate saving settings
-    console.log('Settings saved:', settings)
-    // Show success message
+  // Load settings from localStorage on component mount
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('viby-settings')
+    if (savedSettings) {
+      try {
+        const parsed = JSON.parse(savedSettings)
+        setSettings(prev => ({ ...prev, ...parsed }))
+      } catch (error) {
+        console.error('Failed to load settings:', error)
+      }
+    }
+  }, [])
+
+  const handleSave = async () => {
+    setIsSaving(true)
+    setSaveStatus('idle')
+
+    try {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Save to localStorage
+      localStorage.setItem('viby-settings', JSON.stringify(settings))
+      
+      // Show success status
+      setSaveStatus('success')
+      
+      // Reset status after 3 seconds
+      setTimeout(() => setSaveStatus('idle'), 3000)
+      
+    } catch (error) {
+      console.error('Failed to save settings:', error)
+      setSaveStatus('error')
+      setTimeout(() => setSaveStatus('idle'), 3000)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const updateSetting = (section: string, key: string, value: any) => {
@@ -61,9 +96,32 @@ export default function SettingsPage() {
             Customize your Viby.ai experience
           </p>
         </div>
-        <Button className="gradient-button hover:scale-105 transition-transform" onClick={handleSave}>
-          <Save className="h-4 w-4 mr-2" />
-          Save Changes
+        <Button 
+          className="gradient-button hover:scale-105 transition-transform" 
+          onClick={handleSave}
+          disabled={isSaving}
+        >
+          {isSaving ? (
+            <>
+              <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              Saving...
+            </>
+          ) : saveStatus === 'success' ? (
+            <>
+              <Check className="h-4 w-4 mr-2" />
+              Saved!
+            </>
+          ) : saveStatus === 'error' ? (
+            <>
+              <AlertCircle className="h-4 w-4 mr-2" />
+              Error
+            </>
+          ) : (
+            <>
+              <Save className="h-4 w-4 mr-2" />
+              Save Changes
+            </>
+          )}
         </Button>
       </div>
 
@@ -253,6 +311,25 @@ export default function SettingsPage() {
                     API keys are encrypted and stored securely. They're only used to communicate with AI services.
                   </p>
                 </div>
+                
+                {/* Save Status Message */}
+                {saveStatus === 'success' && (
+                  <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
+                    <p className="text-green-300 text-sm flex items-center">
+                      <Check className="h-4 w-4 mr-2" />
+                      Settings saved successfully! Your API keys have been securely stored.
+                    </p>
+                  </div>
+                )}
+                
+                {saveStatus === 'error' && (
+                  <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+                    <p className="text-red-300 text-sm flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-2" />
+                      Failed to save settings. Please try again.
+                    </p>
+                  </div>
+                )}
                 
                 <div className="space-y-4">
                   <div className="space-y-2">

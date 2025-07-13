@@ -5,9 +5,10 @@ import { Button } from '../../../components/ui/button'
 import { Plus, FileText, Code, Palette, Database, Globe, Smartphone, Server, Download, Eye } from 'lucide-react'
 import { useState } from 'react'
 import { UseTemplateModal } from '../../../components/templates/UseTemplateModal'
+import { CreateTemplateModal } from '../../../components/templates/CreateTemplateModal'
 
 export default function TemplatesPage() {
-  const [templates] = useState([
+  const [templates, setTemplates] = useState([
     {
       id: 1,
       name: 'React SaaS Starter',
@@ -102,12 +103,17 @@ export default function TemplatesPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null)
   const [showUseTemplateModal, setShowUseTemplateModal] = useState(false)
   const [templateToUse, setTemplateToUse] = useState<any>(null)
+  const [showCreateTemplateModal, setShowCreateTemplateModal] = useState(false)
 
   const categories = ['All', 'Web App', 'E-commerce', 'Mobile', 'Backend', 'Dashboard', 'Portfolio', 'Content', 'Marketing']
 
   const filteredTemplates = selectedCategory === 'All' 
     ? templates 
     : templates.filter(template => template.category === selectedCategory)
+
+  const handleTemplateCreated = (newTemplate: any) => {
+    setTemplates(prev => [...prev, newTemplate])
+  }
 
   return (
     <div className="space-y-8">
@@ -118,7 +124,10 @@ export default function TemplatesPage() {
             Jumpstart your projects with pre-built templates
           </p>
         </div>
-        <Button className="gradient-button hover:scale-105 transition-transform">
+        <Button 
+          className="gradient-button hover:scale-105 transition-transform"
+          onClick={() => setShowCreateTemplateModal(true)}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Create Template
         </Button>
@@ -279,6 +288,13 @@ export default function TemplatesPage() {
           console.log('Project created from template:', project)
           window.location.href = '/dashboard/projects'
         }}
+      />
+
+      {/* Create Template Modal */}
+      <CreateTemplateModal
+        isOpen={showCreateTemplateModal}
+        onClose={() => setShowCreateTemplateModal(false)}
+        onTemplateCreated={handleTemplateCreated}
       />
     </div>
   )

@@ -4,9 +4,10 @@ import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
-import { Send, Loader2, ArrowLeft, Brain, Code, TestTube, Users, User, Palette } from 'lucide-react'
+import { Send, Loader2, ArrowLeft, Brain, Code, TestTube, Users, User, Palette, Settings, Key, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import { TypingIndicator } from './TypingIndicator'
+import { openAIService } from '../../lib/ai/openai'
 
 interface Message {
   id: string
@@ -104,6 +105,8 @@ export function AgentChat({ agentId }: AgentChatProps) {
   const [isTyping, setIsTyping] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [hasApiKey, setHasApiKey] = useState(false)
+  const [isCheckingApiKey, setIsCheckingApiKey] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   
   const agent = AGENTS[agentId as keyof typeof AGENTS]
@@ -116,9 +119,33 @@ export function AgentChat({ agentId }: AgentChatProps) {
     scrollToBottom()
   }, [messages])
 
+  // Check for API key on component mount
   useEffect(() => {
-    if (agent) {
-      // Add greeting message when agent changes
+    const checkApiKey = () => {
+      const savedSettings = localStorage.getItem('viby-settings')
+      if (savedSettings) {
+        try {
+          const settings = JSON.parse(savedSettings)
+          const hasValidApiKey = settings.apiKeys?.openai?.trim() || 
+                                 settings.apiKeys?.claude?.trim() || 
+                                 settings.apiKeys?.gemini?.trim()
+          setHasApiKey(!!hasValidApiKey)
+        } catch (error) {
+          console.error('Failed to parse settings:', error)
+          setHasApiKey(false)
+        }
+      } else {
+        setHasApiKey(false)
+      }
+      setIsCheckingApiKey(false)
+    }
+
+    checkApiKey()
+  }, [])
+
+  useEffect(() => {
+    if (agent && hasApiKey) {
+      // Add greeting message when agent changes and API key is available
       const greetingMessage: Message = {
         id: `greeting-${agentId}`,
         role: 'assistant',
@@ -127,7 +154,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
       }
       setMessages([greetingMessage])
     }
-  }, [agentId, agent])
+  }, [agentId, agent, hasApiKey])
 
   const generateAgentResponse = (userMessage: string, agent: any): string => {
     const responses = {
@@ -188,7 +215,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!message.trim() || isLoading || !agent) return
+    if (!message.trim() || isLoading || !agent || !hasApiKey) return
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -203,19 +230,45 @@ export function AgentChat({ agentId }: AgentChatProps) {
     setIsLoading(true)
 
     try {
-      // Simulate AI thinking time
-      await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000))
+      // Get saved API key from localStorage
+      const savedSettings = localStorage.getItem('viby-settings')
+      let apiKey = ''
+      if (savedSettings) {
+        const settings = JSON.parse(savedSettings)
+        apiKey = settings.apiKeys?.openai || settings.apiKeys?.claude || settings.apiKeys?.gemini || ''
+      }
+
+      // Create AI service instance with the user's API key
+      const aiService = new (await import('../../lib/ai/openai')).OpenAIService({ apiKey })
+      
+      // Call the AI service with agent context
+      const response = await aiService.processAgentTask(
+        agentId,
+        'chat-conversation',
+        [`Respond to user message: "${userMessage.content}"`],
+        `You are having a conversation with a user. Stay in character as ${agent.name} (${agent.title}). Be helpful, professional, and provide valuable insights based on your expertise in ${agent.expertise.join(', ')}.`,
+        messages.map(m => `${m.role}: ${m.content}`)
+      )
       
       const agentMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: generateAgentResponse(userMessage.content, agent),
+        content: response.content || generateAgentResponse(userMessage.content, agent),
         timestamp: new Date().toISOString()
       }
 
       setMessages(prev => [...prev, agentMessage])
     } catch (error) {
       console.error('Error sending message:', error)
+      
+      // Fallback to mock response if API fails
+      const agentMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: generateAgentResponse(userMessage.content, agent),
+        timestamp: new Date().toISOString()
+      }
+      setMessages(prev => [...prev, agentMessage])
     } finally {
       setIsTyping(false)
       setIsLoading(false)
@@ -235,6 +288,107 @@ export function AgentChat({ agentId }: AgentChatProps) {
                 Back to Agents
               </Button>
             </Link>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // Show loading state while checking API key
+  if (isCheckingApiKey) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Card className="glass-card p-8 text-center">
+          <CardContent>
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-slate-400" />
+            <h3 className="text-xl font-semibold text-white mb-2">Checking Configuration</h3>
+            <p className="text-slate-400">Validating your AI service settings...</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // Show API key missing message
+  if (!hasApiKey) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Card className="glass-card p-8 text-center max-w-md">
+          <CardContent>
+            <div className="p-4 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl mb-6">
+              <Key className="h-8 w-8 text-white mx-auto" />
+            </div>
+            <h3 className="text-xl font-semibold text-white mb-4">AI Service Not Configured</h3>
+            <p className="text-slate-400 mb-6 leading-relaxed">
+              To chat with AI agents, you need to configure your AI service API keys. 
+              We support OpenAI, Claude, and Gemini APIs.
+            </p>
+            
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mb-6">
+              <div className="flex items-start space-x-3">
+                <Settings className="h-5 w-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                <div className="text-left">
+                  <h4 className="text-blue-300 font-medium mb-2">Quick Setup:</h4>
+                  <ol className="text-sm text-slate-300 space-y-1">
+                    <li>1. Go to Settings → API Keys</li>
+                    <li>2. Add your OpenAI, Claude, or Gemini API key</li>
+                    <li>3. Save changes</li>
+                    <li>4. Return here to start chatting!</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col space-y-3">
+              <Link href="/dashboard/settings">
+                <Button className="gradient-button w-full">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Configure API Keys
+                  <ExternalLink className="h-4 w-4 ml-2" />
+                </Button>
+              </Link>
+              
+              <Link href="/dashboard/agents">
+                <Button variant="outline" className="glass-button w-full">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Agents
+                </Button>
+              </Link>
+            </div>
+
+            <div className="mt-6 p-4 bg-slate-800/50 rounded-lg">
+              <p className="text-xs text-slate-400 mb-2">
+                <strong>Need an API key?</strong>
+              </p>
+              <div className="flex flex-wrap gap-2 text-xs">
+                <a 
+                  href="https://platform.openai.com/api-keys" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:text-blue-300 underline"
+                >
+                  OpenAI API Keys
+                </a>
+                <span className="text-slate-500">•</span>
+                <a 
+                  href="https://console.anthropic.com/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:text-blue-300 underline"
+                >
+                  Claude API Keys
+                </a>
+                <span className="text-slate-500">•</span>
+                <a 
+                  href="https://makersuite.google.com/app/apikey" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:text-blue-300 underline"
+                >
+                  Gemini API Keys
+                </a>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -320,13 +474,13 @@ export function AgentChat({ agentId }: AgentChatProps) {
             <Input
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder={`Message ${agent.name}...`}
-              disabled={isLoading}
+              placeholder={hasApiKey ? `Message ${agent.name}...` : "Configure API keys to start chatting..."}
+              disabled={isLoading || !hasApiKey}
               className="flex-1 glass-input"
             />
             <Button 
               type="submit" 
-              disabled={isLoading || !message.trim()}
+              disabled={isLoading || !message.trim() || !hasApiKey}
               className="gradient-button"
             >
               {isLoading ? (
@@ -336,6 +490,19 @@ export function AgentChat({ agentId }: AgentChatProps) {
               )}
             </Button>
           </form>
+          
+          {/* API Key Status Indicator */}
+          {!hasApiKey && (
+            <div className="text-center mt-2">
+              <p className="text-xs text-slate-400">
+                <Key className="h-3 w-3 inline mr-1" />
+                Chat requires API key configuration. 
+                <Link href="/dashboard/settings" className="text-blue-400 hover:text-blue-300 underline ml-1">
+                  Add API keys in Settings
+                </Link>
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
