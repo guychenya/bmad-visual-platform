@@ -185,7 +185,12 @@ export function AgentTabWorkspace({ projectId, templateId, onWorkflowComplete }:
       ? workflow.steps.filter(step => selectedAgentIds.includes(step.agentId))
       : workflow.steps;
 
-    const tabs: AgentTab[] = filteredSteps.map((step, index) => {
+    // Ensure orchestrator is always first if not already
+    const orchestratorStep = filteredSteps.find(step => step.agentId === 'bmad-orchestrator')
+    const otherSteps = filteredSteps.filter(step => step.agentId !== 'bmad-orchestrator')
+    const orderedSteps = orchestratorStep ? [orchestratorStep, ...otherSteps] : filteredSteps
+
+    const tabs: AgentTab[] = orderedSteps.map((step, index) => {
       const agent = BMAD_AGENTS.find(a => a.id === step.agentId)
       if (!agent) {
         console.warn('Agent not found:', step.agentId)
@@ -592,44 +597,55 @@ Please provide detailed, actionable guidance specific to this ${selectedTemplate
         </div>
       </div>
 
-      {/* Agent Tabs */}
-      <div className="border-b border-border bg-slate-900/50">
-        <div className="flex overflow-x-auto scrollbar-thin scrollbar-thumb-slate-600">
-          {agentTabs.map((tab) => {
-            const IconComponent = tab.icon
-            const StatusIcon = getStatusIcon(tab.status)
-            const isActive = activeTabId === tab.id
-            
-            return (
-              <button
-                key={tab.id}
-                onClick={() => tab.isEnabled && setActiveTabId(tab.id)}
-                disabled={!tab.isEnabled}
-                className={`flex items-center space-x-3 px-6 py-4 border-r border-border transition-all whitespace-nowrap ${
-                  isActive 
-                    ? 'bg-background border-b-2 border-blue-400 text-white' 
-                    : tab.isEnabled 
-                      ? 'text-slate-400 hover:text-white hover:bg-white/5' 
-                      : 'text-slate-600 cursor-not-allowed'
-                }`}
-              >
-                <div className={`p-1.5 bg-gradient-to-r ${tab.color} rounded-lg ${
-                  !tab.isEnabled ? 'opacity-50' : ''
-                }`}>
-                  <IconComponent className="h-4 w-4 text-white" />
-                </div>
-                <span className="font-medium">{tab.name}</span>
-                <StatusIcon className={`h-4 w-4 ${getStatusColor(tab.status)} ${
-                  tab.status === 'working' ? 'animate-spin' : ''
-                }`} />
-              </button>
-            )
-          })}
+      {/* Agent Tabs - Vertical Layout */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Sidebar with Agent List */}
+        <div className="w-80 border-r border-border bg-slate-900/50 overflow-y-auto">
+          <div className="p-4">
+            <h3 className="text-white font-semibold mb-4 flex items-center">
+              <Users className="h-5 w-5 mr-2" />
+              BMad Agents
+            </h3>
+            <div className="space-y-2">
+              {agentTabs.map((tab) => {
+                const IconComponent = tab.icon
+                const StatusIcon = getStatusIcon(tab.status)
+                const isActive = activeTabId === tab.id
+                
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => tab.isEnabled && setActiveTabId(tab.id)}
+                    disabled={!tab.isEnabled}
+                    className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-all ${
+                      isActive 
+                        ? 'bg-blue-600/20 border border-blue-400/50 text-white' 
+                        : tab.isEnabled 
+                          ? 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10' 
+                          : 'text-slate-600 cursor-not-allowed opacity-50 border border-transparent'
+                    }`}
+                  >
+                    <div className={`p-2 bg-gradient-to-r ${tab.color} rounded-lg ${
+                      !tab.isEnabled ? 'opacity-50' : ''
+                    }`}>
+                      <IconComponent className="h-4 w-4 text-white" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <div className="font-medium text-sm">{tab.name}</div>
+                      <div className="text-xs opacity-75">{tab.currentTask || 'Ready'}</div>
+                    </div>
+                    <StatusIcon className={`h-4 w-4 ${getStatusColor(tab.status)} ${
+                      tab.status === 'working' ? 'animate-spin' : ''
+                    }`} />
+                  </button>
+                )
+              })}
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Chat Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Main Chat Area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
         {agentTabs.length === 0 ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
@@ -786,6 +802,7 @@ Please provide detailed, actionable guidance specific to this ${selectedTemplate
             </div>
           </>
         )}
+        </div>
       </div>
     </div>
   )
