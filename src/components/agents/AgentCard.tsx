@@ -15,6 +15,13 @@ interface AgentCardProps {
 }
 
 export function AgentCard({ agent, onStartChat, className }: AgentCardProps) {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      onStartChat(agent.id)
+    }
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -24,8 +31,13 @@ export function AgentCard({ agent, onStartChat, className }: AgentCardProps) {
       className={className}
     >
       <Card 
-        className="h-full hover:shadow-lg transition-shadow cursor-pointer"
+        role="button"
+        tabIndex={0}
+        aria-label={`Chat with ${agent.name}, ${agent.title}. Rating: 4.9 stars. Expertise: ${agent.personality.expertise.slice(0, 3).join(', ')}`}
+        className="h-full hover:shadow-lg transition-shadow cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
         style={{ borderColor: agent.color.secondary }}
+        onClick={() => onStartChat(agent.id)}
+        onKeyDown={handleKeyDown}
       >
         <CardHeader className="pb-3">
           <div className="flex items-center space-x-3">
@@ -69,17 +81,21 @@ export function AgentCard({ agent, onStartChat, className }: AgentCardProps) {
           </div>
           
           <div className="flex items-center justify-between pt-2">
-            <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              <span>4.9</span>
+            <div className="flex items-center space-x-1 text-sm text-muted-foreground" aria-label="Rating">
+              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" aria-hidden="true" />
+              <span>4.9 stars</span>
             </div>
             
             <Button 
-              onClick={() => onStartChat(agent.id)}
+              onClick={(e) => {
+                e.stopPropagation()
+                onStartChat(agent.id)
+              }}
               style={{ backgroundColor: agent.color.primary }}
-              className="text-white hover:opacity-90"
+              className="text-white hover:opacity-90 focus:ring-2 focus:ring-offset-2"
+              aria-label={`Start chat with ${agent.name}`}
             >
-              <MessageSquare className="h-4 w-4 mr-2" />
+              <MessageSquare className="h-4 w-4 mr-2" aria-hidden="true" />
               Chat
             </Button>
           </div>

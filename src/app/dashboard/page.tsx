@@ -97,10 +97,10 @@ export default function Dashboard() {
             <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-accent rounded-full animate-ping"></div>
           </div>
         </div>
-        <h1 className="text-4xl md:text-6xl font-bold gradient-text mb-4">
+        <h1 className="responsive-text-6xl font-bold gradient-text mb-4">
           Welcome to Viby.ai
         </h1>
-        <p className="text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed">
+        <p className="responsive-text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed">
           Experience the power of AI-driven development with beautiful, intuitive interfaces. 
           Your intelligent agents are ready to transform your development workflow.
         </p>
@@ -113,11 +113,11 @@ export default function Dashboard() {
             <CardHeader>
               <CardTitle className="flex items-center space-x-3">
                 <div className={`p-3 bg-gradient-to-r ${action.gradient} rounded-xl group-hover:scale-110 transition-transform`}>
-                  <action.icon className="h-6 w-6 text-white" />
+                  <action.icon className="h-6 w-6 text-white" aria-hidden="true" />
                 </div>
-                <span className="text-white">{action.title}</span>
+                <span className="responsive-text-lg text-white">{action.title}</span>
               </CardTitle>
-              <CardDescription className="text-slate-400">
+              <CardDescription className="responsive-text-sm text-slate-400">
                 {action.description}
               </CardDescription>
             </CardHeader>

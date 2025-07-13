@@ -472,6 +472,26 @@
   }
 }
 
+  /* Responsive typography */
+  .responsive-text-xs { @apply text-xs sm:text-sm; }
+  .responsive-text-sm { @apply text-sm sm:text-base; }
+  .responsive-text-base { @apply text-base sm:text-lg; }
+  .responsive-text-lg { @apply text-lg sm:text-xl; }
+  .responsive-text-xl { @apply text-xl sm:text-2xl; }
+  .responsive-text-2xl { @apply text-2xl sm:text-3xl lg:text-4xl; }
+  .responsive-text-3xl { @apply text-3xl sm:text-4xl lg:text-5xl; }
+  .responsive-text-4xl { @apply text-4xl sm:text-5xl lg:text-6xl; }
+  .responsive-text-6xl { @apply text-4xl sm:text-5xl lg:text-6xl xl:text-7xl; }
+
+  /* Safe area support for mobile devices */
+  .safe-area-pb {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+  
+  .safe-area-pt {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+
 /* Responsive glass effects */
 @media (max-width: 768px) {
   .glass-card {

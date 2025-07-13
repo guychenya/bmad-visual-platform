@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -24,6 +24,67 @@ export function AddAgentModal({ isOpen, onClose, onAgentCreated }: AddAgentModal
     color: 'Blue'
   })
   const [isCreating, setIsCreating] = useState(false)
+  const modalRef = useRef<HTMLDivElement>(null)
+  const firstInputRef = useRef<HTMLInputElement>(null)
+
+  // Focus management
+  useEffect(() => {
+    if (isOpen && firstInputRef.current) {
+      firstInputRef.current.focus()
+    }
+  }, [isOpen])
+
+  // Handle escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose()
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape)
+      document.body.style.overflow = 'hidden'
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape)
+      document.body.style.overflow = 'unset'
+    }
+  }, [isOpen, onClose])
+
+  // Focus trap
+  useEffect(() => {
+    if (!isOpen) return
+
+    const modal = modalRef.current
+    if (!modal) return
+
+    const focusableElements = modal.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    )
+    const firstElement = focusableElements[0] as HTMLElement
+    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement
+
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key === 'Tab') {
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            e.preventDefault()
+            lastElement.focus()
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault()
+            firstElement.focus()
+          }
+        }
+      }
+    }
+
+    modal.addEventListener('keydown', handleTab)
+    return () => modal.removeEventListener('keydown', handleTab)
+  }, [isOpen])
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -79,21 +140,40 @@ export function AddAgentModal({ isOpen, onClose, onAgentCreated }: AddAgentModal
   const colorKeys = Object.keys(agentColors)
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="glass-card max-w-2xl w-full animate-scale-in max-h-[90vh] overflow-y-auto">
+    <div 
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose()
+        }
+      }}
+    >
+      <Card 
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+        aria-describedby="modal-description"
+        className="glass-card max-w-2xl w-full animate-scale-in max-h-[90vh] overflow-y-auto"
+      >
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="p-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl">
-                <Plus className="h-6 w-6 text-white" />
+                <Plus className="h-6 w-6 text-white" aria-hidden="true" />
               </div>
               <div>
-                <CardTitle className="text-2xl text-white">Create Custom Agent</CardTitle>
-                <p className="text-slate-400">Design your specialized AI assistant</p>
+                <CardTitle id="modal-title" className="text-2xl text-white">Create Custom Agent</CardTitle>
+                <p id="modal-description" className="text-slate-400">Design your specialized AI assistant</p>
               </div>
             </div>
-            <Button variant="outline" onClick={onClose} className="glass-button">
-              <X className="h-4 w-4" />
+            <Button 
+              variant="outline" 
+              onClick={onClose} 
+              className="glass-button"
+              aria-label="Close modal"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
         </CardHeader>
@@ -104,13 +184,18 @@ export function AddAgentModal({ isOpen, onClose, onAgentCreated }: AddAgentModal
             <div className="space-y-2">
               <Label htmlFor="agentName" className="text-white">Agent Name</Label>
               <Input
+                ref={firstInputRef}
                 id="agentName"
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 placeholder="e.g., Data Scientist, Marketing Expert"
                 required
                 className="glass-input"
+                aria-describedby="agentName-help"
               />
+              <p id="agentName-help" className="text-xs text-slate-400">
+                Give your agent a descriptive name that reflects its role
+              </p>
             </div>
 
             {/* Description */}
@@ -159,7 +244,7 @@ export function AddAgentModal({ isOpen, onClose, onAgentCreated }: AddAgentModal
             {/* Icon Selection */}
             <div className="space-y-2">
               <Label className="text-white">Icon</Label>
-              <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
+              <div className="grid grid-cols-4 md:grid-cols-6 gap-2" role="radiogroup" aria-label="Choose agent icon">
                 {iconKeys.map((iconKey) => {
                   const Icon = agentIcons[iconKey as keyof typeof agentIcons]
                   const isSelected = formData.icon === iconKey
@@ -167,13 +252,16 @@ export function AddAgentModal({ isOpen, onClose, onAgentCreated }: AddAgentModal
                     <Button
                       key={iconKey}
                       type="button"
+                      role="radio"
+                      aria-checked={isSelected}
                       variant={isSelected ? "default" : "outline"}
                       onClick={() => handleInputChange('icon', iconKey)}
                       className={`flex flex-col items-center space-y-1 h-16 ${
                         isSelected ? "gradient-button" : "glass-button"
                       }`}
+                      aria-label={`Select ${iconKey} icon`}
                     >
-                      <Icon className="h-4 w-4" />
+                      <Icon className="h-4 w-4" aria-hidden="true" />
                       <span className="text-xs">{iconKey}</span>
                     </Button>
                   )
@@ -184,13 +272,15 @@ export function AddAgentModal({ isOpen, onClose, onAgentCreated }: AddAgentModal
             {/* Color Selection */}
             <div className="space-y-2">
               <Label className="text-white">Color Theme</Label>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-2" role="radiogroup" aria-label="Choose agent color theme">
                 {colorKeys.map((colorKey) => {
                   const isSelected = formData.color === colorKey
                   return (
                     <Button
                       key={colorKey}
                       type="button"
+                      role="radio"
+                      aria-checked={isSelected}
                       variant={isSelected ? "default" : "outline"}
                       onClick={() => handleInputChange('color', colorKey)}
                       className={`flex items-center justify-center h-12 ${
@@ -201,6 +291,7 @@ export function AddAgentModal({ isOpen, onClose, onAgentCreated }: AddAgentModal
                           ? `linear-gradient(to right, ${agentColors[colorKey as keyof typeof agentColors].replace('from-', '').replace(' to-', ', ').replace('-500', '').replace('-400', '')})`
                           : undefined
                       }}
+                      aria-label={`Select ${colorKey} color theme`}
                     >
                       <span className={`text-xs font-medium ${isSelected ? 'text-white' : 'text-slate-300'}`}>
                         {colorKey}
@@ -254,15 +345,19 @@ export function AddAgentModal({ isOpen, onClose, onAgentCreated }: AddAgentModal
                 type="submit"
                 className="flex-1 gradient-button"
                 disabled={!formData.name.trim() || !formData.description.trim() || isCreating}
+                aria-describedby={isCreating ? "creating-status" : undefined}
               >
                 {isCreating ? (
                   <>
-                    <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Creating Agent...
+                    <div 
+                      className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"
+                      aria-hidden="true"
+                    ></div>
+                    <span id="creating-status">Creating Agent...</span>
                   </>
                 ) : (
                   <>
-                    <Plus className="h-4 w-4 mr-2" />
+                    <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
                     Create Agent
                   </>
                 )}

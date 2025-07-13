@@ -45,6 +45,14 @@ export default function DashboardLayout({
   return (
     <HierarchyProvider>
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      {/* Skip Navigation */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-purple-600 focus:text-white focus:rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+      >
+        Skip to main content
+      </a>
+      
       {/* Navigation Header */}
       <header className="glass-nav sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -60,7 +68,7 @@ export default function DashboardLayout({
                 </div>
               </Link>
               
-              <nav className="hidden md:flex space-x-1">
+              <nav className="hidden md:flex space-x-1" role="navigation" aria-label="Main navigation">
                 {navigation.map((item) => {
                   const Icon = item.icon
                   const isActive = pathname === item.href
@@ -68,13 +76,14 @@ export default function DashboardLayout({
                     <Link
                       key={item.name}
                       href={item.href}
-                      className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
                         isActive
                           ? 'bg-gradient-viby text-white shadow-lg'
                           : 'text-slate-300 hover:text-white hover:bg-white/10'
                       }`}
+                      aria-current={isActive ? 'page' : undefined}
                     >
-                      <Icon className="h-4 w-4" />
+                      <Icon className="h-4 w-4" aria-hidden="true" />
                       <span>{item.name}</span>
                     </Link>
                   )
@@ -94,9 +103,10 @@ export default function DashboardLayout({
               <Button 
                 variant="outline" 
                 onClick={signOut}
-                className="glass-button hover:scale-105 transition-transform"
+                className="glass-button hover:scale-105 transition-transform focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                aria-label="Sign out of your account"
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-4 w-4" aria-hidden="true" />
                 <span className="hidden sm:inline ml-2">Sign Out</span>
               </Button>
             </div>
@@ -105,15 +115,19 @@ export default function DashboardLayout({
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="animate-fade-in">
           {children}
         </div>
       </main>
       
       {/* Mobile Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 glass-nav border-t">
-        <div className="flex justify-around py-2">
+      <nav 
+        className="md:hidden fixed bottom-0 left-0 right-0 glass-nav border-t safe-area-pb"
+        role="navigation"
+        aria-label="Mobile navigation"
+      >
+        <div className="flex justify-around py-3">
           {navigation.slice(0, 5).map((item) => {
             const Icon = item.icon
             const isActive = pathname === item.href
@@ -121,13 +135,14 @@ export default function DashboardLayout({
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex flex-col items-center space-y-1 px-2 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                className={`flex flex-col items-center space-y-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 min-h-[48px] min-w-[48px] ${
                   isActive
                     ? 'text-purple-400'
                     : 'text-slate-400 hover:text-white'
                 }`}
+                aria-current={isActive ? 'page' : undefined}
               >
-                <Icon className="h-5 w-5" />
+                <Icon className="h-6 w-6" aria-hidden="true" />
                 <span>{item.name}</span>
               </Link>
             )
