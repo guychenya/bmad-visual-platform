@@ -5,21 +5,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui
 import { Button } from '../../../components/ui/button'
 import { Upload, MessageSquare, FileText, Download, CheckCircle, Sparkles, Users, ArrowRight, Bot } from 'lucide-react'
 import { PRDUpload } from '../../../components/upload/PRDUpload'
-import { BMadAgentCollaboration } from '../../../components/collaboration/BMadAgentCollaboration'
+import { AgentSelector } from '../../../components/workflow/AgentSelector';
 
 export default function CreateProjectPage() {
-  const [currentStep, setCurrentStep] = useState<'upload' | 'workflow' | 'complete'>('upload')
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
-  const [uploadedContent, setUploadedContent] = useState('')
-  const [projectName, setProjectName] = useState('')
-  const [workflowResult, setWorkflowResult] = useState<any>(null)
+  const [currentStep, setCurrentStep] = useState<'upload' | 'select-agents' | 'workflow' | 'complete'>('upload');
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadedContent, setUploadedContent] = useState('');
+  const [projectName, setProjectName] = useState('');
+  const [workflowResult, setWorkflowResult] = useState<any>(null);
+  const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
 
   const handleFileUploaded = (file: File, content: string) => {
-    setUploadedFile(file)
-    setUploadedContent(content)
-    const name = file.name ? file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, ' ') : 'New Project'
-    setProjectName(name || 'New Project')
-  }
+    setUploadedFile(file);
+    setUploadedContent(content);
+    const name = file.name ? file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, ' ') : 'New Project';
+    setProjectName(name || 'New Project');
+    setCurrentStep('select-agents');
+  };
 
   const handleProjectStart = () => {
     setCurrentStep('workflow')
@@ -63,9 +65,10 @@ export default function CreateProjectPage() {
 
   const steps = [
     { id: 'upload', name: 'Upload Requirements', icon: Upload, step: 1 },
-    { id: 'workflow', name: 'BMad Workflow', icon: Users, step: 2 },
-    { id: 'complete', name: 'Download Results', icon: Download, step: 3 }
-  ]
+    { id: 'select-agents', name: 'Select Agents', icon: Users, step: 2 },
+    { id: 'workflow', name: 'BMad Workflow', icon: Users, step: 3 },
+    { id: 'complete', name: 'Download Results', icon: Download, step: 4 }
+  ];
 
   const getCurrentStepIndex = () => steps.findIndex(step => step.id === currentStep)
 
@@ -148,12 +151,30 @@ export default function CreateProjectPage() {
           </div>
         )}
 
+        {currentStep === 'select-agents' && (
+          <div className="space-y-6">
+            <Card className="glass-card">
+              <CardHeader>
+                <CardTitle className="text-white">Select Your Team</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AgentSelector onSelectionChange={setSelectedAgentIds} />
+              </CardContent>
+            </Card>
+            <Button onClick={() => setCurrentStep('workflow')} className="gradient-button">
+              <ArrowRight className="h-4 w-4 mr-2" />
+              Run Workflow
+            </Button>
+          </div>
+        )}
+
         {currentStep === 'workflow' && (
           <BMadAgentCollaboration
             projectName={projectName}
             uploadedContent={uploadedContent}
             onComplete={handleWorkflowComplete}
             showDownloads={true}
+            selectedAgentIds={selectedAgentIds}
           />
         )}
 
