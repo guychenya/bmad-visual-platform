@@ -116,10 +116,10 @@ export default function DashboardLayout({
               <div className="hidden sm:flex items-center space-x-2 text-sm text-slate-300">
                 <div className="w-8 h-8 bg-gradient-viby rounded-full flex items-center justify-center">
                   <span className="text-white font-medium">
-                    {(profile?.full_name || user.email)?.charAt(0)?.toUpperCase()}
+                    {(profile?.full_name || user?.email)?.charAt(0)?.toUpperCase()}
                   </span>
                 </div>
-                <span>{profile?.full_name || user.email}</span>
+                <span>{profile?.full_name || user?.email}</span>
               </div>
               <Button 
                 variant="outline" 

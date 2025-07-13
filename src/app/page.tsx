@@ -11,15 +11,9 @@ export default function Home() {
     // Check if auth bypass is enabled
     const bypassAuth = process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true'
     
-    console.log('[HomePage] Environment variable NEXT_PUBLIC_BYPASS_AUTH:', process.env.NEXT_PUBLIC_BYPASS_AUTH)
-    console.log('[HomePage] Bypass auth status:', bypassAuth)
-    
     if (bypassAuth) {
-      console.log('[HomePage] Redirecting to chat interface')
       // Redirect to simplified chat interface
       router.push('/chat?template=Custom%20Project&project=new')
-    } else {
-      console.log('[HomePage] Auth bypass disabled, showing login')
     }
   }, [router])
 
