@@ -435,7 +435,7 @@ export class HierarchyService {
     comments?: string
   ): Promise<boolean> {
     // Find the authorization across all resources
-    for (const workflow of this.workflows.values()) {
+    for (const workflow of Array.from(this.workflows.values())) {
       const authIndex = workflow.authorizations.findIndex(auth => auth.id === authId)
       if (authIndex !== -1) {
         workflow.authorizations[authIndex].status = status
@@ -699,7 +699,7 @@ export class HierarchyService {
     const errors: string[] = []
 
     // Validate organization-project relationships
-    for (const [orgId, org] of this.organizations) {
+    for (const [orgId, org] of Array.from(this.organizations)) {
       for (const projectId of org.projects) {
         const project = this.projects.get(projectId)
         if (!project) {
@@ -711,7 +711,7 @@ export class HierarchyService {
     }
 
     // Validate project-workflow relationships
-    for (const [projectId, project] of this.projects) {
+    for (const [projectId, project] of Array.from(this.projects)) {
       for (const projectWorkflow of project.workflows) {
         const workflow = this.workflows.get(projectWorkflow.id)
         if (!workflow) {

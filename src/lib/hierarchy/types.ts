@@ -108,8 +108,8 @@ export interface Project {
 export interface ProjectWorkflow {
   id: string
   name: string
-  type: 'bmad-methodology' | 'agile' | 'waterfall' | 'kanban' | 'custom'
-  status: 'draft' | 'active' | 'paused' | 'completed'
+  type: WorkflowType
+  status: WorkflowStatus
   phases: WorkflowPhase[]
   currentPhase: string
   assignedAgents: string[]

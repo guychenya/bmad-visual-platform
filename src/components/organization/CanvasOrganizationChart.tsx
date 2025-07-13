@@ -6,7 +6,8 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { 
   Users, Crown, Plus, Trash2, Save, X, Edit3, Download,
-  Target, Code, Palette, Shield, BarChart, Settings, Lightbulb, Code2, Cpu
+  Target, Code, Palette, Shield, BarChart, Settings, Lightbulb, Code2, Cpu,
+  ZoomIn, ZoomOut, RotateCcw, Maximize2, Move
 } from 'lucide-react'
 import { Organization, OrganizationNode, AgentRole } from '../../lib/organization/types'
 
@@ -54,6 +55,18 @@ export default function CanvasOrganizationChart({
   const [newAgentData, setNewAgentData] = useState({ name: '', role: '', department: '', parentId: '' })
   const [canvasNodes, setCanvasNodes] = useState<CanvasNode[]>([])
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 })
+  
+  // Zoom and Pan state
+  const [zoom, setZoom] = useState(1)
+  const [pan, setPan] = useState({ x: 0, y: 0 })
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [lastPan, setLastPan] = useState({ x: 0, y: 0 })
+  
+  // Drag and drop state
+  const [draggedAgent, setDraggedAgent] = useState<string | null>(null)
+  const [dropTarget, setDropTarget] = useState<string | null>(null)
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
 
   // Build canvas node tree
   const buildCanvasNodes = useCallback((org: Organization): CanvasNode[] => {
@@ -293,17 +306,121 @@ export default function CanvasOrganizationChart({
     setNewAgentData({ name: '', role: '', department: '', parentId: '' })
   }, [newAgentData, organization, onOrganizationUpdate])
 
+  // Handle agent reassignment via drag and drop
+  const handleAgentReassignment = useCallback((agentId: string, newParentId: string | null) => {
+    if (!onOrganizationUpdate || agentId === newParentId) return
+
+    const updatedOrg = { ...organization }
+    const agent = updatedOrg.agents[agentId]
+    if (!agent) return
+
+    // Remove from old parent's direct reports
+    if (agent.reportsTo && updatedOrg.agents[agent.reportsTo]) {
+      updatedOrg.agents[agent.reportsTo].directReports = 
+        updatedOrg.agents[agent.reportsTo].directReports.filter(id => id !== agentId)
+    }
+
+    // Update agent's reporting relationship
+    agent.reportsTo = newParentId || undefined
+
+    // Add to new parent's direct reports
+    if (newParentId && updatedOrg.agents[newParentId]) {
+      if (!updatedOrg.agents[newParentId].directReports.includes(agentId)) {
+        updatedOrg.agents[newParentId].directReports.push(agentId)
+      }
+    }
+
+    onOrganizationUpdate(updatedOrg)
+  }, [organization, onOrganizationUpdate])
+
+  // Drag handlers
+  const handleDragStart = useCallback((e: React.DragEvent, agentId: string) => {
+    if (!editable || !editMode) return
+    
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', agentId)
+    setDraggedAgent(agentId)
+    
+    // Calculate drag offset
+    const rect = (e.target as HTMLElement).getBoundingClientRect()
+    setDragOffset({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    })
+  }, [editable, editMode])
+
+  const handleDragOver = useCallback((e: React.DragEvent, targetId: string) => {
+    if (!draggedAgent || draggedAgent === targetId) return
+    
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDropTarget(targetId)
+  }, [draggedAgent])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    // Only clear drop target if we're leaving the node completely
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const x = e.clientX
+    const y = e.clientY
+    
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      setDropTarget(null)
+    }
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent, targetId: string) => {
+    e.preventDefault()
+    
+    const draggedId = e.dataTransfer.getData('text/plain')
+    if (!draggedId || draggedId === targetId) return
+
+    // Prevent dropping an agent on its own descendant
+    const isDescendant = (agentId: string, potentialDescendantId: string): boolean => {
+      const agent = organization.agents[agentId]
+      if (!agent) return false
+      
+      return agent.directReports.some(childId => 
+        childId === potentialDescendantId || isDescendant(childId, potentialDescendantId)
+      )
+    }
+
+    if (isDescendant(draggedId, targetId)) {
+      console.warn('Cannot move agent to its own descendant')
+      return
+    }
+
+    handleAgentReassignment(draggedId, targetId)
+    setDraggedAgent(null)
+    setDropTarget(null)
+  }, [organization, handleAgentReassignment])
+
+  const handleDragEnd = useCallback(() => {
+    setDraggedAgent(null)
+    setDropTarget(null)
+  }, [])
+
   const renderNode = (node: CanvasNode) => {
     const IconComponent = getAgentIcon(node.agent.role)
     const agentColor = getAgentColor(node.agent)
     const isSelected = selectedNode === node.id
+    const isDragTarget = dropTarget === node.id
+    const isBeingDragged = draggedAgent === node.id
 
     return (
       <div
         key={node.id}
+        draggable={editable && editMode}
+        onDragStart={(e) => handleDragStart(e, node.id)}
+        onDragOver={(e) => handleDragOver(e, node.id)}
+        onDragLeave={handleDragLeave}
+        onDrop={(e) => handleDrop(e, node.id)}
+        onDragEnd={handleDragEnd}
         className={`absolute bg-gradient-to-br ${agentColor} rounded-lg border-2 
           ${isSelected ? 'border-blue-400 shadow-lg shadow-blue-400/25' : 'border-white/20'} 
-          shadow-lg cursor-pointer transition-all duration-200 hover:scale-105`}
+          ${isDragTarget ? 'border-green-400 shadow-lg shadow-green-400/25 scale-105' : ''} 
+          ${isBeingDragged ? 'opacity-50 scale-95' : ''} 
+          shadow-lg cursor-pointer transition-all duration-200 hover:scale-105
+          ${editable && editMode ? 'cursor-grab active:cursor-grabbing' : ''}`}
         style={{
           left: node.x,
           top: node.y,
@@ -321,6 +438,11 @@ export default function CanvasOrganizationChart({
             <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
               <IconComponent className="w-5 h-5 text-white" />
             </div>
+            {editable && editMode && (
+              <div className="ml-1 opacity-60">
+                <Move className="w-3 h-3 text-white" />
+              </div>
+            )}
           </div>
           
           {/* Agent Info */}
@@ -386,7 +508,7 @@ export default function CanvasOrganizationChart({
             </Button>
             {editMode && (
               <div className="px-3 py-2 bg-green-100 text-green-800 rounded-md text-sm font-medium">
-                ✏️ Edit Mode - Click any agent, then click "Add" to add subordinates
+                ✏️ Edit Mode - Click "Add" to add subordinates • Drag agents to reassign reporting relationships
               </div>
             )}
             <Button variant="outline" className="glass-button">
@@ -399,7 +521,27 @@ export default function CanvasOrganizationChart({
 
       {/* Canvas Organization Chart */}
       <Card className="glass-card p-6">
-        <div ref={containerRef} className="relative overflow-auto border rounded-lg bg-slate-900/50">
+        <div 
+          ref={containerRef} 
+          className="relative overflow-auto border rounded-lg bg-slate-900/50"
+          onDragOver={(e) => {
+            if (draggedAgent) {
+              e.preventDefault()
+              e.dataTransfer.dropEffect = 'move'
+            }
+          }}
+          onDrop={(e) => {
+            if (draggedAgent) {
+              e.preventDefault()
+              const draggedId = e.dataTransfer.getData('text/plain')
+              if (draggedId) {
+                handleAgentReassignment(draggedId, null) // Make it a root node
+                setDraggedAgent(null)
+                setDropTarget(null)
+              }
+            }
+          }}
+        >
           <canvas
             ref={canvasRef}
             width={canvasSize.width}
@@ -412,6 +554,11 @@ export default function CanvasOrganizationChart({
             style={{ width: canvasSize.width, height: canvasSize.height }}
           >
             {renderAllNodes(canvasNodes)}
+            {draggedAgent && (
+              <div className="absolute top-4 left-4 bg-blue-600/90 text-white px-3 py-2 rounded-md text-sm font-medium">
+                🖱️ Drop on another agent to reassign • Drop on empty area to make root level
+              </div>
+            )}
           </div>
         </div>
       </Card>
