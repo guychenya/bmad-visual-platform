@@ -8,7 +8,7 @@ export default function AgentChatPage() {
   const agentId = params.id as string
 
   return (
-    <div className="h-[calc(100vh-120px)]">
+    <div className="fixed inset-0 z-40">
       <AgentChat agentId={agentId} />
     </div>
   )

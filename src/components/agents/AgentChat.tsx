@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
-import { Send, Loader2, ArrowLeft, Brain, Code, TestTube, Users, User, Palette, Settings, Key, ExternalLink } from 'lucide-react'
+import { Send, Loader2, ArrowLeft, Brain, Code, TestTube, Users, User, Palette, Settings, Key, ExternalLink, Plus, MessageSquare, ChevronLeft, Menu, History, MoreHorizontal } from 'lucide-react'
 import Link from 'next/link'
 import { TypingIndicator } from './TypingIndicator'
 import { openAIService } from '../../lib/ai/openai'
@@ -18,6 +18,16 @@ interface Message {
 
 interface AgentChatProps {
   agentId: string
+}
+
+interface Conversation {
+  id: string
+  title: string
+  agentId: string
+  agentName: string
+  lastMessage: string
+  timestamp: string
+  messages: Message[]
 }
 
 const BUILT_IN_AGENTS = {
@@ -108,6 +118,9 @@ export function AgentChat({ agentId }: AgentChatProps) {
   const [hasApiKey, setHasApiKey] = useState(false)
   const [isCheckingApiKey, setIsCheckingApiKey] = useState(true)
   const [allAgents, setAllAgents] = useState<Record<string, any>>({})
+  const [conversations, setConversations] = useState<Conversation[]>([])
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   
   // Load all agents (built-in + custom)
@@ -135,7 +148,20 @@ export function AgentChat({ agentId }: AgentChatProps) {
       setAllAgents(agents)
     }
 
+    const loadConversations = () => {
+      const savedConversations = localStorage.getItem('viby-conversations')
+      if (savedConversations) {
+        try {
+          const parsed = JSON.parse(savedConversations)
+          setConversations(parsed)
+        } catch (error) {
+          console.error('Failed to load conversations:', error)
+        }
+      }
+    }
+
     loadAllAgents()
+    loadConversations()
   }, [])
   
   const agent = allAgents[agentId]
@@ -174,16 +200,40 @@ export function AgentChat({ agentId }: AgentChatProps) {
 
   useEffect(() => {
     if (agent && hasApiKey) {
-      // Add greeting message when agent changes and API key is available
-      const greetingMessage: Message = {
-        id: `greeting-${agentId}`,
-        role: 'assistant',
-        content: agent.greeting,
-        timestamp: new Date().toISOString()
+      // Check for existing conversation for this agent
+      const existingConversation = conversations.find(conv => conv.agentId === agentId)
+      
+      if (existingConversation) {
+        setCurrentConversationId(existingConversation.id)
+        setMessages(existingConversation.messages)
+      } else {
+        // Create new conversation with greeting
+        const greetingMessage: Message = {
+          id: `greeting-${agentId}`,
+          role: 'assistant',
+          content: agent.greeting,
+          timestamp: new Date().toISOString()
+        }
+        
+        const newConversation: Conversation = {
+          id: `conv-${Date.now()}`,
+          title: `Chat with ${agent.name}`,
+          agentId: agentId,
+          agentName: agent.name,
+          lastMessage: agent.greeting.substring(0, 50) + '...',
+          timestamp: new Date().toISOString(),
+          messages: [greetingMessage]
+        }
+        
+        setCurrentConversationId(newConversation.id)
+        setMessages([greetingMessage])
+        setConversations(prev => [newConversation, ...prev])
+        
+        // Save to localStorage
+        localStorage.setItem('viby-conversations', JSON.stringify([newConversation, ...conversations]))
       }
-      setMessages([greetingMessage])
     }
-  }, [agentId, agent, hasApiKey])
+  }, [agentId, agent, hasApiKey, conversations])
 
   const generateAgentResponse = (userMessage: string, agent: any): string => {
     const responses = {
@@ -285,7 +335,11 @@ export function AgentChat({ agentId }: AgentChatProps) {
         timestamp: new Date().toISOString()
       }
 
-      setMessages(prev => [...prev, agentMessage])
+      const updatedMessages = [...messages, userMessage, agentMessage]
+      setMessages(updatedMessages)
+      
+      // Update conversation in localStorage
+      updateConversation(updatedMessages, userMessage.content)
     } catch (error) {
       console.error('Error sending message:', error)
       
@@ -296,10 +350,86 @@ export function AgentChat({ agentId }: AgentChatProps) {
         content: generateAgentResponse(userMessage.content, agent),
         timestamp: new Date().toISOString()
       }
-      setMessages(prev => [...prev, agentMessage])
+      const updatedMessages = [...messages, userMessage, agentMessage]
+      setMessages(updatedMessages)
+      
+      // Update conversation in localStorage
+      updateConversation(updatedMessages, userMessage.content)
     } finally {
       setIsTyping(false)
       setIsLoading(false)
+    }
+  }
+  
+  const updateConversation = (updatedMessages: Message[], lastUserMessage: string) => {
+    if (!currentConversationId) return
+    
+    const updatedConversations = conversations.map(conv => {
+      if (conv.id === currentConversationId) {
+        return {
+          ...conv,
+          messages: updatedMessages,
+          lastMessage: lastUserMessage.substring(0, 50) + (lastUserMessage.length > 50 ? '...' : ''),
+          timestamp: new Date().toISOString()
+        }
+      }
+      return conv
+    })
+    
+    setConversations(updatedConversations)
+    localStorage.setItem('viby-conversations', JSON.stringify(updatedConversations))
+  }
+  
+  const createNewConversation = () => {
+    if (!agent || !hasApiKey) return
+    
+    const greetingMessage: Message = {
+      id: `greeting-${Date.now()}`,
+      role: 'assistant',
+      content: agent.greeting,
+      timestamp: new Date().toISOString()
+    }
+    
+    const newConversation: Conversation = {
+      id: `conv-${Date.now()}`,
+      title: `New Chat with ${agent.name}`,
+      agentId: agentId,
+      agentName: agent.name,
+      lastMessage: agent.greeting.substring(0, 50) + '...',
+      timestamp: new Date().toISOString(),
+      messages: [greetingMessage]
+    }
+    
+    setCurrentConversationId(newConversation.id)
+    setMessages([greetingMessage])
+    setConversations(prev => [newConversation, ...prev])
+    
+    // Save to localStorage
+    localStorage.setItem('viby-conversations', JSON.stringify([newConversation, ...conversations]))
+  }
+  
+  const loadConversation = (conversationId: string) => {
+    const conversation = conversations.find(conv => conv.id === conversationId)
+    if (conversation) {
+      setCurrentConversationId(conversationId)
+      setMessages(conversation.messages)
+      
+      // If switching to different agent, update URL
+      if (conversation.agentId !== agentId) {
+        window.location.href = `/dashboard/agents/${conversation.agentId}`
+      }
+    }
+  }
+  
+  const deleteConversation = (conversationId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const updatedConversations = conversations.filter(conv => conv.id !== conversationId)
+    setConversations(updatedConversations)
+    localStorage.setItem('viby-conversations', JSON.stringify(updatedConversations))
+    
+    // If deleting current conversation, start a new one
+    if (conversationId === currentConversationId) {
+      createNewConversation()
     }
   }
 
@@ -424,25 +554,136 @@ export function AgentChat({ agentId }: AgentChatProps) {
   }
 
   return (
-    <div className="flex flex-col h-full space-y-4">
-      {/* Agent Header */}
-      <Card className="glass-card">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link href="/dashboard/agents">
-                <Button variant="outline" size="sm" className="glass-button">
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-              </Link>
-              <div className={`p-3 bg-gradient-to-r ${agent.color} rounded-xl`}>
-                <agent.icon className="h-8 w-8 text-white" />
+    <div className="flex h-screen bg-slate-900 overflow-hidden">
+      {/* Sidebar */}
+      <div className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 overflow-hidden border-r border-slate-700/50 bg-slate-800/30 backdrop-blur-sm`}>
+        <div className="flex flex-col h-full">
+          {/* Sidebar Header */}
+          <div className="p-4 border-b border-slate-700/50">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className={`p-2 bg-gradient-to-r ${agent.color} rounded-lg`}>
+                  <agent.icon className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-white">{agent.name}</h2>
+                  <p className="text-xs text-slate-400">{agent.title}</p>
+                </div>
               </div>
-              <div>
-                <CardTitle className="text-2xl text-white">{agent.name}</CardTitle>
-                <p className="text-slate-400">{agent.title}</p>
+              <div className="flex items-center space-x-1">
+                <div className={`w-2 h-2 rounded-full ${
+                  hasApiKey ? 'bg-green-400' : 'bg-slate-500'
+                }`}></div>
+                <span className="text-xs text-slate-400">
+                  {hasApiKey ? 'Online' : 'Offline'}
+                </span>
               </div>
             </div>
+            
+            <Button 
+              onClick={createNewConversation}
+              className="w-full gradient-button text-sm"
+              disabled={!hasApiKey}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              New Chat
+            </Button>
+          </div>
+          
+          {/* Conversations List */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-2">
+              <h3 className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3 px-2">
+                Recent Conversations
+              </h3>
+              <div className="space-y-1">
+                {conversations
+                  .filter(conv => conv.agentId === agentId)
+                  .map((conversation) => (
+                    <div
+                      key={conversation.id}
+                      onClick={() => loadConversation(conversation.id)}
+                      className={`group flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all ${
+                        conversation.id === currentConversationId
+                          ? 'bg-blue-500/20 border border-blue-500/30'
+                          : 'hover:bg-white/5'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3 flex-1 min-w-0">
+                        <MessageSquare className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm text-white font-medium truncate">
+                            {conversation.title}
+                          </p>
+                          <p className="text-xs text-slate-400 truncate">
+                            {conversation.lastMessage}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {new Date(conversation.timestamp).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => deleteConversation(conversation.id, e)}
+                        className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-400 h-6 w-6 p-0"
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </div>
+          
+          {/* Sidebar Footer */}
+          <div className="p-4 border-t border-slate-700/50">
+            <Link href="/dashboard/agents">
+              <Button variant="outline" className="w-full glass-button text-sm">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Agents
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+      
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Top Header */}
+        <div className="flex items-center justify-between p-4 border-b border-slate-700/50 bg-slate-800/30 backdrop-blur-sm">
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="text-slate-400 hover:text-white"
+            >
+              {sidebarOpen ? <ChevronLeft className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+            
+            <div className="flex items-center space-x-3">
+              <div className={`p-2 bg-gradient-to-r ${agent.color} rounded-lg`}>
+                <agent.icon className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-semibold text-white">{agent.name}</h1>
+                <p className="text-sm text-slate-400">{agent.title}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            {/* Expertise Tags */}
+            <div className="hidden md:flex flex-wrap gap-2">
+              {agent.expertise.slice(0, 3).map((skill, idx) => (
+                <span key={idx} className="text-xs bg-white/10 text-slate-300 px-2 py-1 rounded-full">
+                  {skill}
+                </span>
+              ))}
+            </div>
+            
             <div className="flex items-center space-x-2">
               <div className={`w-3 h-3 rounded-full ${
                 hasApiKey ? 'bg-green-400 animate-pulse' : 'bg-slate-500'
@@ -452,39 +693,39 @@ export function AgentChat({ agentId }: AgentChatProps) {
               </span>
             </div>
           </div>
-          
-          {/* Expertise Tags */}
-          <div className="flex flex-wrap gap-2 mt-4">
-            {agent.expertise.map((skill, idx) => (
-              <span key={idx} className="text-xs bg-white/10 text-slate-300 px-2 py-1 rounded-full">
-                {skill}
-              </span>
-            ))}
-          </div>
-        </CardHeader>
-      </Card>
-
-      {/* Chat Messages */}
-      <Card className="glass-card flex-1 flex flex-col">
-        <CardContent className="flex-1 flex flex-col p-4">
-          {/* Messages Container */}
-          <div className="flex-1 overflow-y-auto space-y-4 scrollbar-thin">
+        </div>
+        
+        {/* Chat Messages */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((msg) => (
               <div
                 key={msg.id}
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
               >
-                <div
-                  className={`max-w-[80%] p-3 rounded-lg ${
-                    msg.role === 'user'
-                      ? 'bg-gradient-viby text-white'
-                      : 'bg-white/10 text-slate-200'
-                  }`}
-                >
-                  <p className="text-sm leading-relaxed">{msg.content}</p>
-                  <span className="text-xs opacity-70 mt-2 block">
-                    {new Date(msg.timestamp).toLocaleTimeString()}
-                  </span>
+                <div className="flex items-start space-x-3 max-w-[80%]">
+                  {msg.role === 'assistant' && (
+                    <div className={`p-2 bg-gradient-to-r ${agent.color} rounded-lg flex-shrink-0 mt-1`}>
+                      <agent.icon className="h-4 w-4 text-white" />
+                    </div>
+                  )}
+                  <div
+                    className={`p-4 rounded-2xl ${
+                      msg.role === 'user'
+                        ? 'bg-blue-600 text-white rounded-br-md'
+                        : 'bg-slate-800/80 text-slate-200 rounded-bl-md'
+                    }`}
+                  >
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                    <span className="text-xs opacity-70 mt-2 block">
+                      {new Date(msg.timestamp).toLocaleTimeString()}
+                    </span>
+                  </div>
+                  {msg.role === 'user' && (
+                    <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                      <User className="h-4 w-4 text-white" />
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -492,51 +733,65 @@ export function AgentChat({ agentId }: AgentChatProps) {
             {/* Typing Indicator */}
             {isTyping && (
               <div className="flex justify-start animate-fade-in">
-                <div className="bg-white/10 p-3 rounded-lg">
-                  <TypingIndicator />
+                <div className="flex items-start space-x-3 max-w-[80%]">
+                  <div className={`p-2 bg-gradient-to-r ${agent.color} rounded-lg flex-shrink-0`}>
+                    <agent.icon className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="bg-slate-800/80 p-4 rounded-2xl rounded-bl-md">
+                    <TypingIndicator />
+                  </div>
                 </div>
               </div>
             )}
             
             <div ref={messagesEndRef} />
           </div>
-
-          {/* Message Input */}
-          <form onSubmit={handleSendMessage} className="flex space-x-2 mt-4">
-            <Input
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder={hasApiKey ? `Message ${agent.name}...` : "Configure API keys to start chatting..."}
-              disabled={isLoading || !hasApiKey}
-              className="flex-1 glass-input"
-            />
-            <Button 
-              type="submit" 
-              disabled={isLoading || !message.trim() || !hasApiKey}
-              className="gradient-button"
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </Button>
-          </form>
           
-          {/* API Key Status Indicator */}
-          {!hasApiKey && (
-            <div className="text-center mt-2">
-              <p className="text-xs text-slate-400">
-                <Key className="h-3 w-3 inline mr-1" />
-                Chat requires API key configuration. 
-                <Link href="/dashboard/settings?tab=api" className="text-blue-400 hover:text-blue-300 underline ml-1">
-                  Add API keys in Settings
-                </Link>
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          {/* Message Input */}
+          <div className="p-4 border-t border-slate-700/50 bg-slate-800/30 backdrop-blur-sm">
+            {!hasApiKey ? (
+              <div className="text-center py-8">
+                <div className="max-w-md mx-auto">
+                  <div className="p-4 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl mb-4 inline-block">
+                    <Key className="h-6 w-6 text-white" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-2">AI Service Not Configured</h3>
+                  <p className="text-slate-400 mb-4 text-sm">
+                    Configure your API keys to start chatting with AI agents.
+                  </p>
+                  <Link href="/dashboard/settings?tab=api">
+                    <Button className="gradient-button">
+                      <Settings className="h-4 w-4 mr-2" />
+                      Configure API Keys
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleSendMessage} className="flex space-x-3">
+                <Input
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder={`Message ${agent.name}...`}
+                  disabled={isLoading}
+                  className="flex-1 bg-slate-700/50 border-slate-600 text-white placeholder-slate-400 rounded-xl px-4 py-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                />
+                <Button 
+                  type="submit" 
+                  disabled={isLoading || !message.trim()}
+                  className="gradient-button px-6 py-3 rounded-xl"
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Send className="h-5 w-5" />
+                  )}
+                </Button>
+              </form>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
