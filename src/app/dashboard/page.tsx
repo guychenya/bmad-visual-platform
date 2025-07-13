@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Button } from '../../components/ui/button'
 import { Plus, Users, MessageSquare, FileText, BarChart3, Zap, Brain, Sparkles, ArrowRight, Rocket, Folder, Layers, Building } from 'lucide-react'
 import Link from 'next/link'
+import { routes } from '../../lib/routes'
 import { useHierarchy } from '../../contexts/HierarchyContext'
 
 export default function Dashboard() {
@@ -14,7 +15,7 @@ export default function Dashboard() {
       title: 'Agent Workspace',
       description: 'GitHub Copilot-style tabbed interface with AI agents working together',
       icon: Users,
-      href: '/dashboard/workspace',
+      href: routes.dashboard.workspace,
       gradient: 'from-orange-500 to-red-500',
       buttonText: 'Open Workspace',
       buttonIcon: Users
@@ -23,7 +24,7 @@ export default function Dashboard() {
       title: 'AI Agents Hub',
       description: 'Chat with specialized AI agents for every aspect of development',
       icon: Brain,
-      href: '/dashboard/agents',
+      href: routes.dashboard.agents,
       gradient: 'from-purple-500 to-pink-500',
       buttonText: 'Start Chatting',
       buttonIcon: MessageSquare
@@ -32,7 +33,7 @@ export default function Dashboard() {
       title: 'Manage Hierarchy',
       description: 'Navigate your organization structure and manage projects',
       icon: Layers,
-      href: '/dashboard/hierarchy',
+      href: routes.dashboard.hierarchy,
       gradient: 'from-indigo-500 to-purple-500',
       buttonText: 'View Hierarchy',
       buttonIcon: Building
@@ -41,7 +42,7 @@ export default function Dashboard() {
       title: 'Create Project',
       description: 'Upload your PRD and watch AI agents build your app automatically',
       icon: Rocket,
-      href: '/dashboard/create',
+      href: routes.dashboard.create,
       gradient: 'from-blue-500 to-cyan-500',
       buttonText: 'Start Building',
       buttonIcon: Plus
@@ -50,7 +51,7 @@ export default function Dashboard() {
       title: 'Templates',
       description: 'Browse pre-built templates for common project types',
       icon: FileText,
-      href: '/dashboard/templates',
+      href: routes.dashboard.templates,
       gradient: 'from-green-500 to-emerald-500',
       buttonText: 'Browse Templates',
       buttonIcon: FileText
@@ -185,7 +186,7 @@ export default function Dashboard() {
               </div>
             )}
             <div className="pt-2">
-              <Link href="/dashboard/hierarchy">
+              <Link href={routes.dashboard.hierarchy}>
                 <Button size="sm" className="gradient-button">
                   <Layers className="w-4 h-4 mr-2" />
                   Manage Hierarchy
@@ -234,25 +235,25 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/dashboard/hierarchy">
+            <Link href={routes.dashboard.hierarchy}>
               <Button size="lg" className="w-full sm:w-auto gradient-button hover:scale-105 transition-transform">
                 <Layers className="h-5 w-5 mr-2" />
                 Explore Hierarchy
               </Button>
             </Link>
-            <Link href="/dashboard/agents">
+            <Link href={routes.dashboard.agents}>
               <Button size="lg" className="w-full sm:w-auto gradient-button hover:scale-105 transition-transform">
                 <Brain className="h-5 w-5 mr-2" />
                 Meet Your Agents
               </Button>
             </Link>
-            <Link href="/dashboard/workspace">
+            <Link href={routes.dashboard.workspace}>
               <Button size="lg" className="w-full sm:w-auto gradient-button hover:scale-105 transition-transform">
                 <Users className="h-5 w-5 mr-2" />
                 Try Workspace
               </Button>
             </Link>
-            <Link href="/dashboard/create">
+            <Link href={routes.dashboard.create}>
               <Button variant="outline" size="lg" className="w-full sm:w-auto glass-button hover:scale-105 transition-transform">
                 <Plus className="h-5 w-5 mr-2" />
                 Create Project
