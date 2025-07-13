@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { routes } from '../../lib/routes'
+import { useRouter } from 'next/navigation'
 
 interface WorkflowTemplate {
   id: string
@@ -85,6 +86,7 @@ export function WorkflowTrigger({ onStartWorkflow, className = '' }: WorkflowTri
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
   const [projectName, setProjectName] = useState('')
   const [showQuickStart, setShowQuickStart] = useState(false)
+  const router = useRouter()
 
   const handleStartWorkflow = (templateId: string) => {
     if (!projectName.trim()) {
@@ -97,7 +99,7 @@ export function WorkflowTrigger({ onStartWorkflow, className = '' }: WorkflowTri
       onStartWorkflow(templateId, projectName)
     } else {
       // Navigate to workflow page with parameters
-      window.location.href = `${routes.dashboard.workflow}?template=${templateId}&project=${encodeURIComponent(projectName)}`
+      router.push(`${routes.dashboard.workflow}?template=${templateId}&project=${encodeURIComponent(projectName)}`)
     }
   }
 
