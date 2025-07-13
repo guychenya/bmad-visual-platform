@@ -36,12 +36,7 @@ export default function DashboardLayout({
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: 'Hierarchy', href: '/dashboard/hierarchy', icon: Layers },
-    { name: 'Create Project', href: '/dashboard/create', icon: Plus },
     { name: 'Organizations', href: '/dashboard/organizations', icon: Building },
-    { name: 'AI Agents', href: '/dashboard/agents', icon: Brain },
-    { name: 'Workflow', href: '/dashboard/workflow', icon: GitBranch },
-    { name: 'Projects', href: '/dashboard/projects', icon: Folder },
     { name: 'Templates', href: '/dashboard/templates', icon: FileText },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ]
