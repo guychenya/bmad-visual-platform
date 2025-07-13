@@ -153,9 +153,11 @@ export function AgentHub() {
     setAgents(prev => [...prev, newAgent])
     
     // Save custom agents to localStorage
-    const customAgents = JSON.parse(localStorage.getItem('viby-custom-agents') || '[]')
-    customAgents.push(newAgent)
-    localStorage.setItem('viby-custom-agents', JSON.stringify(customAgents))
+    if (typeof window !== 'undefined') {
+      const customAgents = JSON.parse(localStorage.getItem('viby-custom-agents') || '[]')
+      customAgents.push(newAgent)
+      localStorage.setItem('viby-custom-agents', JSON.stringify(customAgents))
+    }
   }
 
   const handleConfigureAgent = (agent: any, e?: React.MouseEvent) => {
