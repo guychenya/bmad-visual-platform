@@ -53,6 +53,8 @@ export const ORGANIZATION_TEMPLATES: Record<string, OrganizationTemplate> = {
       },
       agents: {
         'ceo': {
+          id: 'ceo',
+          name: 'Chief Executive Officer',
           agentId: 'ceo',
           role: AGENT_ROLES.ceo,
           directReports: ['product-manager', 'senior-developer', 'ux-director'],
@@ -63,9 +65,13 @@ export const ORGANIZATION_TEMPLATES: Record<string, OrganizationTemplate> = {
             { condition: 'technical_architecture', targetDepartment: 'engineering', escalationLevel: 1, priority: 'high' },
             { condition: 'user_experience', targetDepartment: 'design', escalationLevel: 1, priority: 'medium' }
           ],
-          collaborationPreferences: ['weekly_all_hands', 'daily_standup', 'strategic_planning']
+          collaborationPreferences: ['weekly_all_hands', 'daily_standup', 'strategic_planning'],
+          availability: 'available',
+          workload: 'normal'
         },
         'product-manager': {
+          id: 'product-manager',
+          name: 'Product Manager',
           agentId: 'product-manager',
           role: AGENT_ROLES['product-manager'],
           reportsTo: 'ceo',
@@ -76,9 +82,13 @@ export const ORGANIZATION_TEMPLATES: Record<string, OrganizationTemplate> = {
             { condition: 'technical_feasibility', targetAgent: 'senior-developer', escalationLevel: 0, priority: 'high' },
             { condition: 'user_research', targetAgent: 'ux-director', escalationLevel: 0, priority: 'medium' }
           ],
-          collaborationPreferences: ['product_planning', 'user_feedback_review', 'sprint_planning']
+          collaborationPreferences: ['product_planning', 'user_feedback_review', 'sprint_planning'],
+          availability: 'available',
+          workload: 'normal'
         },
         'senior-developer': {
+          id: 'senior-developer',
+          name: 'Senior Developer',
           agentId: 'senior-developer',
           role: AGENT_ROLES['senior-developer'],
           reportsTo: 'ceo',
@@ -89,9 +99,13 @@ export const ORGANIZATION_TEMPLATES: Record<string, OrganizationTemplate> = {
             { condition: 'complex_architecture', targetAgent: 'ceo', escalationLevel: 1, priority: 'high' },
             { condition: 'ui_implementation', targetAgent: 'ux-director', escalationLevel: 0, priority: 'medium' }
           ],
-          collaborationPreferences: ['technical_review', 'sprint_planning', 'architecture_discussion']
+          collaborationPreferences: ['technical_review', 'sprint_planning', 'architecture_discussion'],
+          availability: 'available',
+          workload: 'normal'
         },
         'ux-director': {
+          id: 'ux-director',
+          name: 'UX Director',
           agentId: 'ux-director',
           role: AGENT_ROLES['ux-director'],
           reportsTo: 'ceo',
@@ -102,7 +116,9 @@ export const ORGANIZATION_TEMPLATES: Record<string, OrganizationTemplate> = {
             { condition: 'user_research', targetAgent: 'product-manager', escalationLevel: 0, priority: 'medium' },
             { condition: 'technical_constraints', targetAgent: 'senior-developer', escalationLevel: 0, priority: 'low' }
           ],
-          collaborationPreferences: ['design_review', 'user_research', 'product_planning']
+          collaborationPreferences: ['design_review', 'user_research', 'product_planning'],
+          availability: 'available',
+          workload: 'normal'
         }
       },
       workflowRules: [
@@ -200,6 +216,8 @@ export const ORGANIZATION_TEMPLATES: Record<string, OrganizationTemplate> = {
       },
       agents: {
         'ceo': {
+          id: 'ceo',
+          name: 'Chief Executive Officer',
           agentId: 'ceo',
           role: AGENT_ROLES.ceo,
           directReports: ['cto', 'product-vp'],
@@ -209,9 +227,13 @@ export const ORGANIZATION_TEMPLATES: Record<string, OrganizationTemplate> = {
             { condition: 'strategic_decision', targetAgent: 'cto', escalationLevel: 1, priority: 'high' },
             { condition: 'product_strategy', targetAgent: 'product-vp', escalationLevel: 1, priority: 'high' }
           ],
-          collaborationPreferences: ['executive_review', 'strategic_planning', 'board_meetings']
+          collaborationPreferences: ['executive_review', 'strategic_planning', 'board_meetings'],
+          availability: 'available',
+          workload: 'normal'
         },
         'cto': {
+          id: 'cto',
+          name: 'Chief Technology Officer',
           agentId: 'cto',
           role: AGENT_ROLES.cto,
           reportsTo: 'ceo',
@@ -223,9 +245,13 @@ export const ORGANIZATION_TEMPLATES: Record<string, OrganizationTemplate> = {
             { condition: 'quality_assurance', targetAgent: 'qa-director', escalationLevel: 0, priority: 'high' },
             { condition: 'data_strategy', targetAgent: 'data-scientist', escalationLevel: 0, priority: 'medium' }
           ],
-          collaborationPreferences: ['tech_leadership', 'architecture_review', 'innovation_planning']
+          collaborationPreferences: ['tech_leadership', 'architecture_review', 'innovation_planning'],
+          availability: 'available',
+          workload: 'normal'
         },
         'product-vp': {
+          id: 'product-vp',
+          name: 'VP of Product',
           agentId: 'product-vp',
           role: AGENT_ROLES['product-vp'],
           reportsTo: 'ceo',
@@ -236,9 +262,13 @@ export const ORGANIZATION_TEMPLATES: Record<string, OrganizationTemplate> = {
             { condition: 'product_management', targetAgent: 'product-manager', escalationLevel: 0, priority: 'high' },
             { condition: 'user_experience', targetAgent: 'ux-director', escalationLevel: 0, priority: 'high' }
           ],
-          collaborationPreferences: ['product_strategy', 'market_analysis', 'user_research']
+          collaborationPreferences: ['product_strategy', 'market_analysis', 'user_research'],
+          availability: 'available',
+          workload: 'normal'
         },
         'engineering-vp': {
+          id: 'engineering-vp',
+          name: 'VP of Engineering',
           agentId: 'engineering-vp',
           role: AGENT_ROLES['engineering-vp'],
           reportsTo: 'cto',
@@ -250,9 +280,13 @@ export const ORGANIZATION_TEMPLATES: Record<string, OrganizationTemplate> = {
             { condition: 'development_tasks', targetAgent: 'senior-developer', escalationLevel: 0, priority: 'medium' },
             { condition: 'infrastructure', targetAgent: 'devops-engineer', escalationLevel: 0, priority: 'medium' }
           ],
-          collaborationPreferences: ['engineering_planning', 'technical_review', 'team_development']
+          collaborationPreferences: ['engineering_planning', 'technical_review', 'team_development'],
+          availability: 'available',
+          workload: 'normal'
         },
         'solution-architect': {
+          id: 'solution-architect',
+          name: 'Solution Architect',
           agentId: 'solution-architect',
           role: AGENT_ROLES['solution-architect'],
           reportsTo: 'engineering-vp',
@@ -260,9 +294,13 @@ export const ORGANIZATION_TEMPLATES: Record<string, OrganizationTemplate> = {
           department: 'engineering',
           responsibilities: ['System Architecture', 'Technical Design', 'Integration Planning'],
           delegationRules: [],
-          collaborationPreferences: ['architecture_design', 'technical_review', 'solution_planning']
+          collaborationPreferences: ['architecture_design', 'technical_review', 'solution_planning'],
+          availability: 'available',
+          workload: 'normal'
         },
         'product-manager': {
+          id: 'product-manager',
+          name: 'Product Manager',
           agentId: 'product-manager',
           role: AGENT_ROLES['product-manager'],
           reportsTo: 'product-vp',
@@ -270,9 +308,13 @@ export const ORGANIZATION_TEMPLATES: Record<string, OrganizationTemplate> = {
           department: 'product',
           responsibilities: ['Product Planning', 'Requirements Management', 'Stakeholder Communication'],
           delegationRules: [],
-          collaborationPreferences: ['product_planning', 'requirements_review', 'stakeholder_meetings']
+          collaborationPreferences: ['product_planning', 'requirements_review', 'stakeholder_meetings'],
+          availability: 'available',
+          workload: 'normal'
         },
         'senior-developer': {
+          id: 'senior-developer',
+          name: 'Senior Developer',
           agentId: 'senior-developer',
           role: AGENT_ROLES['senior-developer'],
           reportsTo: 'engineering-vp',
@@ -280,9 +322,13 @@ export const ORGANIZATION_TEMPLATES: Record<string, OrganizationTemplate> = {
           department: 'engineering',
           responsibilities: ['Software Development', 'Code Review', 'Technical Mentoring'],
           delegationRules: [],
-          collaborationPreferences: ['code_review', 'technical_discussion', 'development_planning']
+          collaborationPreferences: ['code_review', 'technical_discussion', 'development_planning'],
+          availability: 'available',
+          workload: 'normal'
         },
         'ux-director': {
+          id: 'ux-director',
+          name: 'UX Director',
           agentId: 'ux-director',
           role: AGENT_ROLES['ux-director'],
           reportsTo: 'product-vp',
@@ -290,9 +336,13 @@ export const ORGANIZATION_TEMPLATES: Record<string, OrganizationTemplate> = {
           department: 'design',
           responsibilities: ['UX Strategy', 'Design Leadership', 'User Research'],
           delegationRules: [],
-          collaborationPreferences: ['design_review', 'user_research', 'design_strategy']
+          collaborationPreferences: ['design_review', 'user_research', 'design_strategy'],
+          availability: 'available',
+          workload: 'normal'
         },
         'qa-director': {
+          id: 'qa-director',
+          name: 'QA Director',
           agentId: 'qa-director',
           role: AGENT_ROLES['qa-director'],
           reportsTo: 'cto',
@@ -300,9 +350,13 @@ export const ORGANIZATION_TEMPLATES: Record<string, OrganizationTemplate> = {
           department: 'qa',
           responsibilities: ['Quality Strategy', 'Test Planning', 'Compliance Management'],
           delegationRules: [],
-          collaborationPreferences: ['quality_review', 'test_planning', 'compliance_audit']
+          collaborationPreferences: ['quality_review', 'test_planning', 'compliance_audit'],
+          availability: 'available',
+          workload: 'normal'
         },
         'data-scientist': {
+          id: 'data-scientist',
+          name: 'Data Scientist',
           agentId: 'data-scientist',
           role: AGENT_ROLES['data-scientist'],
           reportsTo: 'cto',
@@ -310,9 +364,13 @@ export const ORGANIZATION_TEMPLATES: Record<string, OrganizationTemplate> = {
           department: 'data',
           responsibilities: ['Data Analysis', 'ML Model Development', 'Business Intelligence'],
           delegationRules: [],
-          collaborationPreferences: ['data_review', 'model_discussion', 'analytics_planning']
+          collaborationPreferences: ['data_review', 'model_discussion', 'analytics_planning'],
+          availability: 'available',
+          workload: 'normal'
         },
         'devops-engineer': {
+          id: 'devops-engineer',
+          name: 'DevOps Engineer',
           agentId: 'devops-engineer',
           role: AGENT_ROLES['devops-engineer'],
           reportsTo: 'engineering-vp',
@@ -320,7 +378,9 @@ export const ORGANIZATION_TEMPLATES: Record<string, OrganizationTemplate> = {
           department: 'engineering',
           responsibilities: ['Infrastructure Management', 'CI/CD', 'Operational Excellence'],
           delegationRules: [],
-          collaborationPreferences: ['infrastructure_review', 'deployment_planning', 'monitoring_setup']
+          collaborationPreferences: ['infrastructure_review', 'deployment_planning', 'monitoring_setup'],
+          availability: 'available',
+          workload: 'normal'
         }
       },
       workflowRules: [
@@ -407,6 +467,8 @@ export const ORGANIZATION_TEMPLATES: Record<string, OrganizationTemplate> = {
       },
       agents: {
         'ceo': {
+          id: 'ceo',
+          name: 'Chief Executive Officer',
           agentId: 'ceo',
           role: AGENT_ROLES.ceo,
           directReports: ['product-vp', 'ux-director', 'engineering-vp', 'product-manager'],
@@ -417,9 +479,13 @@ export const ORGANIZATION_TEMPLATES: Record<string, OrganizationTemplate> = {
             { condition: 'creative_direction', targetAgent: 'ux-director', escalationLevel: 1, priority: 'high' },
             { condition: 'technical_delivery', targetAgent: 'engineering-vp', escalationLevel: 1, priority: 'high' }
           ],
-          collaborationPreferences: ['client_meetings', 'strategic_planning', 'business_development']
+          collaborationPreferences: ['client_meetings', 'strategic_planning', 'business_development'],
+          availability: 'available',
+          workload: 'normal'
         },
         'product-vp': {
+          id: 'product-vp',
+          name: 'VP of Product',
           agentId: 'product-vp',
           role: AGENT_ROLES['product-vp'],
           reportsTo: 'ceo',
@@ -427,9 +493,13 @@ export const ORGANIZATION_TEMPLATES: Record<string, OrganizationTemplate> = {
           department: 'strategy',
           responsibilities: ['Client Strategy', 'Business Analysis', 'Strategic Consulting'],
           delegationRules: [],
-          collaborationPreferences: ['client_strategy', 'business_analysis', 'strategic_consulting']
+          collaborationPreferences: ['client_strategy', 'business_analysis', 'strategic_consulting'],
+          availability: 'available',
+          workload: 'normal'
         },
         'ux-director': {
+          id: 'ux-director',
+          name: 'UX Director',
           agentId: 'ux-director',
           role: AGENT_ROLES['ux-director'],
           reportsTo: 'ceo',
@@ -437,9 +507,13 @@ export const ORGANIZATION_TEMPLATES: Record<string, OrganizationTemplate> = {
           department: 'creative',
           responsibilities: ['Creative Direction', 'Brand Strategy', 'User Experience Design'],
           delegationRules: [],
-          collaborationPreferences: ['creative_review', 'brand_development', 'user_experience']
+          collaborationPreferences: ['creative_review', 'brand_development', 'user_experience'],
+          availability: 'available',
+          workload: 'normal'
         },
         'engineering-vp': {
+          id: 'engineering-vp',
+          name: 'VP of Engineering',
           agentId: 'engineering-vp',
           role: AGENT_ROLES['engineering-vp'],
           reportsTo: 'ceo',
@@ -449,9 +523,13 @@ export const ORGANIZATION_TEMPLATES: Record<string, OrganizationTemplate> = {
           delegationRules: [
             { condition: 'development_tasks', targetAgent: 'senior-developer', escalationLevel: 0, priority: 'high' }
           ],
-          collaborationPreferences: ['technical_planning', 'solution_design', 'development_review']
+          collaborationPreferences: ['technical_planning', 'solution_design', 'development_review'],
+          availability: 'available',
+          workload: 'normal'
         },
         'product-manager': {
+          id: 'product-manager',
+          name: 'Product Manager',
           agentId: 'product-manager',
           role: AGENT_ROLES['product-manager'],
           reportsTo: 'ceo',
@@ -459,9 +537,13 @@ export const ORGANIZATION_TEMPLATES: Record<string, OrganizationTemplate> = {
           department: 'delivery',
           responsibilities: ['Project Management', 'Client Communication', 'Delivery Coordination'],
           delegationRules: [],
-          collaborationPreferences: ['project_planning', 'client_communication', 'delivery_coordination']
+          collaborationPreferences: ['project_planning', 'client_communication', 'delivery_coordination'],
+          availability: 'available',
+          workload: 'normal'
         },
         'senior-developer': {
+          id: 'senior-developer',
+          name: 'Senior Developer',
           agentId: 'senior-developer',
           role: AGENT_ROLES['senior-developer'],
           reportsTo: 'engineering-vp',
@@ -469,7 +551,9 @@ export const ORGANIZATION_TEMPLATES: Record<string, OrganizationTemplate> = {
           department: 'technical',
           responsibilities: ['Technical Implementation', 'Code Quality', 'Client Solutions'],
           delegationRules: [],
-          collaborationPreferences: ['technical_implementation', 'code_review', 'solution_delivery']
+          collaborationPreferences: ['technical_implementation', 'code_review', 'solution_delivery'],
+          availability: 'available',
+          workload: 'normal'
         }
       },
       workflowRules: [
