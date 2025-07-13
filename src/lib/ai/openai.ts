@@ -82,7 +82,10 @@ export class OpenAIService {
   ): Promise<string> {
     const systemPrompt = this.getAgentChatPrompt(agentId)
     
+    console.log('ChatWithAgent called:', { agentId, hasApiKey: !!this.config.apiKey, apiKeyLength: this.config.apiKey?.length })
+    
     if (!this.config.apiKey) {
+      console.log('No API key found, using simulation')
       // Fallback to enhanced simulation
       return this.simulateChatResponse(agentId, message)
     }
@@ -93,6 +96,8 @@ export class OpenAIService {
         ...conversationHistory.slice(-10), // Keep last 10 messages for context
         { role: 'user', content: message }
       ]
+
+      console.log('Making OpenAI API call with:', { model: this.config.model, messageCount: messages.length })
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -108,14 +113,21 @@ export class OpenAIService {
         }),
       })
 
+      console.log('OpenAI API response status:', response.status)
+
       if (!response.ok) {
+        const errorText = await response.text()
+        console.error('OpenAI API error response:', errorText)
         throw new Error(`OpenAI API error: ${response.statusText}`)
       }
 
       const data = await response.json()
-      return data.choices[0]?.message?.content || 'I apologize, but I encountered an issue processing your message.'
+      const content = data.choices[0]?.message?.content || 'I apologize, but I encountered an issue processing your message.'
+      console.log('OpenAI API success, response length:', content.length)
+      return content
     } catch (error) {
       console.error('OpenAI Chat API error:', error)
+      console.log('Falling back to simulation')
       // Fallback to simulation
       return this.simulateChatResponse(agentId, message)
     }

@@ -97,7 +97,7 @@ export function AgentHub() {
   const totalTasks = 247
   const successRate = 98
 
-  // Check for API key on component mount
+  // Check for API key and load custom agents on component mount
   useEffect(() => {
     const checkApiKey = () => {
       const savedSettings = localStorage.getItem('viby-settings')
@@ -117,7 +117,26 @@ export function AgentHub() {
       }
     }
 
+    // Load custom agents from localStorage
+    const loadCustomAgents = () => {
+      const savedCustomAgents = localStorage.getItem('viby-custom-agents')
+      if (savedCustomAgents) {
+        try {
+          const customAgents = JSON.parse(savedCustomAgents)
+          setAgents(prev => {
+            // Only add custom agents that aren't already in the list
+            const existingIds = prev.map(agent => agent.id)
+            const newCustomAgents = customAgents.filter((agent: any) => !existingIds.includes(agent.id))
+            return [...prev, ...newCustomAgents]
+          })
+        } catch (error) {
+          console.error('Failed to load custom agents:', error)
+        }
+      }
+    }
+
     checkApiKey()
+    loadCustomAgents()
     
     // Listen for storage changes (when settings are updated)
     window.addEventListener('storage', checkApiKey)
@@ -126,6 +145,11 @@ export function AgentHub() {
 
   const handleAgentCreated = (newAgent: any) => {
     setAgents(prev => [...prev, newAgent])
+    
+    // Save custom agents to localStorage
+    const customAgents = JSON.parse(localStorage.getItem('viby-custom-agents') || '[]')
+    customAgents.push(newAgent)
+    localStorage.setItem('viby-custom-agents', JSON.stringify(customAgents))
   }
 
   const handleConfigureAgent = (agent: any, e?: React.MouseEvent) => {

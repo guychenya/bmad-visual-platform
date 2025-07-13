@@ -20,7 +20,7 @@ interface AgentChatProps {
   agentId: string
 }
 
-const AGENTS = {
+const BUILT_IN_AGENTS = {
   '1': {
     id: '1',
     name: 'Analyst',
@@ -107,9 +107,38 @@ export function AgentChat({ agentId }: AgentChatProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [hasApiKey, setHasApiKey] = useState(false)
   const [isCheckingApiKey, setIsCheckingApiKey] = useState(true)
+  const [allAgents, setAllAgents] = useState<Record<string, any>>({})
   const messagesEndRef = useRef<HTMLDivElement>(null)
   
-  const agent = AGENTS[agentId as keyof typeof AGENTS]
+  // Load all agents (built-in + custom)
+  useEffect(() => {
+    const loadAllAgents = () => {
+      const agents = { ...BUILT_IN_AGENTS }
+      
+      // Load custom agents from localStorage
+      const savedCustomAgents = localStorage.getItem('viby-custom-agents')
+      if (savedCustomAgents) {
+        try {
+          const customAgents = JSON.parse(savedCustomAgents)
+          customAgents.forEach((agent: any) => {
+            agents[agent.id] = {
+              ...agent,
+              title: agent.description, // Use description as title for custom agents
+              greeting: `Hello! I'm ${agent.name}. ${agent.description} How can I help you today?`
+            }
+          })
+        } catch (error) {
+          console.error('Failed to load custom agents:', error)
+        }
+      }
+      
+      setAllAgents(agents)
+    }
+
+    loadAllAgents()
+  }, [])
+  
+  const agent = allAgents[agentId]
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -236,6 +265,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
       if (savedSettings) {
         const settings = JSON.parse(savedSettings)
         apiKey = settings.apiKeys?.openai || settings.apiKeys?.claude || settings.apiKeys?.gemini || ''
+        console.log('API Key found:', apiKey ? 'Yes (OpenAI)' : 'No', 'Length:', apiKey.length)
       }
 
       // Create AI service instance with the user's API key
