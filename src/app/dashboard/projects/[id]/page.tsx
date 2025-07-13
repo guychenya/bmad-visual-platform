@@ -126,6 +126,7 @@ export default function ProjectDetailPage() {
     { id: 'documents', name: 'Documents', icon: FileText },
     { id: 'workflow', name: 'Workflow', icon: CheckCircle },
     { id: 'team', name: 'Team', icon: Users },
+    { id: 'chat', name: 'Discussion', icon: MessageSquare },
     { id: 'settings', name: 'Settings', icon: Settings }
   ]
 
@@ -350,15 +351,26 @@ export default function ProjectDetailPage() {
                     <CardTitle className="text-white">Quick Actions</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    <Button className="w-full gradient-button">
+                    <Button 
+                      className="w-full gradient-button"
+                      onClick={() => window.location.href = '/dashboard/agents/bmad-orchestrator'}
+                    >
                       <MessageSquare className="h-4 w-4 mr-2" />
-                      Start Chat Session
+                      Chat with Orchestra
                     </Button>
-                    <Button variant="outline" className="w-full glass-button">
+                    <Button 
+                      variant="outline" 
+                      className="w-full glass-button"
+                      onClick={() => setActiveTab('documents')}
+                    >
                       <FileText className="h-4 w-4 mr-2" />
-                      View Full PRD
+                      View Documents
                     </Button>
-                    <Button variant="outline" className="w-full glass-button">
+                    <Button 
+                      variant="outline" 
+                      className="w-full glass-button"
+                      onClick={() => setActiveTab('settings')}
+                    >
                       <Settings className="h-4 w-4 mr-2" />
                       Project Settings
                     </Button>
@@ -502,6 +514,135 @@ export default function ProjectDetailPage() {
                       <Button className="w-full gradient-button">
                         Send Invitation
                       </Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {activeTab === 'chat' && (
+            <Card className="glass-card">
+              <CardHeader>
+                <CardTitle className="text-white">Project Discussion</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                    <h3 className="text-blue-300 font-medium mb-2">BMad Orchestra Integration</h3>
+                    <p className="text-slate-300 text-sm mb-4">
+                      Chat with the BMad Orchestra agent about this project. The Orchestra can coordinate with specific agents, 
+                      help with planning, and provide strategic guidance for "{project.name}".
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button 
+                        className="gradient-button"
+                        onClick={() => window.location.href = '/dashboard/agents/bmad-orchestrator'}
+                      >
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Chat with Orchestra
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="glass-button"
+                        onClick={() => window.location.href = '/dashboard/agents/1'}
+                      >
+                        Talk to Analyst
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="glass-button"
+                        onClick={() => window.location.href = '/dashboard/agents/2'}
+                      >
+                        Talk to Architect
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <h3 className="font-semibold text-white">Agent Recommendations</h3>
+                      <div className="space-y-3">
+                        <div className="p-3 border border-slate-700 rounded-lg">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <div className="w-8 h-8 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full flex items-center justify-center">
+                              <span className="text-xs text-white font-medium">O</span>
+                            </div>
+                            <div>
+                              <p className="text-white font-medium">BMad Orchestra</p>
+                              <p className="text-xs text-slate-400">Project Coordination</p>
+                            </div>
+                          </div>
+                          <p className="text-sm text-slate-300">
+                            Best for: Overall project guidance, agent coordination, strategic planning
+                          </p>
+                        </div>
+                        
+                        <div className="p-3 border border-slate-700 rounded-lg">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
+                              <span className="text-xs text-white font-medium">A</span>
+                            </div>
+                            <div>
+                              <p className="text-white font-medium">Mary (Analyst)</p>
+                              <p className="text-xs text-slate-400">Requirements Analysis</p>
+                            </div>
+                          </div>
+                          <p className="text-sm text-slate-300">
+                            Best for: Requirements gathering, stakeholder analysis, project planning
+                          </p>
+                        </div>
+                        
+                        <div className="p-3 border border-slate-700 rounded-lg">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
+                              <span className="text-xs text-white font-medium">W</span>
+                            </div>
+                            <div>
+                              <p className="text-white font-medium">Winston (Architect)</p>
+                              <p className="text-xs text-slate-400">System Architecture</p>
+                            </div>
+                          </div>
+                          <p className="text-sm text-slate-300">
+                            Best for: Technical architecture, system design, scalability planning
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <h3 className="font-semibold text-white">Quick Actions</h3>
+                      <div className="space-y-2">
+                        <Button 
+                          variant="outline" 
+                          className="w-full glass-button text-left justify-start"
+                          onClick={() => window.location.href = '/dashboard/create'}
+                        >
+                          🚀 Start New BMad Workflow
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          className="w-full glass-button text-left justify-start"
+                          onClick={() => setActiveTab('workflow')}
+                        >
+                          📋 View Project Workflow
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          className="w-full glass-button text-left justify-start"
+                          onClick={() => setActiveTab('documents')}
+                        >
+                          📄 Download Project Documents
+                        </Button>
+                      </div>
+                      
+                      <div className="mt-6 p-4 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+                        <h4 className="text-purple-300 font-medium mb-2">Pro Tip</h4>
+                        <p className="text-sm text-slate-300">
+                          Start with the Orchestra agent for overall guidance, then they can connect you 
+                          with specific agents based on your project needs.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>

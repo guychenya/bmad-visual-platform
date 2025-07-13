@@ -166,7 +166,7 @@ export default function ProjectsPage() {
         </div>
         <Button 
           className="gradient-button hover:scale-105 transition-transform"
-          onClick={() => window.location.href = '/dashboard/projects/new'}
+          onClick={() => window.location.href = '/dashboard/create'}
         >
           <Plus className="h-4 w-4 mr-2" />
           New Project

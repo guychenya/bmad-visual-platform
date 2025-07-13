@@ -1,32 +1,56 @@
 'use client'
 
 import { useState } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
+import { Button } from '../../../components/ui/button'
+import { Upload, MessageSquare, FileText, Download, CheckCircle, Sparkles, Users, ArrowRight, Bot } from 'lucide-react'
 import { PRDUpload } from '../../../components/upload/PRDUpload'
 import { BMadAgentCollaboration } from '../../../components/collaboration/BMadAgentCollaboration'
-import { BMadAppShowcase } from '../../../components/showcase/BMadAppShowcase'
 
 export default function CreateProjectPage() {
-  const [currentStep, setCurrentStep] = useState<'upload' | 'collaboration' | 'showcase'>('upload')
+  const [currentStep, setCurrentStep] = useState<'upload' | 'workflow' | 'complete'>('upload')
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [uploadedContent, setUploadedContent] = useState('')
   const [projectName, setProjectName] = useState('')
-  const [appResult, setAppResult] = useState<any>(null)
+  const [workflowResult, setWorkflowResult] = useState<any>(null)
 
   const handleFileUploaded = (file: File, content: string) => {
     setUploadedFile(file)
     setUploadedContent(content)
-    // Extract project name from file name or content
-    const name = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, ' ')
+    const name = file.name ? file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, ' ') : 'New Project'
     setProjectName(name || 'New Project')
   }
 
   const handleProjectStart = () => {
-    setCurrentStep('collaboration')
+    setCurrentStep('workflow')
   }
 
-  const handleCollaborationComplete = (result: any) => {
-    setAppResult(result)
-    setCurrentStep('showcase')
+  const handleWorkflowComplete = (result: any) => {
+    setWorkflowResult(result)
+    setCurrentStep('complete')
+    
+    // Save project to localStorage for project management
+    const newProject = {
+      id: Date.now(),
+      name: projectName,
+      description: `BMad methodology project: ${projectName}`,
+      status: 'active',
+      progress: 100,
+      lastActivity: 'just now',
+      team: ['You'],
+      priority: 'medium',
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
+      category: 'Web App',
+      color: 'from-purple-500 to-pink-500',
+      workflowResult: result,
+      prdDocument: result?.prdDocument,
+      uploadedFile: uploadedFile?.name,
+      uploadedContent
+    }
+
+    const existingProjects = JSON.parse(localStorage.getItem('viby-projects') || '[]')
+    const updatedProjects = [...existingProjects, newProject]
+    localStorage.setItem('viby-projects', JSON.stringify(updatedProjects))
   }
 
   const handleNewProject = () => {
@@ -34,38 +58,56 @@ export default function CreateProjectPage() {
     setUploadedFile(null)
     setUploadedContent('')
     setProjectName('')
-    setAppResult(null)
+    setWorkflowResult(null)
   }
+
+  const steps = [
+    { id: 'upload', name: 'Upload Requirements', icon: Upload, step: 1 },
+    { id: 'workflow', name: 'BMad Workflow', icon: Users, step: 2 },
+    { id: 'complete', name: 'Download Results', icon: Download, step: 3 }
+  ]
+
+  const getCurrentStepIndex = () => steps.findIndex(step => step.id === currentStep)
 
   return (
     <div className="min-h-screen p-6">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="text-center space-y-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-viby rounded-full mb-4">
+            <Sparkles className="h-8 w-8 text-white" />
+          </div>
+          <h1 className="text-4xl font-bold gradient-text">BMad Methodology</h1>
+          <p className="text-slate-300 text-lg max-w-2xl mx-auto">
+            Transform your ideas into production-ready applications using our specialized AI agents and proven methodology.
+          </p>
+        </div>
+
         {/* Progress Indicator */}
         <div className="mb-8">
-          <div className="flex items-center justify-center space-x-4">
-            {[
-              { id: 'upload', name: 'Upload PRD', step: 1 },
-              { id: 'collaboration', name: 'BMad Methodology', step: 2 },
-              { id: 'showcase', name: 'Generated App', step: 3 }
-            ].map((item, index) => (
-              <div key={item.id} className="flex items-center">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium ${
-                  currentStep === item.id 
-                    ? 'bg-gradient-viby text-white' 
-                    : index < (['upload', 'collaboration', 'showcase'].indexOf(currentStep))
+          <div className="flex items-center justify-center space-x-4 overflow-x-auto pb-4">
+            {steps.map((step, index) => (
+              <div key={step.id} className="flex items-center flex-shrink-0">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-medium transition-all ${
+                  getCurrentStepIndex() === index 
+                    ? 'bg-gradient-viby text-white scale-110' 
+                    : index < getCurrentStepIndex()
                     ? 'bg-green-500 text-white'
                     : 'bg-white/10 text-slate-400'
                 }`}>
-                  {item.step}
+                  <step.icon className="h-5 w-5" />
                 </div>
-                <span className={`ml-2 text-sm ${
-                  currentStep === item.id ? 'text-white' : 'text-slate-400'
-                }`}>
-                  {item.name}
-                </span>
-                {index < 2 && (
-                  <div className={`w-8 h-0.5 mx-4 ${
-                    index < (['upload', 'collaboration', 'showcase'].indexOf(currentStep))
+                <div className="ml-3 min-w-0">
+                  <span className={`text-sm font-medium block ${
+                    getCurrentStepIndex() === index ? 'text-white' : 'text-slate-400'
+                  }`}>
+                    {step.name}
+                  </span>
+                  <span className="text-xs text-slate-500">Step {step.step}</span>
+                </div>
+                {index < steps.length - 1 && (
+                  <div className={`w-12 h-0.5 mx-4 ${
+                    index < getCurrentStepIndex()
                       ? 'bg-green-500'
                       : 'bg-white/10'
                   }`} />
@@ -77,25 +119,113 @@ export default function CreateProjectPage() {
 
         {/* Content */}
         {currentStep === 'upload' && (
-          <PRDUpload 
-            onFileUploaded={handleFileUploaded}
-            onProjectStart={handleProjectStart}
-          />
+          <div className="space-y-6">
+            <PRDUpload 
+              onFileUploaded={handleFileUploaded}
+              onProjectStart={handleProjectStart}
+              allowSkip={true}
+            />
+            
+            {/* Quick Start Option */}
+            <Card className="glass-card">
+              <CardContent className="p-6 text-center">
+                <MessageSquare className="h-12 w-12 text-blue-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-white mb-2">
+                  Chat with BMad Orchestra
+                </h3>
+                <p className="text-slate-400 mb-4">
+                  Skip the document upload and chat directly with our Orchestra agent to define your project requirements interactively.
+                </p>
+                <Button 
+                  className="gradient-button"
+                  onClick={() => window.location.href = '/dashboard/agents/bmad-orchestrator'}
+                >
+                  <Bot className="h-4 w-4 mr-2" />
+                  Start Interactive Session
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
-        {currentStep === 'collaboration' && (
+        {currentStep === 'workflow' && (
           <BMadAgentCollaboration
             projectName={projectName}
             uploadedContent={uploadedContent}
-            onComplete={handleCollaborationComplete}
+            onComplete={handleWorkflowComplete}
+            showDownloads={true}
           />
         )}
 
-        {currentStep === 'showcase' && appResult && (
-          <BMadAppShowcase
-            result={appResult}
-            onNewProject={handleNewProject}
-          />
+        {currentStep === 'complete' && (
+          <div className="space-y-6">
+            <Card className="glass-card">
+              <CardHeader className="text-center">
+                <div className="mx-auto w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mb-4">
+                  <CheckCircle className="h-8 w-8 text-white" />
+                </div>
+                <CardTitle className="text-3xl text-white">BMad Workflow Complete!</CardTitle>
+                <p className="text-slate-400 text-lg">
+                  Your project has been processed through our complete methodology.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                  <div className="p-4 glass-card rounded-lg">
+                    <FileText className="h-8 w-8 text-blue-400 mx-auto mb-2" />
+                    <h4 className="font-semibold text-white">Complete PRD</h4>
+                    <p className="text-sm text-slate-400">Comprehensive requirements document</p>
+                  </div>
+                  <div className="p-4 glass-card rounded-lg">
+                    <Users className="h-8 w-8 text-purple-400 mx-auto mb-2" />
+                    <h4 className="font-semibold text-white">Agent Collaboration</h4>
+                    <p className="text-sm text-slate-400">Multi-agent workflow results</p>
+                  </div>
+                  <div className="p-4 glass-card rounded-lg">
+                    <Download className="h-8 w-8 text-green-400 mx-auto mb-2" />
+                    <h4 className="font-semibold text-white">Ready to Use</h4>
+                    <p className="text-sm text-slate-400">Download all generated documents</p>
+                  </div>
+                </div>
+                
+                <div className="flex justify-center space-x-4">
+                  <Button 
+                    className="gradient-button px-8"
+                    onClick={() => {
+                      // Download complete PRD
+                      const content = `# ${projectName} - Complete PRD\n\nGenerated by BMad-Method\n\n## Project Overview\n${uploadedContent}\n\n## Workflow Results\n${JSON.stringify(workflowResult, null, 2)}`
+                      const blob = new Blob([content], { type: 'text/markdown' })
+                      const url = URL.createObjectURL(blob)
+                      const a = document.createElement('a')
+                      a.href = url
+                      a.download = `${projectName.toLowerCase().replace(/\s+/g, '-')}-complete-prd.md`
+                      document.body.appendChild(a)
+                      a.click()
+                      document.body.removeChild(a)
+                      URL.revokeObjectURL(url)
+                    }}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Complete PRD
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="glass-button px-8"
+                    onClick={() => window.location.href = '/dashboard/projects'}
+                  >
+                    View in Projects
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="glass-button px-8"
+                    onClick={handleNewProject}
+                  >
+                    Start New Project
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     </div>

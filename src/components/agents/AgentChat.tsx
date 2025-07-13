@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
-import { Send, Loader2, ArrowLeft, Brain, Code, TestTube, Users, User, Palette, Settings, Key, ExternalLink, Plus, MessageSquare, ChevronLeft, Menu, History, MoreHorizontal } from 'lucide-react'
+import { Send, Loader2, ArrowLeft, Brain, Code, TestTube, Users, User, Palette, Settings, Key, ExternalLink, Plus, MessageSquare, ChevronLeft, Menu, History, MoreHorizontal, Crown } from 'lucide-react'
 import Link from 'next/link'
 import { TypingIndicator } from './TypingIndicator'
 import { aiService } from '../../lib/ai/aiService'
@@ -31,6 +31,17 @@ interface Conversation {
 }
 
 const BUILT_IN_AGENTS = {
+  'bmad-orchestrator': {
+    id: 'bmad-orchestrator',
+    name: 'BMad Orchestra',
+    title: 'Master Project Coordinator',
+    description: 'I coordinate the entire BMad methodology and can hand off tasks to specialized agents.',
+    icon: Crown,
+    color: 'from-yellow-500 to-orange-500',
+    personality: 'Coordinating and strategic',
+    greeting: "Welcome! I'm the BMad Orchestra, your master project coordinator. I oversee the entire BMad methodology and can connect you with any of our specialized agents. Tell me about your project, and I'll guide you through the best approach and coordinate with the right agents for your needs.",
+    expertise: ['Project Coordination', 'BMad Methodology', 'Agent Management', 'Strategic Oversight', 'Workflow Orchestration']
+  },
   '1': {
     id: '1',
     name: 'Analyst',
