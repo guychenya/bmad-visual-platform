@@ -6,6 +6,7 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Send, Loader2, ArrowLeft, Brain, Code, TestTube, Users, User, Palette, Settings, Key, ExternalLink, Plus, MessageSquare, ChevronLeft, Menu, History, MoreHorizontal, Crown } from 'lucide-react'
 import Link from 'next/link'
+import { routes } from '../../lib/routes'
 import { TypingIndicator } from './TypingIndicator'
 import { aiService } from '../../lib/ai/aiService'
 
@@ -428,7 +429,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
       
       // If switching to different agent, update URL
       if (conversation.agentId !== agentId) {
-        window.location.href = `/dashboard/agents/${conversation.agentId}`
+        window.location.href = routes.dashboard.agentDetail(conversation.agentId)
       }
     }
   }
@@ -452,7 +453,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
           <CardContent>
             <h3 className="text-xl font-semibold text-white mb-2">Agent Not Found</h3>
             <p className="text-slate-400 mb-4">The requested agent doesn't exist.</p>
-            <Link href="/dashboard/agents">
+            <Link href={routes.dashboard.agents}>
               <Button className="gradient-button">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Agents
@@ -510,7 +511,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
             </div>
 
             <div className="flex flex-col space-y-3">
-              <Link href="/dashboard/settings?tab=api">
+              <Link href={routes.dashboard.settings + '?tab=api'}>
                 <Button className="gradient-button w-full">
                   <Settings className="h-4 w-4 mr-2" />
                   Configure API Keys
@@ -518,7 +519,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
                 </Button>
               </Link>
               
-              <Link href="/dashboard/agents">
+              <Link href={routes.dashboard.agents}>
                 <Button variant="outline" className="glass-button w-full">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Agents
@@ -651,7 +652,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
           
           {/* Sidebar Footer */}
           <div className="p-4 border-t border-slate-700/50">
-            <Link href="/dashboard/agents">
+            <Link href={routes.dashboard.agents}>
               <Button variant="outline" className="w-full glass-button text-sm">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Agents
@@ -787,7 +788,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
                   <p className="text-slate-400 mb-4 text-sm">
                     Configure your API keys to start chatting with AI agents.
                   </p>
-                  <Link href="/dashboard/settings?tab=api">
+                  <Link href={routes.dashboard.settings + '?tab=api'}>
                     <Button className="gradient-button">
                       <Settings className="h-4 w-4 mr-2" />
                       Configure API Keys
