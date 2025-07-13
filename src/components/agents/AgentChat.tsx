@@ -7,7 +7,7 @@ import { Input } from '../ui/input'
 import { Send, Loader2, ArrowLeft, Brain, Code, TestTube, Users, User, Palette, Settings, Key, ExternalLink, Plus, MessageSquare, ChevronLeft, Menu, History, MoreHorizontal } from 'lucide-react'
 import Link from 'next/link'
 import { TypingIndicator } from './TypingIndicator'
-import { openAIService } from '../../lib/ai/openai'
+import { aiService } from '../../lib/ai/aiService'
 
 interface Message {
   id: string
@@ -309,19 +309,9 @@ export function AgentChat({ agentId }: AgentChatProps) {
     setIsLoading(true)
 
     try {
-      // Get saved API key from localStorage
-      const savedSettings = localStorage.getItem('viby-settings')
-      let apiKey = ''
-      if (savedSettings) {
-        const settings = JSON.parse(savedSettings)
-        apiKey = settings.apiKeys?.openai || settings.apiKeys?.claude || settings.apiKeys?.gemini || ''
-        console.log('API Key found:', apiKey ? 'Yes (OpenAI)' : 'No', 'Length:', apiKey.length)
-      }
-
-      // Create AI service instance with the user's API key
-      const aiService = new (await import('../../lib/ai/openai')).OpenAIService({ apiKey })
+      console.log('Sending message to AI service:', { agentId, messageLength: userMessage.content.length })
       
-      // Call the AI service chat method
+      // Call the AI service chat method - it will auto-detect the available provider
       const responseContent = await aiService.chatWithAgent(
         agentId,
         userMessage.content,
@@ -554,7 +544,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
   }
 
   return (
-    <div className="flex h-screen bg-slate-900 overflow-hidden">
+    <div className="flex h-full bg-slate-900 overflow-hidden">
       {/* Sidebar */}
       <div className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 overflow-hidden border-r border-slate-700/50 bg-slate-800/30 backdrop-blur-sm`}>
         <div className="flex flex-col h-full">
