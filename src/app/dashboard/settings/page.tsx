@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useTheme } from '../../../contexts/ThemeContext'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
 import { Button } from '../../../components/ui/button'
 import { Input } from '../../../components/ui/input'
@@ -10,8 +11,13 @@ import { Settings, User, Bell, Shield, Palette, Save, Eye, EyeOff, Check, AlertC
 
 export default function SettingsPage() {
   const searchParams = useSearchParams()
+  const { theme, setTheme } = useTheme()
   const [activeTab, setActiveTab] = useState('profile')
-  const [showApiKey, setShowApiKey] = useState(false)
+  const [showApiKeys, setShowApiKeys] = useState({
+    openai: false,
+    claude: false,
+    gemini: false
+  })
   const [isSaving, setIsSaving] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [settings, setSettings] = useState({
@@ -60,6 +66,17 @@ export default function SettingsPage() {
       }
     }
   }, [])
+  
+  // Sync settings theme with context theme
+  useEffect(() => {
+    setSettings(prev => ({
+      ...prev,
+      preferences: {
+        ...prev.preferences,
+        theme: theme
+      }
+    }))
+  }, [theme])
 
   const handleSave = async () => {
     setIsSaving(true)
@@ -95,6 +112,11 @@ export default function SettingsPage() {
         [key]: value
       }
     }))
+    
+    // Immediately apply theme changes
+    if (section === 'preferences' && key === 'theme') {
+      setTheme(value)
+    }
   }
 
   return (
@@ -347,7 +369,7 @@ export default function SettingsPage() {
                     <div className="relative">
                       <Input
                         id="openai"
-                        type={showApiKey ? 'text' : 'password'}
+                        type={showApiKeys.openai ? 'text' : 'password'}
                         value={settings.apiKeys.openai}
                         onChange={(e) => updateSetting('apiKeys', 'openai', e.target.value)}
                         placeholder="sk-..."
@@ -355,36 +377,54 @@ export default function SettingsPage() {
                       />
                       <button
                         type="button"
-                        onClick={() => setShowApiKey(!showApiKey)}
+                        onClick={() => setShowApiKeys(prev => ({ ...prev, openai: !prev.openai }))}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white"
                       >
-                        {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showApiKeys.openai ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="claude" className="text-white">Claude API Key</Label>
-                    <Input
-                      id="claude"
-                      type={showApiKey ? 'text' : 'password'}
-                      value={settings.apiKeys.claude}
-                      onChange={(e) => updateSetting('apiKeys', 'claude', e.target.value)}
-                      placeholder="sk-ant-..."
-                      className="glass-input"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="claude"
+                        type={showApiKeys.claude ? 'text' : 'password'}
+                        value={settings.apiKeys.claude}
+                        onChange={(e) => updateSetting('apiKeys', 'claude', e.target.value)}
+                        placeholder="sk-ant-..."
+                        className="glass-input pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowApiKeys(prev => ({ ...prev, claude: !prev.claude }))}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white"
+                      >
+                        {showApiKeys.claude ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="gemini" className="text-white">Gemini API Key</Label>
-                    <Input
-                      id="gemini"
-                      type={showApiKey ? 'text' : 'password'}
-                      value={settings.apiKeys.gemini}
-                      onChange={(e) => updateSetting('apiKeys', 'gemini', e.target.value)}
-                      placeholder="AI..."
-                      className="glass-input"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="gemini"
+                        type={showApiKeys.gemini ? 'text' : 'password'}
+                        value={settings.apiKeys.gemini}
+                        onChange={(e) => updateSetting('apiKeys', 'gemini', e.target.value)}
+                        placeholder="AI..."
+                        className="glass-input pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowApiKeys(prev => ({ ...prev, gemini: !prev.gemini }))}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white"
+                      >
+                        {showApiKeys.gemini ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </CardContent>
