@@ -124,9 +124,29 @@ export function WorkflowPipeline({ workflowId, onComplete, onPause, onCancel }: 
   const [steps, setSteps] = useState<AgentStep[]>([])
   const [startTime, setStartTime] = useState<string | null>(null)
   const [totalDuration, setTotalDuration] = useState<number>(0)
+  const [projectContext, setProjectContext] = useState<{
+    name: string
+    description: string
+    type: string
+  }>({
+    name: 'My Project',
+    description: 'A new project',
+    type: 'fullstack-webapp'
+  })
 
-  // Initialize workflow steps
+  // Initialize workflow steps and project context
   useEffect(() => {
+    // Extract project context from URL parameters or props
+    const urlParams = new URLSearchParams(window.location.search)
+    const projectName = urlParams.get('project') || 'My Project'
+    const workflowType = urlParams.get('template') || 'fullstack-webapp'
+    
+    setProjectContext({
+      name: decodeURIComponent(projectName),
+      description: `${projectName} - Generated using BMad AI workflow`,
+      type: workflowType
+    })
+
     const initialSteps: AgentStep[] = Object.values(AGENT_DEFINITIONS).map(agent => ({
       ...agent,
       status: 'pending' as const,
@@ -229,58 +249,70 @@ export function WorkflowPipeline({ workflowId, onComplete, onPause, onCancel }: 
   }
 
   const getStepLogMessage = (stepId: string, step: number, total: number): string => {
+    const projectName = projectContext.name
+    const projectType = projectContext.type
+    
+    const getProjectTypeContext = () => {
+      switch (projectType) {
+        case 'mobile-app': return 'mobile application'
+        case 'api-service': return 'backend API service'
+        case 'landing-page': return 'marketing landing page'
+        default: return 'web application'
+      }
+    }
+    
     const messages = {
       'orchestrator': [
-        'Initializing workflow orchestration...',
-        'Analyzing project requirements...',
-        'Determining agent execution order...',
-        'Preparing agent handoff protocols...',
-        'Setting up monitoring and logging...',
-        'Orchestrator ready - handing off to Analyst'
+        `Initializing workflow orchestration for ${projectName}...`,
+        `Analyzing ${getProjectTypeContext()} requirements...`,
+        'Determining optimal agent execution order...',
+        'Preparing secure agent handoff protocols...',
+        `Setting up monitoring for ${projectName} development...`,
+        `Orchestrator ready - initiating ${projectName} analysis phase`
       ],
       'analyst': [
-        'Starting business analysis...',
-        'Gathering stakeholder requirements...',
-        'Analyzing market conditions...',
-        'Defining success criteria...',
-        'Creating project brief...',
-        'Analysis complete - handing off to Architect'
+        `Starting business analysis for ${projectName}...`,
+        `Gathering stakeholder requirements for ${getProjectTypeContext()}...`,
+        `Analyzing market conditions for ${projectType} solutions...`,
+        `Defining success criteria for ${projectName}...`,
+        `Creating comprehensive project brief for ${projectName}...`,
+        `Analysis complete for ${projectName} - handing off to Architecture team`
       ],
       'architect': [
-        'Beginning system architecture design...',
-        'Analyzing technical requirements...',
-        'Designing scalable architecture...',
-        'Creating technical specifications...',
-        'Validating architecture decisions...',
-        'Architecture complete - handing off to Developer'
+        `Beginning system architecture design for ${projectName}...`,
+        `Analyzing technical requirements for ${getProjectTypeContext()}...`,
+        `Designing scalable ${projectType} architecture...`,
+        `Creating technical specifications for ${projectName}...`,
+        `Validating architecture decisions for ${getProjectTypeContext()}...`,
+        `Architecture complete for ${projectName} - handing off to Development team`
       ],
       'developer': [
-        'Setting up development environment...',
-        'Implementing core features...',
-        'Writing unit tests...',
-        'Optimizing performance...',
-        'Code review and refactoring...',
-        'Development complete - handing off to QA'
+        `Setting up development environment for ${projectName}...`,
+        `Implementing core ${getProjectTypeContext()} features...`,
+        `Writing comprehensive unit tests for ${projectName}...`,
+        `Optimizing performance for ${projectType} deployment...`,
+        `Code review and refactoring ${projectName} codebase...`,
+        `Development complete for ${projectName} - handing off to QA team`
       ],
       'qa': [
-        'Creating comprehensive test plan...',
-        'Setting up test automation...',
-        'Executing functional tests...',
-        'Performing security testing...',
-        'Validating user acceptance criteria...',
-        'QA complete - final validation passed'
+        `Creating comprehensive test plan for ${projectName}...`,
+        `Setting up automated testing for ${getProjectTypeContext()}...`,
+        `Executing functional tests on ${projectName}...`,
+        `Performing security testing for ${projectType}...`,
+        `Validating user acceptance criteria for ${projectName}...`,
+        `QA complete for ${projectName} - all tests passed successfully`
       ],
       'ux': [
-        'Analyzing user journey requirements...',
-        'Creating wireframes and mockups...',
-        'Designing user interface components...',
-        'Conducting usability validation...',
-        'Finalizing design specifications...',
-        'UX design complete - ready for implementation'
+        `Analyzing user journey requirements for ${projectName}...`,
+        `Creating wireframes and mockups for ${getProjectTypeContext()}...`,
+        `Designing UI components for ${projectName}...`,
+        `Conducting usability validation for ${projectType}...`,
+        `Finalizing design specifications for ${projectName}...`,
+        `UX design complete for ${projectName} - ready for implementation`
       ]
     }
     
-    return messages[stepId as keyof typeof messages]?.[step] || `Processing step ${step + 1}...`
+    return messages[stepId as keyof typeof messages]?.[step] || `Processing ${projectName} step ${step + 1}...`
   }
 
   const generateStepOutputs = (stepId: string): AgentOutput[] => {
