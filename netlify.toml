@@ -6,6 +6,11 @@
   NEXT_TELEMETRY_DISABLED = "1"
   NODE_ENV = "production"
   NPM_FLAGS = "--include=dev"
+  NEXT_PUBLIC_BYPASS_AUTH = "true"
+  NEXT_PUBLIC_SUPABASE_URL = "https://lebzcjdjexqkyorpnkgm.supabase.co"
+  NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxlYnpjamRqZXhxa3lvcnBua2dtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyMTY3OTMsImV4cCI6MjA2Nzc5Mjc5M30.H3_CwbKfHBynJrM1sEHYFhC-5rOfLE50mDXyOJW-bXY"
+  NEXT_PUBLIC_APP_URL = "https://bmad-visual-platform.netlify.app"
+  NEXT_PUBLIC_APP_NAME = "Viby.ai"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
