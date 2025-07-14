@@ -1,569 +1,580 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Button } from '../../components/ui/button'
+import React, { useState, useEffect, useRef } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { 
   Send, 
-  Bot, 
+  Plus, 
+  Settings, 
   User, 
-  Loader2,
-  ArrowLeft,
-  ChevronDown,
-  Zap,
+  Bot, 
+  Copy, 
+  MoreHorizontal,
+  Sparkles,
   Brain,
   Code,
-  GitBranch,
-  FileCode,
-  Settings,
-  Sparkles
-} from 'lucide-react'
-import { aiService } from '../../lib/ai/aiService'
+  Search,
+  Zap,
+  Shield,
+  Palette,
+  BarChart3
+} from 'lucide-react';
 
 interface Message {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  timestamp: string
-  type?: 'code' | 'text' | 'workflow'
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: Date;
+  agentId?: string;
+  agentName?: string;
+  isStreaming?: boolean;
 }
 
-// Enhanced agent configurations for VibeDev
-const VIBE_AGENTS = {
-  'bmad-orchestrator': {
-    name: 'Vibe Orchestrator',
-    description: 'AI Project Coordinator',
-    icon: '🎯',
-    color: 'from-blue-500 to-purple-600',
-    specialty: 'Project coordination and workflow optimization'
+interface BMadAgent {
+  id: string;
+  name: string;
+  title: string;
+  icon: React.ReactNode;
+  color: string;
+  gradient: string;
+  description: string;
+  specialties: string[];
+  avatar: string;
+}
+
+const BMAD_AGENTS: BMadAgent[] = [
+  {
+    id: 'bmad-orchestrator',
+    name: 'Orchestrator',
+    title: 'BMad Master Orchestrator',
+    icon: <Sparkles className="w-4 h-4" />,
+    color: 'from-purple-500 to-pink-500',
+    gradient: 'bg-gradient-to-r from-purple-500 to-pink-500',
+    description: 'Workflow coordination and agent management',
+    specialties: ['Coordination', 'Strategy', 'Workflows'],
+    avatar: '🎭'
   },
-  '1': {
-    name: 'Vibe Analyst',
-    description: 'Requirements & Strategy',
-    icon: '📊',
-    color: 'from-green-500 to-emerald-600',
-    specialty: 'Business analysis and project planning'
+  {
+    id: 'analyst',
+    name: 'Mary',
+    title: 'Business Analyst',
+    icon: <BarChart3 className="w-4 h-4" />,
+    color: 'from-blue-500 to-cyan-500',
+    gradient: 'bg-gradient-to-r from-blue-500 to-cyan-500',
+    description: 'Business analysis and market research',
+    specialties: ['Requirements', 'Analysis', 'Strategy'],
+    avatar: '📊'
   },
-  '2': {
-    name: 'Vibe Architect',
-    description: 'System Design',
-    icon: '🏗️',
-    color: 'from-orange-500 to-red-600',
-    specialty: 'Technical architecture and system design'
+  {
+    id: 'architect',
+    name: 'Winston',
+    title: 'System Architect',
+    icon: <Brain className="w-4 h-4" />,
+    color: 'from-emerald-500 to-teal-500',
+    gradient: 'bg-gradient-to-r from-emerald-500 to-teal-500',
+    description: 'System architecture and technical design',
+    specialties: ['Architecture', 'Design', 'Scalability'],
+    avatar: '🏗️'
   },
-  '3': {
-    name: 'Vibe Developer',
-    description: 'Code Generation',
-    icon: '👨‍💻',
-    color: 'from-purple-500 to-pink-600',
-    specialty: 'Full-stack development and coding'
+  {
+    id: 'dev',
+    name: 'James',
+    title: 'Full Stack Developer',
+    icon: <Code className="w-4 h-4" />,
+    color: 'from-orange-500 to-red-500',
+    gradient: 'bg-gradient-to-r from-orange-500 to-red-500',
+    description: 'Full-stack development and implementation',
+    specialties: ['Development', 'Testing', 'Implementation'],
+    avatar: '💻'
   },
-  '4': {
-    name: 'Vibe QA',
-    description: 'Quality Assurance',
-    icon: '🔍',
-    color: 'from-red-500 to-rose-600',
-    specialty: 'Testing and quality validation'
+  {
+    id: 'qa',
+    name: 'Quinn',
+    title: 'QA Engineer',
+    icon: <Shield className="w-4 h-4" />,
+    color: 'from-rose-500 to-pink-500',
+    gradient: 'bg-gradient-to-r from-rose-500 to-pink-500',
+    description: 'Quality assurance and testing',
+    specialties: ['Testing', 'Quality', 'Validation'],
+    avatar: '🔍'
   },
-  '5': {
-    name: 'Vibe Scrum',
-    description: 'Agile Management',
-    icon: '📋',
-    color: 'from-blue-500 to-cyan-600',
-    specialty: 'Sprint planning and team coordination'
+  {
+    id: 'sm',
+    name: 'Bob',
+    title: 'Scrum Master',
+    icon: <Search className="w-4 h-4" />,
+    color: 'from-amber-500 to-orange-500',
+    gradient: 'bg-gradient-to-r from-amber-500 to-orange-500',
+    description: 'Agile project management',
+    specialties: ['Agile', 'Planning', 'Coordination'],
+    avatar: '📋'
+  },
+  {
+    id: 'ux-expert',
+    name: 'Sally',
+    title: 'UX Expert',
+    icon: <Palette className="w-4 h-4" />,
+    color: 'from-violet-500 to-purple-500',
+    gradient: 'bg-gradient-to-r from-violet-500 to-purple-500',
+    description: 'User experience and design',
+    specialties: ['UX/UI', 'Design', 'Accessibility'],
+    avatar: '🎨'
   }
+];
+
+interface ApiStatus {
+  status: 'loading' | 'ready' | 'error';
+  message: string;
+  hasApiKeys: boolean;
+  providers: Array<{id: string; name: string; models: string[]}>;
+  demoMode: boolean;
 }
 
-function VibeChatContent() {
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const template = searchParams?.get('template') || 'VibeDev Project'
-  const project = searchParams?.get('project') || 'New Project'
-  const agentId = searchParams?.get('agent') || 'bmad-orchestrator'
-  const initialPrompt = searchParams?.get('prompt')
+export default function ModernChatPage() {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputValue, setInputValue] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState<BMadAgent>(BMAD_AGENTS[0]);
+  const [showAgentSelector, setShowAgentSelector] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [apiStatus, setApiStatus] = useState<ApiStatus>({ 
+    status: 'loading', 
+    message: 'Initializing BMad system...', 
+    hasApiKeys: false,
+    providers: [],
+    demoMode: true
+  });
+  const [selectedProvider, setSelectedProvider] = useState<string>('');
+  const [selectedModel, setSelectedModel] = useState<string>('');
   
-  const currentAgent = VIBE_AGENTS[agentId as keyof typeof VIBE_AGENTS] || VIBE_AGENTS['bmad-orchestrator']
-  
-  const [messages, setMessages] = useState<Message[]>([])
-  const [message, setMessage] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [hasApiKey, setHasApiKey] = useState(false)
-  const [showAgentSelector, setShowAgentSelector] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLTextAreaElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Check for API key
-    const checkApiKey = () => {
-      if (typeof window === 'undefined') return false
-      const savedSettings = localStorage.getItem('viby-settings')
-      if (savedSettings) {
-        try {
-          const settings = JSON.parse(savedSettings)
-          return !!(settings.apiKeys?.openai?.trim() || 
-                   settings.apiKeys?.claude?.trim() || 
-                   settings.apiKeys?.gemini?.trim() ||
-                   settings.apiKeys?.groq?.trim())
-        } catch (error) {
-          return false
-        }
-      }
-      return false
-    }
+    const initializeBMad = async () => {
+      await checkApiStatus();
+      
+      // Add welcome message
+      const welcomeMessage: Message = {
+        id: 'welcome',
+        role: 'assistant',
+        content: `👋 Hello! I'm **${selectedAgent.name}**, your ${selectedAgent.title}. I specialize in ${selectedAgent.description}. 
+
+**My key areas of expertise include:**
+${selectedAgent.specialties.map(s => `• ${s}`).join('\n')}
+
+**Quick commands:**
+• Type \`*help\` for available commands
+• Type \`*switch\` to change agents
+• Type \`*capabilities\` to see what I can do
+
+${apiStatus.demoMode ? '🎭 **Demo Mode**: I\'m currently running in demo mode. Add API keys to enable real AI responses.' : '🚀 **Live AI**: Connected and ready to help!'}
+
+How can I assist you today?`,
+        timestamp: new Date(),
+        agentId: selectedAgent.id,
+        agentName: selectedAgent.name
+      };
+      setMessages([welcomeMessage]);
+      
+      // Focus input
+      setTimeout(() => inputRef.current?.focus(), 100);
+    };
     
-    setHasApiKey(checkApiKey())
+    initializeBMad();
+  }, [selectedAgent]);
 
-    // Initialize with enhanced agent greeting
-    const greeting: Message = {
-      id: '1',
-      role: 'assistant',
-      content: `🚀 Welcome to **VibeDev**! I'm ${currentAgent.name}, your ${currentAgent.description.toLowerCase()}.
-
-I specialize in: *${currentAgent.specialty}*
-
-I'm here to help you build amazing software with AI-powered assistance. Whether you need:
-• **Code generation** and optimization
-• **Project planning** and architecture
-• **Workflow automation** and team coordination
-• **Quality assurance** and testing strategies
-
-What would you like to work on today? Let's start vibing! ✨`,
-      timestamp: new Date().toISOString(),
-      type: 'text'
+  const checkApiStatus = async () => {
+    try {
+      const response = await fetch('/api/chat/status');
+      const data = await response.json();
+      
+      setApiStatus({
+        status: data.success ? 'ready' : 'error',
+        message: data.success ? 'BMad system ready' : 'Failed to initialize BMad system',
+        hasApiKeys: data.hasApiKeys,
+        providers: data.providers || [],
+        demoMode: data.demoMode
+      });
+      
+      if (data.hasApiKeys && data.providers.length > 0) {
+        const recommended = data.recommended || data.providers[0];
+        setSelectedProvider(recommended.id);
+        setSelectedModel(recommended.models[0]);
+      } else {
+        setSelectedProvider('demo');
+        setSelectedModel('demo-model');
+      }
+    } catch (error) {
+      console.error('Error checking API status:', error);
+      setApiStatus({
+        status: 'error',
+        message: 'Failed to initialize BMad system',
+        hasApiKeys: false,
+        providers: [],
+        demoMode: true
+      });
     }
-    setMessages([greeting])
-  }, [agentId, template, currentAgent])
-
-  // Separate effect for initial prompt to avoid dependency issues
-  useEffect(() => {
-    if (initialPrompt && initialPrompt.trim() && messages.length > 0) {
-      setTimeout(() => {
-        // Send the initial prompt
-        const userMessage: Message = {
-          id: Date.now().toString(),
-          role: 'user',
-          content: initialPrompt,
-          timestamp: new Date().toISOString(),
-          type: 'text'
-        }
-
-        setMessages(prev => [...prev, userMessage])
-        setIsLoading(true)
-
-        // Send to AI service
-        const sendToAI = async () => {
-          try {
-            const contextualMessage = `VibeDev Project: "${template}" (ID: ${project})
-Agent Role: ${currentAgent.name} - ${currentAgent.specialty}
-User Request: ${initialPrompt}
-
-As a VibeDev AI agent, provide comprehensive, actionable guidance with:
-1. Clear next steps and recommendations
-2. Code examples when relevant
-3. Best practices and optimization tips
-4. Integration with modern development workflows
-
-Focus on practical, implementable solutions for professional development teams.`
-
-            const aiResponse = await aiService.chatWithAgent(
-              agentId,
-              contextualMessage,
-              []
-            )
-
-            const aiMessage: Message = {
-              id: (Date.now() + 1).toString(),
-              role: 'assistant',
-              content: aiResponse || `I apologize, but I encountered an issue processing your request. As ${currentAgent.name}, I'm still here to help with your ${template} project! Please try asking again or let me know how else I can assist you with development workflows.`,
-              timestamp: new Date().toISOString(),
-              type: aiResponse?.includes('```') ? 'code' : 'text'
-            }
-            
-            setMessages(prev => [...prev, aiMessage])
-          } catch (error) {
-            console.error('Error getting AI response:', error)
-            
-            const errorMessage: Message = {
-              id: (Date.now() + 1).toString(),
-              role: 'assistant',
-              content: `🚧 I encountered a technical issue, but I'm still here to help with your ${template} project! 
-
-As ${currentAgent.name}, I can assist you with:
-• ${currentAgent.specialty}
-• Code examples and best practices
-• Project planning and optimization
-• Development workflow recommendations
-
-Please try your request again, or let me know how else I can help! 💪`,
-              timestamp: new Date().toISOString(),
-              type: 'text'
-            }
-            setMessages(prev => [...prev, errorMessage])
-          } finally {
-            setIsLoading(false)
-          }
-        }
-
-        sendToAI()
-      }, 1000)
-    }
-  }, [initialPrompt, messages.length, template, project, currentAgent, agentId])
+  };
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    scrollToBottom();
+  }, [messages]);
 
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus()
-    }
-  }, [])
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
-  const handleSendMessage = async (e: React.FormEvent | null, customMessage?: string) => {
-    if (e) e.preventDefault()
-    const messageToSend = customMessage || message.trim()
-    if (!messageToSend || isLoading) return
+  const handleAgentSwitch = (agent: BMadAgent) => {
+    setSelectedAgent(agent);
+    setShowAgentSelector(false);
+  };
 
+  const simulateTyping = (text: string, callback: (text: string) => void) => {
+    let index = 0;
+    const interval = setInterval(() => {
+      if (index < text.length) {
+        callback(text.substring(0, index + 1));
+        index++;
+      } else {
+        clearInterval(interval);
+        setIsTyping(false);
+      }
+    }, 30);
+  };
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!inputValue.trim() || isLoading) return;
+    
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: messageToSend,
-      timestamp: new Date().toISOString(),
-      type: 'text'
-    }
+      content: inputValue.trim(),
+      timestamp: new Date()
+    };
 
-    setMessages(prev => [...prev, userMessage])
-    setMessage('')
-    setIsLoading(true)
+    setMessages(prev => [...prev, userMessage]);
+    setInputValue('');
+    setIsLoading(true);
+    setIsTyping(true);
 
     try {
-      const conversationHistory = messages.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }))
+      // Prepare conversation history
+      const history = messages
+        .filter(m => m.role !== 'system')
+        .map(m => ({ role: m.role, content: m.content }));
 
-      const contextualMessage = `VibeDev Project: "${template}" (ID: ${project})
-Agent Role: ${currentAgent.name} - ${currentAgent.specialty}
-User Request: ${messageToSend}
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          provider: selectedProvider,
+          model: selectedModel,
+          message: userMessage.content,
+          history,
+          agentId: selectedAgent.id,
+          agentContext: {
+            name: selectedAgent.name,
+            title: selectedAgent.title,
+            role: selectedAgent.description
+          }
+        })
+      });
 
-As a VibeDev AI agent, provide comprehensive, actionable guidance with:
-1. Clear next steps and recommendations
-2. Code examples when relevant
-3. Best practices and optimization tips
-4. Integration with modern development workflows
-
-Focus on practical, implementable solutions for professional development teams.`
-
-      const aiResponse = await aiService.chatWithAgent(
-        agentId,
-        contextualMessage,
-        conversationHistory
-      )
-
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: aiResponse || `I apologize, but I encountered an issue processing your request. As ${currentAgent.name}, I'm still here to help with your ${template} project! Please try asking again or let me know how else I can assist you with development workflows.`,
-        timestamp: new Date().toISOString(),
-        type: aiResponse?.includes('```') ? 'code' : 'text'
+      const data = await response.json();
+      
+      if (data.success) {
+        // Add assistant message with typing simulation
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: '',
+          timestamp: new Date(),
+          agentId: selectedAgent.id,
+          agentName: selectedAgent.name,
+          isStreaming: true
+        };
+        
+        setMessages(prev => [...prev, assistantMessage]);
+        
+        // Simulate typing
+        simulateTyping(data.response, (partialText) => {
+          setMessages(prev => prev.map(msg => 
+            msg.id === assistantMessage.id 
+              ? { ...msg, content: partialText }
+              : msg
+          ));
+        });
+      } else {
+        // Handle error case
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'system',
+          content: `❌ Error: ${data.error || 'Unknown error'}`,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, errorMessage]);
       }
-      
-      setMessages(prev => [...prev, aiMessage])
     } catch (error) {
-      console.error('Error getting AI response:', error)
-      
+      console.error('Error sending message:', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: `🚧 I encountered a technical issue, but I'm still here to help with your ${template} project! 
-
-As ${currentAgent.name}, I can assist you with:
-• ${currentAgent.specialty}
-• Code examples and best practices
-• Project planning and optimization
-• Development workflow recommendations
-
-Please try your request again, or let me know how else I can help! 💪`,
-        timestamp: new Date().toISOString(),
-        type: 'text'
-      }
-      setMessages(prev => [...prev, errorMessage])
+        role: 'system',
+        content: '❌ Failed to send message. Please check your connection.',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
-  const handleAgentSwitch = (newAgentId: string) => {
-    router.push(`/chat?agent=${newAgentId}&template=${encodeURIComponent(template)}&project=${encodeURIComponent(project)}`)
-    setShowAgentSelector(false)
-  }
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSendMessage(e as any)
-    }
-  }
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-black flex flex-col">
-      {/* Enhanced Header */}
-      <div className="border-b border-gray-800 bg-black/95 backdrop-blur-xl sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link 
-                href="/"
-                className="p-2 hover:bg-gray-800/50 rounded-lg transition-colors group"
-                aria-label="Back to VibeDev home"
-              >
-                <ArrowLeft className="h-5 w-5 text-gray-400 group-hover:text-white" />
-              </Link>
-              
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl">
-                  <Zap className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-lg font-bold text-white">VibeDev</h1>
-                  <p className="text-xs text-gray-400">Vibe Coding Session</p>
-                </div>
+    <div className="h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex flex-col">
+      {/* Header */}
+      <div className="border-b border-gray-700/50 bg-gray-900/50 backdrop-blur-md">
+        <div className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              <div className={`w-12 h-12 rounded-full ${selectedAgent.gradient} flex items-center justify-center text-white font-bold shadow-lg`}>
+                {selectedAgent.icon}
               </div>
-              
-              <div className="h-6 w-px bg-gray-700" />
-              
-              <div 
-                className="flex items-center space-x-3 cursor-pointer p-3 hover:bg-gray-800/30 rounded-lg transition-colors"
-                onClick={() => setShowAgentSelector(!showAgentSelector)}
-              >
-                <div className={`p-2 bg-gradient-to-r ${currentAgent.color} rounded-lg text-base`}>
-                  {currentAgent.icon}
-                </div>
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <h2 className="font-semibold text-white">{currentAgent.name}</h2>
-                    <ChevronDown className="h-4 w-4 text-gray-400" />
-                  </div>
-                  <p className="text-sm text-gray-400">{currentAgent.description}</p>
-                </div>
-              </div>
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-gray-900"></div>
             </div>
-            
-            <div className="flex items-center space-x-3">
-              <div className={`px-3 py-1.5 rounded-full text-xs font-medium ${
-                hasApiKey 
-                  ? 'bg-green-900/50 text-green-300 border border-green-700/50' 
-                  : 'bg-amber-900/50 text-amber-300 border border-amber-700/50'
-              }`}>
-                {hasApiKey ? '🚀 AI Ready' : '✨ Demo Mode'}
-              </div>
-              
-              <Link 
-                href="/dashboard"
-                className="p-2 hover:bg-gray-800/50 rounded-lg transition-colors group"
-              >
-                <Settings className="h-5 w-5 text-gray-400 group-hover:text-white" />
-              </Link>
+            <div>
+              <h1 className="text-xl font-semibold text-white">{selectedAgent.name}</h1>
+              <p className="text-sm text-gray-400">{selectedAgent.title}</p>
             </div>
           </div>
-
-          {/* Agent Selector Dropdown */}
-          {showAgentSelector && (
-            <div className="absolute top-full left-4 right-4 max-w-md mt-2 bg-gray-900/95 border border-gray-700/50 rounded-xl shadow-2xl backdrop-blur-xl z-20">
-              <div className="p-3">
-                <h3 className="text-sm font-medium text-white mb-3 px-2">Switch Vibe Agent</h3>
-                <div className="space-y-1">
-                  {Object.entries(VIBE_AGENTS).map(([id, agent]) => (
-                    <div
-                      key={id}
-                      onClick={() => handleAgentSwitch(id)}
-                      className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-all duration-200 ${
-                        id === agentId 
-                          ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30' 
-                          : 'hover:bg-gray-800/50 text-gray-300 hover:text-white'
-                      }`}
-                    >
-                      <div className={`p-2 bg-gradient-to-r ${agent.color} rounded-lg text-sm`}>
+          
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAgentSelector(!showAgentSelector)}
+              className="text-gray-400 hover:text-white hover:bg-gray-800"
+            >
+              <User className="w-4 h-4 mr-2" />
+              Switch Agent
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-400 hover:text-white hover:bg-gray-800"
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+        
+        {/* Agent Selector */}
+        {showAgentSelector && (
+          <div className="border-t border-gray-700/50 p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {BMAD_AGENTS.map((agent) => (
+                <Card 
+                  key={agent.id}
+                  className={`cursor-pointer transition-all duration-200 hover:scale-105 bg-gray-800/50 border-gray-700/50 hover:border-gray-600 ${
+                    selectedAgent.id === agent.id ? 'ring-2 ring-blue-500' : ''
+                  }`}
+                  onClick={() => handleAgentSwitch(agent)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-10 h-10 rounded-full ${agent.gradient} flex items-center justify-center text-white`}>
                         {agent.icon}
                       </div>
                       <div className="flex-1">
-                        <div className="font-medium text-sm">{agent.name}</div>
-                        <div className="text-xs opacity-75">{agent.description}</div>
+                        <h3 className="font-medium text-white">{agent.name}</h3>
+                        <p className="text-sm text-gray-400">{agent.title}</p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
+                    <p className="text-xs text-gray-500 mt-2">{agent.description}</p>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {agent.specialties.map((specialty) => (
+                        <Badge
+                          key={specialty}
+                          variant="secondary"
+                          className="text-xs bg-gray-700/50 text-gray-300"
+                        >
+                          {specialty}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
-      {/* Enhanced Messages */}
-      <div className="flex-1 max-w-6xl mx-auto w-full px-4 py-6 overflow-y-auto">
-        <div className="space-y-6">
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div className={`flex items-start space-x-4 max-w-[85%] ${
-                msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''
-              }`}>
-                {/* Enhanced Avatar */}
-                <div className={`flex-shrink-0 ${
-                  msg.role === 'user' 
-                    ? 'w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center'
-                    : `p-2 bg-gradient-to-r ${currentAgent.color} rounded-xl shadow-lg`
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+          >
+            <div className={`max-w-[80%] ${message.role === 'user' ? 'order-2' : 'order-1'}`}>
+              <div className={`flex items-start space-x-3 ${message.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                {/* Avatar */}
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  message.role === 'user' 
+                    ? 'bg-blue-500' 
+                    : selectedAgent.gradient
                 }`}>
-                  {msg.role === 'user' ? (
-                    <User className="h-4 w-4 text-white" />
+                  {message.role === 'user' ? (
+                    <User className="w-4 h-4 text-white" />
                   ) : (
-                    <span className="text-sm">{currentAgent.icon}</span>
+                    selectedAgent.icon
                   )}
                 </div>
                 
-                {/* Enhanced Message */}
-                <div className={`p-4 rounded-2xl shadow-lg ${
-                  msg.role === 'user'
-                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-br-md'
-                    : 'bg-gray-900/80 border border-gray-700/50 rounded-bl-md backdrop-blur-sm'
-                }`}>
-                  <div className={`text-sm leading-relaxed whitespace-pre-wrap ${
-                    msg.role === 'user' ? 'text-white' : 'text-gray-100'
+                {/* Message Content */}
+                <div className={`group ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
+                  <div className={`rounded-2xl px-4 py-3 ${
+                    message.role === 'user'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-800 text-gray-100'
                   }`}>
-                    {msg.content.split('```').map((part, index) => {
-                      if (index % 2 === 1) {
-                        // Code block
-                        return (
-                          <div key={index} className="my-3 p-3 bg-black/50 rounded-lg border border-gray-600/30 font-mono text-sm overflow-x-auto">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center space-x-2">
-                                <Code className="h-3 w-3 text-green-400" />
-                                <span className="text-green-400 text-xs">Code</span>
-                              </div>
-                            </div>
-                            <pre className="text-gray-300">{part}</pre>
-                          </div>
-                        )
-                      }
-                      return <span key={index}>{part}</span>
-                    })}
+                    <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                      {message.content}
+                      {message.isStreaming && isTyping && (
+                        <span className="inline-block w-2 h-4 bg-gray-400 ml-1 animate-pulse"></span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-600/30">
-                    <span className="text-xs opacity-70">
-                      {new Date(msg.timestamp).toLocaleTimeString()}
+                  
+                  {/* Message Actions */}
+                  <div className={`flex items-center space-x-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity ${
+                    message.role === 'user' ? 'justify-end' : 'justify-start'
+                  }`}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(message.content)}
+                      className="text-gray-500 hover:text-gray-300 h-6 px-2"
+                    >
+                      <Copy className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-gray-500 hover:text-gray-300 h-6 px-2"
+                    >
+                      <MoreHorizontal className="w-3 h-3" />
+                    </Button>
+                    <span className="text-xs text-gray-500">
+                      {formatTime(message.timestamp)}
                     </span>
-                    {msg.role === 'assistant' && (
-                      <div className="flex items-center space-x-1 text-xs opacity-70">
-                        <Brain className="h-3 w-3" />
-                        <span>{currentAgent.name}</span>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
             </div>
-          ))}
-          
-          {/* Enhanced Loading indicator */}
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="flex items-start space-x-4 max-w-[85%]">
-                <div className={`p-2 bg-gradient-to-r ${currentAgent.color} rounded-xl shadow-lg animate-pulse`}>
-                  <span className="text-sm">{currentAgent.icon}</span>
-                </div>
-                <div className="bg-gray-900/80 border border-gray-700/50 rounded-2xl rounded-bl-md shadow-lg backdrop-blur-sm p-4">
-                  <div className="flex items-center space-x-3">
-                    <Loader2 className="h-4 w-4 animate-spin text-blue-400" />
-                    <span className="text-sm text-gray-300">
-                      {currentAgent.name} is thinking...
-                    </span>
-                  </div>
-                  <div className="flex space-x-1 mt-2">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                  </div>
+          </div>
+        ))}
+        
+        {isLoading && (
+          <div className="flex justify-start">
+            <div className="flex items-start space-x-3">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${selectedAgent.gradient}`}>
+                {selectedAgent.icon}
+              </div>
+              <div className="bg-gray-800 rounded-2xl px-4 py-3">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                 </div>
               </div>
             </div>
-          )}
-          
-          <div ref={messagesEndRef} />
-        </div>
+          </div>
+        )}
+        
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* Enhanced Input */}
-      <div className="border-t border-gray-800 bg-black/95 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto px-4 py-4">
-          <form onSubmit={handleSendMessage} className="flex items-end space-x-4">
-            <div className="flex-1 relative">
-              <textarea
-                ref={inputRef}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={`Message ${currentAgent.name}... (Shift+Enter for new line)`}
-                disabled={isLoading}
-                rows={1}
-                className="w-full resize-none border border-gray-600/50 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-800/50 text-white placeholder-gray-400 disabled:bg-gray-900/50 disabled:text-gray-500 backdrop-blur-sm"
-                style={{ minHeight: '48px', maxHeight: '120px' }}
-              />
-              <div className="absolute bottom-2 right-2 text-xs text-gray-500">
-                <Sparkles className="h-3 w-3 inline mr-1" />
-                Vibe Mode
-              </div>
-            </div>
-            <Button 
-              type="submit" 
-              disabled={isLoading || !message.trim()}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white p-3 rounded-xl shadow-lg transition-all duration-200 disabled:opacity-50 hover:shadow-xl"
-            >
-              {isLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <Send className="h-5 w-5" />
-              )}
-            </Button>
-          </form>
+      {/* Input */}
+      <div className="border-t border-gray-700/50 bg-gray-900/50 backdrop-blur-md p-6">
+        <form onSubmit={handleSendMessage} className="flex items-end space-x-3">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-gray-400 hover:text-white hover:bg-gray-800 mb-2"
+          >
+            <Plus className="w-4 h-4" />
+          </Button>
           
-          {!hasApiKey && (
-            <div className="mt-3 text-center">
-              <p className="text-xs text-amber-300">
-                🚀 Running in demo mode. 
-                <Link 
-                  href="/dashboard/settings?tab=api" 
-                  className="underline hover:no-underline ml-1 text-amber-200 font-medium"
-                >
-                  Add API keys
-                </Link> for full AI capabilities.
-              </p>
+          <div className="flex-1 relative">
+            <Input
+              ref={inputRef}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder={`Message ${selectedAgent.name}...`}
+              disabled={isLoading}
+              className="bg-gray-800/50 border-gray-700/50 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12 py-3 rounded-2xl resize-none"
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage(e as any);
+                }
+              }}
+            />
+            
+            <Button
+              type="submit"
+              disabled={isLoading || !inputValue.trim()}
+              className="absolute right-2 bottom-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2 h-8 w-8"
+            >
+              <Send className="w-4 h-4" />
+            </Button>
+          </div>
+        </form>
+        
+        <div className="flex items-center justify-between mt-3 text-xs text-gray-500">
+          <div className="flex items-center space-x-4">
+            <span>BMad Framework • {selectedAgent.name}</span>
+            <div className="flex items-center space-x-1">
+              <div className={`w-2 h-2 rounded-full ${
+                apiStatus.status === 'ready' 
+                  ? 'bg-green-500' 
+                  : apiStatus.status === 'loading' 
+                  ? 'bg-yellow-500 animate-pulse' 
+                  : 'bg-red-500'
+              }`}></div>
+              <span>{
+                apiStatus.status === 'ready' 
+                  ? (apiStatus.demoMode ? 'Demo Mode' : 'Connected') 
+                  : apiStatus.status === 'loading' 
+                  ? 'Initializing...' 
+                  : 'Offline'
+              }</span>
             </div>
-          )}
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Zap className="w-3 h-3" />
+            <span>Press Enter to send</span>
+          </div>
         </div>
       </div>
     </div>
-  )
-}
-
-export default function VibeChatPage() {
-  return (
-    <Suspense 
-      fallback={
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-black flex items-center justify-center">
-          <div className="text-center">
-            <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl mb-4 inline-block">
-              <Zap className="h-8 w-8 text-white animate-pulse" />
-            </div>
-            <h3 className="text-xl font-bold text-white mb-2">Loading VibeDev</h3>
-            <p className="text-gray-400">Initializing your AI-powered development workspace...</p>
-          </div>
-        </div>
-      }
-    >
-      <VibeChatContent />
-    </Suspense>
-  )
+  );
 }
