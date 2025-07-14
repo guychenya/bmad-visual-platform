@@ -90,22 +90,31 @@ export default function UnifiedWorkspace() {
     const checkApiKey = () => {
       if (typeof window === 'undefined') return false
       const savedSettings = localStorage.getItem('viby-settings')
+      console.log('Raw saved settings:', savedSettings)
       if (savedSettings) {
         try {
           const settings = JSON.parse(savedSettings)
-          // Only return true if we have a valid, working API key
-          // For now, default to false to ensure demo mode works
+          console.log('Parsed settings:', settings)
+          console.log('API Keys found:', {
+            openai: !!settings.apiKeys?.openai?.trim(),
+            claude: !!settings.apiKeys?.claude?.trim(),
+            gemini: !!settings.apiKeys?.gemini?.trim(),
+            groq: !!settings.apiKeys?.groq?.trim()
+          })
+          
           const hasKey = !!(settings.apiKeys?.openai?.trim() || 
                            settings.apiKeys?.claude?.trim() || 
                            settings.apiKeys?.gemini?.trim() || 
                            settings.apiKeys?.groq?.trim())
           
-          // Re-enabled API calls to test new Claude key
+          console.log('Has API key:', hasKey)
           return hasKey
         } catch (error) {
+          console.error('Error parsing settings:', error)
           return false
         }
       }
+      console.log('No saved settings found')
       return false
     }
     

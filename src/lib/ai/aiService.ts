@@ -30,10 +30,18 @@ export class AIService {
   constructor(config: Partial<AIConfig> = {}) {
     // Load API keys from localStorage
     this.apiKeys = this.loadAPIKeys()
+    console.log('Loaded API keys:', {
+      openai: !!this.apiKeys.openai,
+      claude: !!this.apiKeys.claude,
+      gemini: !!this.apiKeys.gemini,
+      groq: !!this.apiKeys.groq
+    })
     
     // Determine which provider to use based on available keys
     const provider = config.provider || this.getAvailableProvider()
     const apiKey = this.getAPIKeyForProvider(provider)
+    
+    console.log('Selected provider:', provider, 'Key available:', !!apiKey)
     
     this.config = {
       apiKey,
@@ -46,7 +54,8 @@ export class AIService {
     console.log('AI Service initialized:', { 
       provider: this.config.provider, 
       hasApiKey: !!this.config.apiKey,
-      apiKeyLength: this.config.apiKey?.length 
+      apiKeyLength: this.config.apiKey?.length,
+      model: this.config.model
     })
   }
   
