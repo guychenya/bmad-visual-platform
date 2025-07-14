@@ -186,8 +186,12 @@ export default function UnifiedWorkspace() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!message.trim() || isLoading) return
+    if (!message.trim() || isLoading) {
+      console.log('Message blocked:', { messageEmpty: !message.trim(), isLoading })
+      return
+    }
 
+    console.log('Processing new message:', message.trim())
     const currentAgent = BMAD_AGENTS.find(a => a.id === projectState.currentAgent)
     
     const userMessage: Message = {
@@ -199,16 +203,22 @@ export default function UnifiedWorkspace() {
       agentName: 'You'
     }
 
+    console.log('Adding user message to chat:', userMessage)
     setMessages(prev => [...prev, userMessage])
     setMessage('')
     setIsLoading(true)
+    console.log('Set loading to true, starting AI processing...')
 
     try {
+      console.log('Starting chat message processing...')
+      
       // Get conversation history for context
       const conversationHistory = messages.map(msg => ({
         role: msg.role,
         content: msg.content
       }))
+      
+      console.log('Conversation history:', conversationHistory.length, 'messages')
 
       // Enhanced context for orchestrator
       const contextualMessage = `Project: "${projectState.name}"
@@ -218,11 +228,34 @@ User request: ${userMessage.content}
 
 As the BMad Orchestrator, coordinate the team and provide clear next steps. If this is a new project, help define requirements and suggest which agents to involve. Always be specific about what each agent will do.`
 
-      const aiResponse = await aiService.chatWithAgent(
-        projectState.currentAgent,
-        contextualMessage,
-        conversationHistory
-      )
+      console.log('Calling AI service with agent:', projectState.currentAgent)
+      
+      // Try AI service first, but fallback quickly if no API key
+      let aiResponse: string | null = null
+      
+      if (hasApiKey) {
+        try {
+          // Add timeout to AI service call
+          aiResponse = await Promise.race([
+            aiService.chatWithAgent(
+              projectState.currentAgent,
+              contextualMessage,
+              conversationHistory
+            ),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('AI service timeout')), 10000)
+            )
+          ]) as string
+        } catch (aiError) {
+          console.log('AI service failed, using fallback:', aiError)
+          aiResponse = null
+        }
+      } else {
+        console.log('No API key available, skipping AI service call')
+        aiResponse = null
+      }
+      
+      console.log('AI service response received:', aiResponse ? 'success' : 'using fallback')
 
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -233,6 +266,7 @@ As the BMad Orchestrator, coordinate the team and provide clear next steps. If t
         agentName: currentAgent?.name || 'AI Assistant'
       }
       
+      console.log('Adding AI message to chat:', aiMessage.content.slice(0, 100) + '...')
       setMessages(prev => [...prev, aiMessage])
 
       // Auto-advance project if needed
@@ -240,6 +274,7 @@ As the BMad Orchestrator, coordinate the team and provide clear next steps. If t
 
     } catch (error) {
       console.error('Error getting AI response:', error)
+      console.log('Falling back to local response generation')
       
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -249,13 +284,17 @@ As the BMad Orchestrator, coordinate the team and provide clear next steps. If t
         agentId: projectState.currentAgent,
         agentName: currentAgent?.name || 'AI Assistant'
       }
+      
+      console.log('Adding fallback message to chat:', errorMessage.content.slice(0, 100) + '...')
       setMessages(prev => [...prev, errorMessage])
     } finally {
+      console.log('Chat processing complete, setting loading to false')
       setIsLoading(false)
     }
   }
 
   const generateFallbackResponse = (userMessage: string, state: ProjectState): string => {
+    console.log('Generating fallback response for:', userMessage, 'State:', state)
     // More intelligent responses based on keywords and context
     const lowerMsg = userMessage.toLowerCase()
     
@@ -895,7 +934,10 @@ ${context.complexity === 'complex' ? 'Enterprise-grade microservices architectur
                   ].map((suggestion) => (
                     <button
                       key={suggestion}
-                      onClick={() => setMessage(suggestion)}
+                      onClick={() => {
+                        console.log('Quick suggestion clicked:', suggestion)
+                        setMessage(suggestion)
+                      }}
                       className="px-3 py-1 text-xs bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 rounded-full transition-colors"
                     >
                       {suggestion}
