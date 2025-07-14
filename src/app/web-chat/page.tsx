@@ -50,6 +50,25 @@ export default function WebChatPage() {
     const initializeChat = async () => {
       // Add initial system message
       addSystemMessage('🌐 Welcome to Web AI Chat! Checking API providers...');
+      
+      // Force demo mode for testing
+      setApiStatus({
+        status: 'ready',
+        message: 'Running in demo mode - no API keys configured',
+        hasApiKeys: false,
+        providers: [{
+          id: 'demo',
+          name: 'Demo Mode',
+          models: ['demo-model']
+        }],
+        demoMode: true
+      });
+      
+      setSelectedProvider('demo');
+      setSelectedModel('demo-model');
+      addSystemMessage('🎭 DEMO MODE ACTIVATED - Chat responses will be simulated!');
+      
+      // Also try to check real API status
       await checkApiStatus();
     };
     
@@ -62,8 +81,11 @@ export default function WebChatPage() {
 
   const checkApiStatus = async () => {
     try {
+      console.log('Checking API status...');
       const response = await fetch('/api/chat/status');
+      console.log('Response status:', response.status);
       const data = await response.json();
+      console.log('Response data:', data);
       
       setApiStatus({
         status: data.success ? 'ready' : 'error',
@@ -140,6 +162,31 @@ export default function WebChatPage() {
     setError('');
 
     try {
+      // If in demo mode, provide immediate simulated response
+      if (selectedProvider === 'demo' || apiStatus.demoMode) {
+        const demoResponses = [
+          "🎭 Demo Mode: I'm a simulated AI response! This is working correctly - you can add your real API keys to enable actual AI chat.",
+          "🎭 Demo Mode: Hello! I'm running in simulation mode. To get real AI responses, please configure your API keys in the environment variables.",
+          "🎭 Demo Mode: This is a test response! The chat system is working - just add your OpenAI, Claude, or other API keys to enable real AI.",
+          "🎭 Demo Mode: Great question! I'm currently in demo mode. Configure your API keys to chat with real AI models."
+        ];
+        
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: demoResponses[Math.floor(Math.random() * demoResponses.length)],
+          timestamp: new Date()
+        };
+        
+        // Simulate thinking time
+        setTimeout(() => {
+          setMessages(prev => [...prev, assistantMessage]);
+          setIsLoading(false);
+        }, 1000);
+        
+        return;
+      }
+      
       // Prepare conversation history
       const history = messages
         .filter(m => m.role !== 'system')
