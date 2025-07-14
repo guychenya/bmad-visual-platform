@@ -1,18 +1,18 @@
 'use client'
 
 import { useState, useEffect, useRef, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Button } from '../../components/ui/button'
-import { Input } from '../../components/ui/input'
-import { Badge } from '../../components/ui/badge'
 import { 
   Send, 
   Bot, 
   User, 
   Loader2,
-  Key,
-  MessageSquare,
-  ExternalLink
+  Settings,
+  Home,
+  Sparkles,
+  ArrowLeft,
+  ChevronDown
 } from 'lucide-react'
 import Link from 'next/link'
 import { aiService } from '../../lib/ai/aiService'
@@ -24,33 +24,69 @@ interface Message {
   timestamp: string
 }
 
-function DirectChatContent() {
+// Agent configurations
+const AGENTS = {
+  'bmad-orchestrator': {
+    name: 'BMad Orchestra',
+    description: 'Master coordinator',
+    icon: '🎯',
+    color: 'from-blue-500 to-purple-600',
+    bgColor: 'bg-blue-50'
+  },
+  '1': {
+    name: 'Mary',
+    description: 'Business Analyst',
+    icon: '📊',
+    color: 'from-green-500 to-emerald-600',
+    bgColor: 'bg-green-50'
+  },
+  '2': {
+    name: 'Winston',
+    description: 'System Architect',
+    icon: '🏗️',
+    color: 'from-orange-500 to-red-600',
+    bgColor: 'bg-orange-50'
+  },
+  '3': {
+    name: 'James',
+    description: 'Developer',
+    icon: '👨‍💻',
+    color: 'from-purple-500 to-pink-600',
+    bgColor: 'bg-purple-50'
+  },
+  '4': {
+    name: 'Quinn',
+    description: 'QA Engineer',
+    icon: '🔍',
+    color: 'from-red-500 to-rose-600',
+    bgColor: 'bg-red-50'
+  },
+  '5': {
+    name: 'Bob',
+    description: 'Scrum Master',
+    icon: '📋',
+    color: 'from-blue-500 to-cyan-600',
+    bgColor: 'bg-blue-50'
+  }
+}
+
+function ChatContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const template = searchParams?.get('template') || 'Custom Project'
   const project = searchParams?.get('project') || 'New Project'
+  const agentId = searchParams?.get('agent') || 'bmad-orchestrator'
+  const initialPrompt = searchParams?.get('prompt')
   
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: `Hello! I'm the BMad Orchestra, your AI project coordinator. I'm ready to help you build your "${template}" project. 
-
-I can assist you with:
-• 📋 Project planning and requirements analysis
-• 🏗️ Technical architecture design  
-• 👨‍💻 Development coordination
-• ✅ Quality assurance planning
-• 📊 Team organization and workflows
-
-What would you like to work on today?`,
-      timestamp: new Date().toISOString()
-    }
-  ])
+  const currentAgent = AGENTS[agentId as keyof typeof AGENTS] || AGENTS['bmad-orchestrator']
   
+  const [messages, setMessages] = useState<Message[]>([])
   const [message, setMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [hasApiKey, setHasApiKey] = useState(false)
+  const [showAgentSelector, setShowAgentSelector] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     // Check for API key
@@ -62,7 +98,8 @@ What would you like to work on today?`,
           const settings = JSON.parse(savedSettings)
           return !!(settings.apiKeys?.openai?.trim() || 
                    settings.apiKeys?.claude?.trim() || 
-                   settings.apiKeys?.gemini?.trim())
+                   settings.apiKeys?.gemini?.trim() ||
+                   settings.apiKeys?.groq?.trim())
         } catch (error) {
           return false
         }
@@ -71,20 +108,101 @@ What would you like to work on today?`,
     }
     
     setHasApiKey(checkApiKey())
-  }, [])
+
+    // Initialize with agent greeting
+    const greeting: Message = {
+      id: '1',
+      role: 'assistant',
+      content: `Hello! I'm ${currentAgent.name}, your ${currentAgent.description.toLowerCase()}. I'm here to help you with your "${template}" project.
+
+What would you like to work on today?`,
+      timestamp: new Date().toISOString()
+    }
+    setMessages([greeting])
+
+    // If there's an initial prompt, send it
+    if (initialPrompt && initialPrompt.trim()) {
+      setTimeout(() => {
+        setMessage(initialPrompt)
+        // Auto-send the initial prompt after a delay
+        setTimeout(() => {
+          const sendInitialMessage = async () => {
+            const userMessage: Message = {
+              id: Date.now().toString(),
+              role: 'user',
+              content: initialPrompt,
+              timestamp: new Date().toISOString()
+            }
+
+            setMessages(prev => [...prev, userMessage])
+            setMessage('')
+            setIsLoading(true)
+
+            try {
+              const conversationHistory = [greeting].map(msg => ({
+                role: msg.role,
+                content: msg.content
+              }))
+
+              const contextualMessage = `Project: "${template}" (Project ID: ${project})
+User Request: ${initialPrompt}
+
+Please provide helpful, actionable guidance for this ${template} project. Be specific and practical in your recommendations.`
+
+              const aiResponse = await aiService.chatWithAgent(
+                agentId,
+                contextualMessage,
+                conversationHistory
+              )
+
+              const aiMessage: Message = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: aiResponse || 'I apologize, but I encountered an issue processing your request. Please try again.',
+                timestamp: new Date().toISOString()
+              }
+              
+              setMessages(prev => [...prev, aiMessage])
+            } catch (error) {
+              console.error('Error getting AI response:', error)
+              
+              const errorMessage: Message = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: `I encountered an issue processing your request, but I'm still here to help with your ${template} project! Please try asking again or let me know how else I can assist you.`,
+                timestamp: new Date().toISOString()
+              }
+              setMessages(prev => [...prev, errorMessage])
+            } finally {
+              setIsLoading(false)
+            }
+          }
+          sendInitialMessage()
+        }, 100)
+      }, 1000)
+    }
+  }, [agentId, template, currentAgent, initialPrompt, project])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!message.trim() || isLoading) return
+  useEffect(() => {
+    // Auto-focus input when component loads
+    if (inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [])
+
+  const handleSendMessage = async (e: React.FormEvent | null, customMessage?: string) => {
+    if (e) e.preventDefault()
+    const messageToSend = customMessage || message.trim()
+    if (!messageToSend || isLoading) return
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: message.trim(),
+      content: messageToSend,
       timestamp: new Date().toISOString()
     }
 
@@ -93,27 +211,18 @@ What would you like to work on today?`,
     setIsLoading(true)
 
     try {
-      // Get conversation history for context
       const conversationHistory = messages.map(msg => ({
         role: msg.role,
         content: msg.content
       }))
 
-      // Create contextual message for better responses
       const contextualMessage = `Project: "${template}" (Project ID: ${project})
-User Request: ${userMessage.content}
+User Request: ${messageToSend}
 
 Please provide helpful, actionable guidance for this ${template} project. Be specific and practical in your recommendations.`
 
-      console.log('Sending message to AI service:', {
-        template,
-        project,
-        messageLength: contextualMessage.length,
-        hasApiKey
-      })
-
       const aiResponse = await aiService.chatWithAgent(
-        'bmad-orchestrator',
+        agentId,
         contextualMessage,
         conversationHistory
       )
@@ -121,29 +230,9 @@ Please provide helpful, actionable guidance for this ${template} project. Be spe
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: aiResponse || `I understand you want to work on "${userMessage.content}" for your ${template} project. Here's how I can help:
-
-🎯 **Immediate Next Steps:**
-1. **Requirements Clarification**: Let's define exactly what you need
-2. **Technical Planning**: Choose the right architecture and tools
-3. **Implementation Strategy**: Break down the work into manageable phases
-4. **Quality Assurance**: Ensure everything works perfectly
-
-Would you like me to dive deeper into any of these areas? I can also connect you with specific BMad specialists if you need detailed expertise in:
-• Business Analysis (Mary)
-• System Architecture (Winston) 
-• Development (James)
-• Quality Assurance (Quinn)
-• Project Management (Bob)
-
-What's your biggest priority right now?`,
+        content: aiResponse || 'I apologize, but I encountered an issue processing your request. Please try again.',
         timestamp: new Date().toISOString()
       }
-      
-      console.log('AI response received:', {
-        responseLength: aiMessage.content.length,
-        timestamp: aiMessage.timestamp
-      })
       
       setMessages(prev => [...prev, aiMessage])
     } catch (error) {
@@ -152,26 +241,7 @@ What's your biggest priority right now?`,
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `I encountered an issue processing your request, but I'm still here to help with your ${template} project!
-
-Here's what I can help you with right now:
-
-🚀 **Project Kickoff:**
-• Define project scope and requirements
-• Choose technology stack and architecture
-• Plan development phases and timelines
-
-💡 **Technical Guidance:**
-• Best practices for ${template} development
-• Architecture recommendations
-• Integration strategies
-
-📈 **Project Management:**
-• Task breakdown and prioritization
-• Team coordination and workflows
-• Quality assurance planning
-
-Please try asking again, or let me know which area you'd like to focus on first!`,
+        content: `I encountered an issue processing your request, but I'm still here to help with your ${template} project! Please try asking again or let me know how else I can assist you.`,
         timestamp: new Date().toISOString()
       }
       setMessages(prev => [...prev, errorMessage])
@@ -180,118 +250,144 @@ Please try asking again, or let me know which area you'd like to focus on first!
     }
   }
 
+  const handleAgentSwitch = (newAgentId: string) => {
+    router.push(`/chat?agent=${newAgentId}&template=${encodeURIComponent(template)}&project=${encodeURIComponent(project)}`)
+    setShowAgentSelector(false)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSendMessage(e as any)
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Enhanced Header - Mobile Optimized */}
-      <div className="border-b border-border glass-nav p-4 safe-area-pt animate-slide-up">
-        <div className="max-w-4xl mx-auto">
-          {/* Mobile-first layout */}
-          <div className="flex items-center justify-between mb-3 sm:mb-0">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-gray-50 flex flex-col">
+      {/* Header */}
+      <div className="border-b border-gray-200 bg-white/95 backdrop-blur-sm sticky top-0 z-10">
+        <div className="max-w-4xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg interactive-glow animate-pulse-glow">
-                <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-              </div>
-              <div>
-                <h1 className="responsive-text-lg font-semibold text-white">
-                  BMad Chat
-                </h1>
-                <p className="responsive-text-xs text-slate-400 truncate max-w-[200px] sm:max-w-none">
-                  {template} • {project}
-                </p>
+              <Link 
+                href="/"
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Back to home"
+              >
+                <ArrowLeft className="h-5 w-5 text-gray-600" />
+              </Link>
+              
+              <div 
+                className="flex items-center space-x-3 cursor-pointer p-2 hover:bg-gray-50 rounded-lg transition-colors"
+                onClick={() => setShowAgentSelector(!showAgentSelector)}
+              >
+                <div className={`p-2 bg-gradient-to-r ${currentAgent.color} rounded-lg text-lg`}>
+                  {currentAgent.icon}
+                </div>
+                <div>
+                  <div className="flex items-center space-x-1">
+                    <h1 className="font-semibold text-gray-900">{currentAgent.name}</h1>
+                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                  </div>
+                  <p className="text-sm text-gray-500">{currentAgent.description}</p>
+                </div>
               </div>
             </div>
             
-            {/* Status indicator - always visible */}
-            <Badge 
-              variant={hasApiKey ? "default" : "destructive"}
-              className="px-2 py-1 responsive-text-xs shrink-0"
-              aria-label={hasApiKey ? 'AI service connected' : 'Running in simulation mode'}
-            >
-              {hasApiKey ? 'AI' : 'Demo'}
-            </Badge>
-          </div>
-          
-          {/* Secondary actions - mobile responsive */}
-          <div className="flex items-center justify-between sm:justify-end space-x-2 sm:space-x-4">
-            <div className="text-xs text-slate-500 sm:hidden">
-              {hasApiKey ? 'AI Connected' : 'Simulation Mode'}
+            <div className="flex items-center space-x-2">
+              <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                hasApiKey 
+                  ? 'bg-green-100 text-green-700' 
+                  : 'bg-yellow-100 text-yellow-700'
+              }`}>
+                {hasApiKey ? 'AI Ready' : 'Demo Mode'}
+              </div>
             </div>
-            <Link 
-              href="/dashboard/workspace" 
-              className="text-blue-400 hover:text-blue-300 responsive-text-xs flex items-center touch-target"
-              aria-label="Open full workspace interface"
-            >
-              <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4 inline mr-1" />
-              <span className="hidden sm:inline">Full Workspace</span>
-              <span className="sm:hidden">Workspace</span>
-            </Link>
           </div>
+
+          {/* Agent Selector Dropdown */}
+          {showAgentSelector && (
+            <div className="absolute top-full left-4 right-4 max-w-md mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-20">
+              <div className="p-2">
+                <h3 className="text-sm font-medium text-gray-900 mb-2 px-2">Switch Agent</h3>
+                {Object.entries(AGENTS).map(([id, agent]) => (
+                  <div
+                    key={id}
+                    onClick={() => handleAgentSwitch(id)}
+                    className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                      id === agentId 
+                        ? 'bg-blue-50 text-blue-700' 
+                        : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className={`p-2 bg-gradient-to-r ${agent.color} rounded-lg text-sm`}>
+                      {agent.icon}
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm">{agent.name}</div>
+                      <div className="text-xs text-gray-500">{agent.description}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Chat Container - Mobile Optimized */}
-      <div className="max-w-4xl mx-auto h-[calc(100vh-160px)] sm:h-[calc(100vh-140px)] flex flex-col">
-        {/* Enhanced Messages */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
-          {messages.map((msg, index) => (
+      {/* Messages */}
+      <div className="flex-1 max-w-4xl mx-auto w-full px-4 py-6 overflow-y-auto">
+        <div className="space-y-6">
+          {messages.map((msg) => (
             <div
               key={msg.id}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
-              style={{ animationDelay: `${index * 0.1}s` }}
+              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              <div className={`flex items-start space-x-2 sm:space-x-3 ${
-                msg.role === 'user' ? 'max-w-[85%] sm:max-w-[80%]' : 'max-w-[90%] sm:max-w-[80%]'
+              <div className={`flex items-start space-x-3 max-w-[80%] ${
+                msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''
               }`}>
-                {msg.role === 'assistant' && (
-                  <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex-shrink-0 mt-1 interactive-lift animate-bounce-gentle">
-                    <Bot className="h-4 w-4 text-white" aria-hidden="true" />
-                  </div>
-                )}
-                <div
-                  className={`p-3 sm:p-4 rounded-2xl transition-all duration-300 interactive-lift ${
-                    msg.role === 'user'
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-br-md shadow-lg'
-                      : 'glass-card-premium text-slate-100 rounded-bl-md'
-                  }`}
-                  role={msg.role === 'assistant' ? 'log' : undefined}
-                  aria-label={msg.role === 'assistant' ? 'Assistant message' : 'Your message'}
-                >
-                  <p className="responsive-text-sm leading-relaxed whitespace-pre-wrap break-words">
+                {/* Avatar */}
+                <div className={`flex-shrink-0 ${
+                  msg.role === 'user' 
+                    ? 'w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center'
+                    : `p-2 bg-gradient-to-r ${currentAgent.color} rounded-lg`
+                }`}>
+                  {msg.role === 'user' ? (
+                    <User className="h-4 w-4 text-white" />
+                  ) : (
+                    <span className="text-sm">{currentAgent.icon}</span>
+                  )}
+                </div>
+                
+                {/* Message */}
+                <div className={`p-4 rounded-2xl ${
+                  msg.role === 'user'
+                    ? 'bg-blue-600 text-white rounded-br-md'
+                    : 'bg-white border border-gray-200 rounded-bl-md shadow-sm'
+                }`}>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
                     {msg.content}
                   </p>
-                  <span className="text-xs opacity-70 mt-2 block" aria-label={`Sent at ${new Date(msg.timestamp).toLocaleTimeString()}`}>
+                  <span className="text-xs opacity-70 mt-2 block">
                     {new Date(msg.timestamp).toLocaleTimeString()}
                   </span>
                 </div>
-                {msg.role === 'user' && (
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1 interactive-glow">
-                    <User className="h-3 w-3 sm:h-4 sm:w-4 text-white" aria-hidden="true" />
-                  </div>
-                )}
               </div>
             </div>
           ))}
           
-          {/* Enhanced Loading indicator - Accessible */}
+          {/* Loading indicator */}
           {isLoading && (
-            <div className="flex justify-start animate-fade-in" role="status" aria-live="polite">
-              <div className="flex items-start space-x-2 sm:space-x-3 max-w-[90%] sm:max-w-[80%]">
-                <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex-shrink-0 animate-pulse-glow">
-                  <Bot className="h-4 w-4 text-white animate-bounce-gentle" aria-hidden="true" />
+            <div className="flex justify-start">
+              <div className="flex items-start space-x-3 max-w-[80%]">
+                <div className={`p-2 bg-gradient-to-r ${currentAgent.color} rounded-lg`}>
+                  <span className="text-sm">{currentAgent.icon}</span>
                 </div>
-                <div className="glass-card-premium p-3 sm:p-4 rounded-2xl rounded-bl-md animate-shimmer">
+                <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-md shadow-sm p-4">
                   <div className="flex items-center space-x-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-blue-400" aria-hidden="true" />
-                    <span className="responsive-text-sm text-slate-300">
-                      BMad is thinking...
-                    </span>
+                    <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
+                    <span className="text-sm text-gray-600">Thinking...</span>
                   </div>
-                  <div className="flex space-x-1 mt-2">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                  </div>
-                  <span className="sr-only">Assistant is processing your message</span>
                 </div>
               </div>
             </div>
@@ -299,81 +395,71 @@ Please try asking again, or let me know which area you'd like to focus on first!
           
           <div ref={messagesEndRef} />
         </div>
+      </div>
 
-        {/* Message Input - Mobile Optimized */}
-        <div className="p-4 sm:p-6 border-t border-slate-700 safe-area-pb">
-          <div className="space-y-3">
-            {!hasApiKey && (
-              <div className="text-center py-2">
-                <div className="max-w-md mx-auto">
-                  <div className="flex items-center justify-center space-x-2 mb-2">
-                    <div className="p-1 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg">
-                      <Key className="h-4 w-4 text-white" />
-                    </div>
-                    <span className="responsive-text-xs text-slate-400 text-center">
-                      <span className="hidden sm:inline">Using simulation mode - for full AI, configure API keys in settings</span>
-                      <span className="sm:hidden">Demo mode - add API keys for full AI</span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            <form onSubmit={handleSendMessage} className="flex space-x-2 sm:space-x-3">
-              <div className="flex-1 relative">
-                <Input
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder={`Ask about your ${template} project...`}
-                  disabled={isLoading}
-                  className="w-full glass-card border-slate-600/50 text-white placeholder-slate-400 rounded-xl px-3 sm:px-4 py-3 min-h-[48px] responsive-text-sm focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-300"
-                  aria-label="Type your message about the project"
-                />
-                {message.trim() && (
-                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  </div>
-                )}
-              </div>
-              <Button 
-                type="submit" 
-                disabled={isLoading || !message.trim()}
-                className="gradient-button-premium px-4 sm:px-6 py-3 rounded-xl btn-accessible shrink-0 interactive-lift relative overflow-hidden"
-                aria-label={isLoading ? 'Sending message...' : 'Send message'}
-              >
-                <div className="relative z-10 flex items-center">
-                  {isLoading ? (
-                    <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
-                  ) : (
-                    <Send className="h-5 w-5" aria-hidden="true" />
-                  )}
-                </div>
-                <span className="sr-only">
-                  {isLoading ? 'Sending your message' : 'Send message'}
-                </span>
-              </Button>
-            </form>
-          </div>
+      {/* Input */}
+      <div className="border-t border-gray-200 bg-white/95 backdrop-blur-sm">
+        <div className="max-w-4xl mx-auto px-4 py-4">
+          <form onSubmit={handleSendMessage} className="flex items-end space-x-3">
+            <div className="flex-1 relative">
+              <textarea
+                ref={inputRef}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={`Message ${currentAgent.name}...`}
+                disabled={isLoading}
+                rows={1}
+                className="w-full resize-none border border-gray-300 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white disabled:bg-gray-50 disabled:text-gray-500"
+                style={{ minHeight: '48px', maxHeight: '120px' }}
+              />
+            </div>
+            <Button 
+              type="submit" 
+              disabled={isLoading || !message.trim()}
+              className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl shadow-sm transition-all duration-200 disabled:opacity-50"
+            >
+              {isLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Send className="h-5 w-5" />
+              )}
+            </Button>
+          </form>
+          
+          {!hasApiKey && (
+            <div className="mt-3 text-center">
+              <p className="text-xs text-yellow-600">
+                Running in demo mode. 
+                <Link 
+                  href="/dashboard/settings?tab=api" 
+                  className="underline hover:no-underline ml-1"
+                >
+                  Add API keys
+                </Link> for full AI capabilities.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
   )
 }
 
-export default function DirectChatPage() {
+export default function ChatPage() {
   return (
     <Suspense 
       fallback={
-        <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-gray-50 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <h3 className="text-xl font-semibold text-white mb-2">Loading BMad Chat</h3>
-            <p className="text-slate-400">Setting up your AI workspace...</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Loading BMad Chat</h3>
+            <p className="text-gray-600">Setting up your AI workspace...</p>
           </div>
         </div>
       }
     >
-      <DirectChatContent />
+      <ChatContent />
     </Suspense>
   )
 }
