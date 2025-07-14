@@ -13,32 +13,33 @@ interface Message {
   timestamp: Date;
 }
 
-interface Model {
+interface Provider {
+  id: string;
   name: string;
-  size: number;
-  family: string;
-  parameter_size: string;
-  quantization: string;
+  models: string[];
 }
 
-interface OllamaStatus {
+interface ApiStatus {
   status: 'loading' | 'ready' | 'error';
   message: string;
-  running: boolean;
-  version?: string;
-  host?: string;
+  hasApiKeys: boolean;
+  providers: Provider[];
+  recommended?: Provider;
+  demoMode: boolean;
 }
 
 export default function WebChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [ollamaStatus, setOllamaStatus] = useState<OllamaStatus>({ 
+  const [apiStatus, setApiStatus] = useState<ApiStatus>({ 
     status: 'loading', 
-    message: 'Checking Ollama status...', 
-    running: false 
+    message: 'Checking API status...', 
+    hasApiKeys: false,
+    providers: [],
+    demoMode: true
   });
-  const [availableModels, setAvailableModels] = useState<Model[]>([]);
+  const [selectedProvider, setSelectedProvider] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<string>('');
   const [error, setError] = useState<string>('');
   
@@ -48,8 +49,8 @@ export default function WebChatPage() {
   useEffect(() => {
     const initializeChat = async () => {
       // Add initial system message
-      addSystemMessage('🌐 Welcome to Web LLM Chat! Checking Ollama connection...');
-      await checkOllamaStatus();
+      addSystemMessage('🌐 Welcome to Web AI Chat! Checking API providers...');
+      await checkApiStatus();
     };
     
     initializeChat();
@@ -59,57 +60,51 @@ export default function WebChatPage() {
     scrollToBottom();
   }, [messages]);
 
-  const checkOllamaStatus = async () => {
+  const checkApiStatus = async () => {
     try {
-      const response = await fetch('/api/llm/status');
+      const response = await fetch('/api/chat/status');
       const data = await response.json();
       
-      setOllamaStatus(data);
+      setApiStatus({
+        status: data.success ? 'ready' : 'error',
+        message: data.success ? 'API providers checked' : 'Failed to check API status',
+        hasApiKeys: data.hasApiKeys,
+        providers: data.providers || [],
+        recommended: data.recommended,
+        demoMode: data.demoMode
+      });
       
-      if (data.running) {
-        addSystemMessage('🚀 Connected to Ollama! Loading available models...');
-        loadAvailableModels();
+      if (data.hasApiKeys && data.providers.length > 0) {
+        const recommended = data.recommended || data.providers[0];
+        setSelectedProvider(recommended.id);
+        setSelectedModel(recommended.models[0]);
+        addSystemMessage(`🚀 Connected to ${recommended.name}! Ready to chat.`);
       } else {
-        addSystemMessage('❌ Ollama is not running. Please start Ollama service.');
-        setError(data.message || 'Ollama service is not available');
+        addSystemMessage('⚠️ No API keys configured. Running in demo mode.');
+        setError('No API keys configured. Add API keys to enable real AI chat.');
       }
     } catch (error) {
-      console.error('Error checking Ollama status:', error);
-      setOllamaStatus({
+      console.error('Error checking API status:', error);
+      setApiStatus({
         status: 'error',
-        message: 'Failed to check Ollama status',
-        running: false
+        message: 'Failed to check API status',
+        hasApiKeys: false,
+        providers: [],
+        demoMode: true
       });
-      addSystemMessage('❌ Failed to connect to Ollama service.');
+      addSystemMessage('❌ Failed to check API providers.');
     }
   };
 
-  const loadAvailableModels = async () => {
-    try {
-      const response = await fetch('/api/llm/models');
-      const data = await response.json();
-      
-      if (data.success) {
-        setAvailableModels(data.models);
-        
-        if (data.models.length > 0) {
-          // Auto-select a good default model
-          const defaultModel = data.models.find((m: Model) => m.name.includes('llama3.2:3b')) || 
-                              data.models.find((m: Model) => m.name.includes('llama')) || 
-                              data.models[0];
-          setSelectedModel(defaultModel.name);
-          addSystemMessage(`✅ Found ${data.models.length} available models. Selected: ${defaultModel.name}`);
-        } else {
-          addSystemMessage('⚠️ No models found. Please pull a model using: ollama pull llama3.2:3b');
-        }
-      } else {
-        setError(data.error || 'Failed to load models');
-        addSystemMessage('❌ Failed to load available models.');
-      }
-    } catch (error) {
-      console.error('Error loading models:', error);
-      setError('Failed to load available models');
-      addSystemMessage('❌ Error loading models. Please check your connection.');
+  const refreshProviders = async () => {
+    await checkApiStatus();
+  };
+
+  const handleProviderChange = (providerId: string) => {
+    setSelectedProvider(providerId);
+    const provider = apiStatus.providers.find(p => p.id === providerId);
+    if (provider && provider.models.length > 0) {
+      setSelectedModel(provider.models[0]);
     }
   };
 
@@ -130,7 +125,7 @@ export default function WebChatPage() {
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!inputValue.trim() || isLoading || !selectedModel) return;
+    if (!inputValue.trim() || isLoading || !selectedProvider || !selectedModel) return;
     
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -150,12 +145,13 @@ export default function WebChatPage() {
         .filter(m => m.role !== 'system')
         .map(m => ({ role: m.role, content: m.content }));
 
-      const response = await fetch('/api/llm', {
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          provider: selectedProvider,
           model: selectedModel,
           message: userMessage.content,
           history
@@ -205,11 +201,6 @@ export default function WebChatPage() {
     }
   };
 
-  const formatModelSize = (size: number) => {
-    if (size >= 1e9) return `${(size / 1e9).toFixed(1)}GB`;
-    if (size >= 1e6) return `${(size / 1e6).toFixed(1)}MB`;
-    return `${size} bytes`;
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
@@ -220,43 +211,58 @@ export default function WebChatPage() {
             <CardTitle className="flex items-center justify-between text-white">
               <div className="flex items-center gap-3">
                 <span className="text-2xl">🌐</span>
-                <span>Web LLM Chat</span>
+                <span>Web AI Chat</span>
               </div>
               
               <div className="flex items-center gap-4">
                 {/* Status Indicator */}
                 <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${getStatusColor(ollamaStatus.status)}`} />
+                  <div className={`w-3 h-3 rounded-full ${getStatusColor(apiStatus.status)}`} />
                   <span className="text-sm text-gray-300">
-                    {ollamaStatus.status === 'loading' && 'Connecting...'}
-                    {ollamaStatus.status === 'ready' && 'Connected'}
-                    {ollamaStatus.status === 'error' && 'Error'}
+                    {apiStatus.status === 'loading' && 'Checking...'}
+                    {apiStatus.status === 'ready' && (apiStatus.hasApiKeys ? 'Ready' : 'Demo Mode')}
+                    {apiStatus.status === 'error' && 'Error'}
                   </span>
                 </div>
+                
+                {/* Provider Selector */}
+                <select 
+                  className="bg-gray-800 text-white px-3 py-1 rounded border border-purple-500/30 text-sm"
+                  value={selectedProvider} 
+                  onChange={(e) => handleProviderChange(e.target.value)}
+                  disabled={apiStatus.status !== 'ready'}
+                >
+                  <option value="">Select provider...</option>
+                  {apiStatus.providers.map(provider => (
+                    <option key={provider.id} value={provider.id}>
+                      {provider.name}
+                    </option>
+                  ))}
+                </select>
                 
                 {/* Model Selector */}
                 <select 
                   className="bg-gray-800 text-white px-3 py-1 rounded border border-purple-500/30 text-sm"
                   value={selectedModel} 
                   onChange={(e) => setSelectedModel(e.target.value)}
-                  disabled={ollamaStatus.status !== 'ready'}
+                  disabled={apiStatus.status !== 'ready' || !selectedProvider}
                 >
                   <option value="">Select model...</option>
-                  {availableModels.map(model => (
-                    <option key={model.name} value={model.name}>
-                      {model.name} ({formatModelSize(model.size)})
+                  {selectedProvider && apiStatus.providers.find(p => p.id === selectedProvider)?.models.map(model => (
+                    <option key={model} value={model}>
+                      {model}
                     </option>
                   ))}
                 </select>
                 
                 <Button 
-                  onClick={loadAvailableModels}
-                  disabled={ollamaStatus.status !== 'ready'}
+                  onClick={refreshProviders}
+                  disabled={apiStatus.status !== 'ready'}
                   variant="outline"
                   size="sm"
                   className="border-purple-500/30 text-purple-300 hover:bg-purple-500/20"
                 >
-                  Refresh Models
+                  Refresh
                 </Button>
               </div>
             </CardTitle>
@@ -280,11 +286,15 @@ export default function WebChatPage() {
           <CardContent className="p-0 flex-1 flex flex-col">
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages.length === 0 && ollamaStatus.status === 'ready' && (
+              {messages.length === 0 && apiStatus.status === 'ready' && (
                 <div className="text-center text-gray-400 py-8">
                   <div className="text-4xl mb-4">🤖</div>
-                  <div className="text-lg">Welcome to Web LLM Chat!</div>
-                  <div className="text-sm mt-2">Select a model above and start chatting with your local AI assistant.</div>
+                  <div className="text-lg">Welcome to Web AI Chat!</div>
+                  <div className="text-sm mt-2">
+                    {apiStatus.hasApiKeys 
+                      ? "Select a provider and model above to start chatting with AI." 
+                      : "Running in demo mode. Add API keys to enable real AI responses."}
+                  </div>
                 </div>
               )}
               
@@ -332,18 +342,18 @@ export default function WebChatPage() {
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder={
-                    ollamaStatus.status === 'ready' 
-                      ? selectedModel 
-                        ? `Message ${selectedModel}... (Press Enter to send)`
-                        : "Please select a model first..."
-                      : "Connecting to Ollama..."
+                    apiStatus.status === 'ready' 
+                      ? selectedProvider && selectedModel 
+                        ? `Message ${selectedProvider} ${selectedModel}... (Press Enter to send)`
+                        : "Please select a provider and model first..."
+                      : "Checking API providers..."
                   }
-                  disabled={isLoading || ollamaStatus.status !== 'ready' || !selectedModel}
+                  disabled={isLoading || apiStatus.status !== 'ready' || !selectedProvider || !selectedModel}
                   className="flex-1 bg-gray-800 border-purple-500/30 text-white placeholder-gray-400"
                 />
                 <Button
                   type="submit"
-                  disabled={isLoading || !inputValue.trim() || ollamaStatus.status !== 'ready' || !selectedModel}
+                  disabled={isLoading || !inputValue.trim() || apiStatus.status !== 'ready' || !selectedProvider || !selectedModel}
                   className="bg-purple-600 hover:bg-purple-700 text-white"
                 >
                   {isLoading ? 'Sending...' : 'Send'}
@@ -353,25 +363,25 @@ export default function WebChatPage() {
           </CardContent>
         </Card>
 
-        {/* Model Info */}
-        {selectedModel && availableModels.length > 0 && (
+        {/* Provider Info */}
+        {selectedProvider && selectedModel && (
           <Card className="mt-4 bg-black/40 backdrop-blur-sm border-purple-500/20">
             <CardContent className="p-4">
               <div className="text-white">
-                <div className="text-sm font-medium mb-2">Current Model:</div>
-                {availableModels.find(m => m.name === selectedModel) && (
-                  <div className="flex flex-wrap gap-2 text-xs">
-                    <Badge variant="outline" className="border-purple-500/30 text-purple-300">
-                      {selectedModel}
+                <div className="text-sm font-medium mb-2">Current Configuration:</div>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <Badge variant="outline" className="border-purple-500/30 text-purple-300">
+                    {apiStatus.providers.find(p => p.id === selectedProvider)?.name || selectedProvider}
+                  </Badge>
+                  <Badge variant="outline" className="border-purple-500/30 text-purple-300">
+                    {selectedModel}
+                  </Badge>
+                  {apiStatus.demoMode && (
+                    <Badge variant="outline" className="border-amber-500/30 text-amber-300">
+                      Demo Mode
                     </Badge>
-                    <Badge variant="outline" className="border-purple-500/30 text-purple-300">
-                      {formatModelSize(availableModels.find(m => m.name === selectedModel)?.size || 0)}
-                    </Badge>
-                    <Badge variant="outline" className="border-purple-500/30 text-purple-300">
-                      {availableModels.find(m => m.name === selectedModel)?.family}
-                    </Badge>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
