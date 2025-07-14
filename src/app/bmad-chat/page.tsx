@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+// import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Message {
   id: string;
@@ -106,7 +106,7 @@ export default function BMadChatPage() {
   });
   const [selectedProvider, setSelectedProvider] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<string>('');
-  const [activeTab, setActiveTab] = useState('chat');
+  // const [activeTab, setActiveTab] = useState('chat');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -332,24 +332,27 @@ ${selectedAgent.whenToUse}
           </CardHeader>
         </Card>
 
-        {/* Agent Selection Tabs */}
+        {/* Agent Selection Buttons */}
         <Card className="mb-6 bg-black/40 backdrop-blur-sm border-purple-500/20">
           <CardContent className="p-4">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-7 bg-gray-800/50">
-                {BMAD_AGENTS.map((agent) => (
-                  <TabsTrigger
-                    key={agent.id}
-                    value={agent.id}
-                    className="text-xs data-[state=active]:bg-purple-600"
-                    onClick={() => handleAgentSwitch(agent.id)}
-                  >
-                    <span className="mr-1">{agent.icon}</span>
-                    {agent.name}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
+            <div className="grid grid-cols-7 gap-2">
+              {BMAD_AGENTS.map((agent) => (
+                <Button
+                  key={agent.id}
+                  variant={selectedAgent.id === agent.id ? "default" : "outline"}
+                  size="sm"
+                  className={`text-xs ${
+                    selectedAgent.id === agent.id 
+                      ? 'bg-purple-600 text-white' 
+                      : 'border-purple-500/30 text-purple-300 hover:bg-purple-500/20'
+                  }`}
+                  onClick={() => handleAgentSwitch(agent.id)}
+                >
+                  <span className="mr-1">{agent.icon}</span>
+                  {agent.name}
+                </Button>
+              ))}
+            </div>
           </CardContent>
         </Card>
 
