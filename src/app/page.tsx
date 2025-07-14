@@ -19,7 +19,8 @@ import {
   Code,
   MessageSquare,
   Workflow,
-  Shield
+  Shield,
+  FileText
 } from 'lucide-react'
 
 const FEATURES = [
@@ -172,7 +173,15 @@ export default function VibeDev() {
                 className="inline-flex items-center px-8 py-4 border border-purple-600 text-purple-300 hover:text-white hover:border-purple-500 rounded-lg text-lg transition-colors hover:bg-purple-600/10"
               >
                 <Brain className="h-5 w-5 mr-2" />
-                Try Web LLM Chat
+                Try Web AI Chat
+              </Link>
+              
+              <Link 
+                href="/prd-generator"
+                className="inline-flex items-center px-8 py-4 border border-green-600 text-green-300 hover:text-white hover:border-green-500 rounded-lg text-lg transition-colors hover:bg-green-600/10"
+              >
+                <FileText className="h-5 w-5 mr-2" />
+                Generate PRD
               </Link>
             </div>
           </div>
