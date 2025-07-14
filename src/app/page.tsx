@@ -166,6 +166,14 @@ export default function VibeDev() {
                 <MessageSquare className="h-5 w-5 mr-2" />
                 Start Vibe Coding
               </Button>
+              
+              <Link 
+                href="/web-chat"
+                className="inline-flex items-center px-8 py-4 border border-purple-600 text-purple-300 hover:text-white hover:border-purple-500 rounded-lg text-lg transition-colors hover:bg-purple-600/10"
+              >
+                <Brain className="h-5 w-5 mr-2" />
+                Try Web LLM Chat
+              </Link>
             </div>
           </div>
         </div>
