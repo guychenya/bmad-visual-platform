@@ -1,268 +1,210 @@
 'use client'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
+import { useState, useEffect } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
-import { Plus, Users, MessageSquare, FileText, BarChart3, Zap, Brain, Sparkles, ArrowRight, Rocket, Folder, Layers, Building } from 'lucide-react'
+import { Sparkles, MessageSquare, Settings, ArrowRight, Zap, Users, FileText, Download } from 'lucide-react'
 import Link from 'next/link'
-import { routes } from '../../lib/routes'
-import { useHierarchy } from '../../contexts/HierarchyContext'
+import { useRouter } from 'next/navigation'
 
-export default function Dashboard() {
-  const { state } = useHierarchy()
-  
-  const quickActions = [
-    {
-      title: 'Agent Workspace',
-      description: 'GitHub Copilot-style tabbed interface with AI agents working together',
-      icon: Users,
-      href: routes.dashboard.workspace,
-      gradient: 'from-orange-500 to-red-500',
-      buttonText: 'Open Workspace',
-      buttonIcon: Users
-    },
-    {
-      title: 'AI Agents Hub',
-      description: 'Chat with specialized AI agents for every aspect of development',
-      icon: Brain,
-      href: routes.dashboard.agents,
-      gradient: 'from-purple-500 to-pink-500',
-      buttonText: 'Start Chatting',
-      buttonIcon: MessageSquare
-    },
-    {
-      title: 'Manage Hierarchy',
-      description: 'Navigate your organization structure and manage projects',
-      icon: Layers,
-      href: routes.dashboard.hierarchy,
-      gradient: 'from-indigo-500 to-purple-500',
-      buttonText: 'View Hierarchy',
-      buttonIcon: Building
-    },
-    {
-      title: 'Create Project',
-      description: 'Upload your PRD and watch AI agents build your app automatically',
-      icon: Rocket,
-      href: routes.dashboard.create,
-      gradient: 'from-blue-500 to-cyan-500',
-      buttonText: 'Start Building',
-      buttonIcon: Plus
-    },
-    {
-      title: 'Templates',
-      description: 'Browse pre-built templates for common project types',
-      icon: FileText,
-      href: routes.dashboard.templates,
-      gradient: 'from-green-500 to-emerald-500',
-      buttonText: 'Browse Templates',
-      buttonIcon: FileText
-    }
-  ]
+export default function SimplifiedDashboard() {
+  const router = useRouter()
+  const [hasApiKey, setHasApiKey] = useState(false)
 
-  const features = [
-    {
-      title: 'Viby Coding Experience',
-      description: 'Fluid, creative development that feels natural',
-      icon: Zap,
-      color: 'text-yellow-400',
-      items: [
-        'Beautiful agent personalities',
-        'Smooth animations and transitions',
-        'Intuitive chat interfaces',
-        'Real-time collaboration'
-      ]
-    },
-    {
-      title: 'AI-Powered Development',
-      description: 'Structured AI development methodology',
-      icon: BarChart3,
-      color: 'text-blue-400',
-      items: [
-        'Strategic planning with Analyst',
-        'Architecture design with Architect',
-        'Story management with Scrum Master',
-        'Quality assurance with QA'
-      ]
+  useEffect(() => {
+    // Check for API key
+    const checkApiKey = () => {
+      if (typeof window === 'undefined') return false
+      const savedSettings = localStorage.getItem('viby-settings')
+      if (savedSettings) {
+        try {
+          const settings = JSON.parse(savedSettings)
+          return !!(settings.apiKeys?.openai?.trim() || 
+                   settings.apiKeys?.claude?.trim() || 
+                   settings.apiKeys?.gemini?.trim())
+        } catch (error) {
+          return false
+        }
+      }
+      return false
     }
-  ]
+    
+    setHasApiKey(checkApiKey())
+  }, [])
+
+  const handleStartBuilding = () => {
+    // Go directly to workspace - no complex navigation
+    router.push('/dashboard/workspace')
+  }
 
   return (
-    <div className="space-y-8 pb-20 md:pb-8">
-      {/* Welcome Section */}
-      <div className="text-center space-y-4">
-        <div className="flex items-center justify-center mb-6">
-          <div className="relative">
-            <div className="w-20 h-20 bg-gradient-viby rounded-full flex items-center justify-center animate-float">
-              <Sparkles className="w-10 h-10 text-white" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <div className="max-w-4xl mx-auto px-4 py-12">
+        
+        {/* Hero Section - Clear Value Prop */}
+        <div className="text-center mb-16">
+          <div className="mb-8">
+            <div className="w-24 h-24 bg-gradient-viby rounded-full flex items-center justify-center mx-auto mb-6 animate-float">
+              <Sparkles className="w-12 h-12 text-white" />
             </div>
-            <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-accent rounded-full animate-ping"></div>
+            <h1 className="text-6xl font-bold gradient-text mb-4">
+              BMad AI Builder
+            </h1>
+            <p className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto">
+              Upload your PRD. AI agents build your app. Download professional deliverables.
+            </p>
           </div>
-        </div>
-        <h1 className="responsive-text-6xl font-bold gradient-text mb-4">
-          Welcome to Viby.ai
-        </h1>
-        <p className="text-lg text-slate-400 mb-4">Viewing: Personal Dashboard</p>
-        <p className="responsive-text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed">
-          Experience the power of AI-driven development with beautiful, intuitive interfaces. 
-          Your intelligent agents are ready to transform your development workflow.
-        </p>
-      </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-        {quickActions.map((action, index) => (
-          <Card key={action.title} className="agent-card group animate-slide-up" style={{ animationDelay: `${index * 0.1}s` }}>
+          {/* API Status Banner */}
+          {!hasApiKey && (
+            <div className="mb-8 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+              <p className="text-amber-300 text-sm">
+                <Settings className="h-4 w-4 inline mr-2" />
+                Demo mode active. <Link href="/dashboard/settings" className="underline hover:text-amber-200">Add API keys</Link> for full AI functionality.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Main Action Flow - Simple 3-Step Process */}
+        <div className="space-y-8">
+          
+          {/* Step 1: Start Building */}
+          <Card className="glass-card-premium border-l-4 border-l-blue-400">
             <CardHeader>
-              <CardTitle className="flex items-center space-x-3">
-                <div className={`p-3 bg-gradient-to-r ${action.gradient} rounded-xl group-hover:scale-110 transition-transform`}>
-                  <action.icon className="h-6 w-6 text-white" aria-hidden="true" />
-                </div>
-                <span className="responsive-text-lg text-white">{action.title}</span>
+              <CardTitle className="text-2xl text-white flex items-center">
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold mr-4">1</div>
+                Start Building Your Project
               </CardTitle>
-              <CardDescription className="responsive-text-sm text-slate-400">
-                {action.description}
-              </CardDescription>
             </CardHeader>
             <CardContent>
-              <Link href={action.href}>
-                <Button className="w-full gradient-button group-hover:scale-105 transition-transform">
-                  <action.buttonIcon className="h-4 w-4 mr-2" />
-                  {action.buttonText}
-                  <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Features Showcase */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {features.map((feature, index) => (
-          <Card key={feature.title} className="glass-card animate-fade-in" style={{ animationDelay: `${index * 0.2}s` }}>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-3">
-                <feature.icon className={`h-6 w-6 ${feature.color}`} />
-                <span className="text-white">{feature.title}</span>
-              </CardTitle>
-              <CardDescription className="text-slate-400">
-                {feature.description}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {feature.items.map((item, itemIndex) => (
-                <div key={itemIndex} className="flex items-center space-x-3 group">
-                  <div className="w-2 h-2 bg-gradient-viby rounded-full group-hover:scale-150 transition-transform"></div>
-                  <span className="text-sm text-slate-300 group-hover:text-white transition-colors">{item}</span>
+              <div className="flex flex-col md:flex-row items-center justify-between">
+                <div className="mb-4 md:mb-0">
+                  <p className="text-slate-300 mb-4">
+                    Launch the BMad workspace where AI agents collaborate to build your project from requirements to deployment.
+                  </p>
+                  <div className="flex items-center space-x-4 text-sm text-slate-400">
+                    <div className="flex items-center">
+                      <Users className="h-4 w-4 mr-1" />
+                      8 AI Specialists
+                    </div>
+                    <div className="flex items-center">
+                      <MessageSquare className="h-4 w-4 mr-1" />
+                      Real-time Chat
+                    </div>
+                    <div className="flex items-center">
+                      <FileText className="h-4 w-4 mr-1" />
+                      Professional Docs
+                    </div>
+                  </div>
                 </div>
-              ))}
+                <Button 
+                  onClick={handleStartBuilding}
+                  size="lg" 
+                  className="gradient-button-premium text-lg px-8 py-4 hover:scale-105 transition-all"
+                >
+                  <Zap className="h-5 w-5 mr-2" />
+                  Launch Workspace
+                  <ArrowRight className="h-5 w-5 ml-2" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
 
-      {/* Current Context */}
-      {state.currentOrganization && (
-        <Card className="glass-card border-l-4 border-l-purple-400">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-3">
-              <Building className="w-5 h-5 text-purple-400" />
-              Current Context
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-slate-300">Organization:</span>
-              <span className="text-white font-medium">{state.currentOrganization.name}</span>
-            </div>
-            {state.currentProject && (
-              <div className="flex items-center justify-between">
-                <span className="text-slate-300">Project:</span>
-                <span className="text-white font-medium">{state.currentProject.name}</span>
+          {/* Step 2: What You Get */}
+          <Card className="glass-card border-l-4 border-l-green-400">
+            <CardHeader>
+              <CardTitle className="text-2xl text-white flex items-center">
+                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold mr-4">2</div>
+                What You&apos;ll Get
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-3 gap-6">
+                
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <FileText className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-2">Professional Documents</h3>
+                  <p className="text-sm text-slate-400">Business requirements, user stories, technical architecture, and system design.</p>
+                </div>
+
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <MessageSquare className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-2">AI Collaboration</h3>
+                  <p className="text-sm text-slate-400">Orchestrator, Analyst, Architect, Developer, QA and more working together.</p>
+                </div>
+
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <Download className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-2">Ready Downloads</h3>
+                  <p className="text-sm text-slate-400">Download all deliverables as professional markdown documents.</p>
+                </div>
+
               </div>
-            )}
-            {state.currentWorkflow && (
-              <div className="flex items-center justify-between">
-                <span className="text-slate-300">Workflow:</span>
-                <span className="text-white font-medium">{state.currentWorkflow.name}</span>
+            </CardContent>
+          </Card>
+
+          {/* Step 3: Configure (Optional) */}
+          <Card className="glass-card border-l-4 border-l-purple-400">
+            <CardHeader>
+              <CardTitle className="text-2xl text-white flex items-center">
+                <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold mr-4">3</div>
+                Configure Settings (Optional)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col md:flex-row items-center justify-between">
+                <div className="mb-4 md:mb-0">
+                  <p className="text-slate-300 mb-2">
+                    Add your API keys for full AI functionality, or continue in demo mode.
+                  </p>
+                  <p className="text-sm text-slate-400">
+                    Supports OpenAI GPT-4, Anthropic Claude, and Google Gemini.
+                  </p>
+                </div>
+                <Link href="/dashboard/settings">
+                  <Button 
+                    variant="outline" 
+                    size="lg" 
+                    className="glass-button px-6 py-3 hover:scale-105 transition-all"
+                  >
+                    <Settings className="h-5 w-5 mr-2" />
+                    Settings
+                  </Button>
+                </Link>
               </div>
-            )}
-            <div className="pt-2">
-              <Link href={routes.dashboard.hierarchy}>
-                <Button size="sm" className="gradient-button">
-                  <Layers className="w-4 h-4 mr-2" />
-                  Manage Hierarchy
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
 
-      {/* Stats Section */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="glass-card text-center">
-          <CardContent className="p-6">
-            <div className="text-3xl font-bold gradient-text mb-2">7+</div>
-            <div className="text-slate-400">AI Agents</div>
-          </CardContent>
-        </Card>
-        <Card className="glass-card text-center">
-          <CardContent className="p-6">
-            <div className="text-3xl font-bold gradient-text mb-2">100+</div>
-            <div className="text-slate-400">Templates</div>
-          </CardContent>
-        </Card>
-        <Card className="glass-card text-center">
-          <CardContent className="p-6">
-            <div className="text-3xl font-bold gradient-text mb-2">{state.currentOrganization ? '1' : '0'}</div>
-            <div className="text-slate-400">Organizations</div>
-          </CardContent>
-        </Card>
-        <Card className="glass-card text-center">
-          <CardContent className="p-6">
-            <div className="text-3xl font-bold gradient-text mb-2">∞</div>
-            <div className="text-slate-400">Possibilities</div>
-          </CardContent>
-        </Card>
-      </div>
+        </div>
 
-      {/* Getting Started */}
-      <Card className="glass-card">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl text-white">Ready to Get Started?</CardTitle>
-          <CardDescription className="text-slate-400">
-            Your AI development team is ready to help you build amazing projects
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href={routes.dashboard.hierarchy}>
-              <Button size="lg" className="w-full sm:w-auto gradient-button hover:scale-105 transition-transform">
-                <Layers className="h-5 w-5 mr-2" />
-                Explore Hierarchy
-              </Button>
-            </Link>
-            <Link href={routes.dashboard.agents}>
-              <Button size="lg" className="w-full sm:w-auto gradient-button hover:scale-105 transition-transform">
-                <Brain className="h-5 w-5 mr-2" />
-                Meet Your Agents
-              </Button>
-            </Link>
-            <Link href={routes.dashboard.workspace}>
-              <Button size="lg" className="w-full sm:w-auto gradient-button hover:scale-105 transition-transform">
-                <Users className="h-5 w-5 mr-2" />
-                Try Workspace
-              </Button>
-            </Link>
-            <Link href={routes.dashboard.create}>
-              <Button variant="outline" size="lg" className="w-full sm:w-auto glass-button hover:scale-105 transition-transform">
-                <Plus className="h-5 w-5 mr-2" />
-                Create Project
-              </Button>
-            </Link>
+        {/* Quick Stats */}
+        <div className="mt-16 grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="text-center">
+            <div className="text-3xl font-bold gradient-text">8+</div>
+            <div className="text-slate-400 text-sm">AI Specialists</div>
           </div>
-        </CardContent>
-      </Card>
+          <div className="text-center">
+            <div className="text-3xl font-bold gradient-text">5min</div>
+            <div className="text-slate-400 text-sm">Setup Time</div>
+          </div>
+          <div className="text-center">
+            <div className="text-3xl font-bold gradient-text">100%</div>
+            <div className="text-slate-400 text-sm">Professional Output</div>
+          </div>
+          <div className="text-center">
+            <div className="text-3xl font-bold gradient-text">∞</div>
+            <div className="text-slate-400 text-sm">Project Types</div>
+          </div>
+        </div>
+
+      </div>
     </div>
   )
 }
