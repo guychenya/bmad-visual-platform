@@ -90,9 +90,9 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
+    <main className="min-h-screen bg-gradient-to-br from-purple-950 via-purple-900 to-indigo-950">
       {/* Header */}
-      <div className="border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+      <div className="border-b border-purple-700/50 bg-purple-900/80 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -100,8 +100,8 @@ export default function Home() {
                 <Brain className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">BMad AI</h1>
-                <p className="text-sm text-gray-500">AI-powered development assistant</p>
+                <h1 className="text-xl font-semibold text-white">BMad AI</h1>
+                <p className="text-sm text-purple-200">AI-powered development assistant</p>
               </div>
             </div>
             <Badge 
@@ -122,17 +122,17 @@ export default function Home() {
       <div className="max-w-4xl mx-auto px-4 py-12">
         {/* Hero Section */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center space-x-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm mb-6">
+          <div className="inline-flex items-center space-x-2 bg-purple-800/50 text-purple-200 px-4 py-2 rounded-full text-sm mb-6">
             <Sparkles className="h-4 w-4" />
             <span>Powered by advanced AI agents</span>
           </div>
           
-          <h1 className="text-5xl font-bold text-gray-900 mb-6 leading-tight">
+          <h1 className="text-5xl font-bold text-white mb-6 leading-tight">
             Build with
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> AI Agents</span>
+            <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"> AI Agents</span>
           </h1>
           
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-xl text-gray-200 mb-8 max-w-2xl mx-auto leading-relaxed">
             Transform your development workflow with specialized AI agents. From planning to deployment, 
             get expert guidance at every step.
           </p>
@@ -150,27 +150,27 @@ export default function Home() {
 
         {/* Agent Cards */}
         <div className="mb-12">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">Choose Your AI Agent</h2>
+          <h2 className="text-2xl font-semibold text-white mb-6 text-center">Choose Your AI Agent</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {FEATURED_AGENTS.map((agent) => (
               <div
                 key={agent.id}
                 onClick={() => handleAgentSelect(agent.id)}
-                className="group p-6 bg-white rounded-2xl border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all duration-200 cursor-pointer"
+                className="group p-6 bg-purple-900/50 rounded-2xl border border-purple-700/50 hover:border-purple-600 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-200 cursor-pointer backdrop-blur-sm"
               >
                 <div className="flex items-start space-x-4">
                   <div className={`p-3 bg-gradient-to-r ${agent.color} rounded-xl text-2xl group-hover:scale-110 transition-transform duration-200`}>
                     {agent.icon}
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
+                    <h3 className="font-semibold text-white mb-1 group-hover:text-purple-300 transition-colors">
                       {agent.name}
                     </h3>
-                    <p className="text-gray-600 text-sm leading-relaxed">
+                    <p className="text-gray-300 text-sm leading-relaxed">
                       {agent.description}
                     </p>
                   </div>
-                  <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all duration-200" />
+                  <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-purple-300 group-hover:translate-x-1 transition-all duration-200" />
                 </div>
               </div>
             ))}
@@ -179,17 +179,17 @@ export default function Home() {
 
         {/* Example Prompts */}
         <div className="mb-12">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">Try These Examples</h2>
+          <h2 className="text-2xl font-semibold text-white mb-6 text-center">Try These Examples</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {EXAMPLE_PROMPTS.map((prompt, index) => (
               <div
                 key={index}
                 onClick={() => handleExamplePrompt(prompt)}
-                className="group p-4 bg-gray-50 hover:bg-blue-50 rounded-xl border border-gray-200 hover:border-blue-200 cursor-pointer transition-all duration-200"
+                className="group p-4 bg-purple-800/30 hover:bg-purple-700/50 rounded-xl border border-purple-600/30 hover:border-purple-500 cursor-pointer transition-all duration-200 backdrop-blur-sm"
               >
                 <div className="flex items-center space-x-3">
-                  <Bot className="h-4 w-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                  <span className="text-gray-700 group-hover:text-blue-700 transition-colors">
+                  <Bot className="h-4 w-4 text-purple-300 group-hover:text-purple-200 transition-colors" />
+                  <span className="text-gray-200 group-hover:text-white transition-colors">
                     &ldquo;{prompt}&rdquo;
                   </span>
                 </div>
@@ -201,12 +201,12 @@ export default function Home() {
         {/* Status Message */}
         {!hasApiKey && (
           <div className="text-center">
-            <div className="inline-flex items-center space-x-2 bg-amber-50 text-amber-700 px-6 py-3 rounded-xl border border-amber-200">
+            <div className="inline-flex items-center space-x-2 bg-amber-900/50 text-amber-200 px-6 py-3 rounded-xl border border-amber-700/50 backdrop-blur-sm">
               <Star className="h-4 w-4" />
               <span>Running in demo mode. </span>
               <Link 
                 href="/dashboard/settings?tab=api" 
-                className="underline hover:no-underline font-medium"
+                className="underline hover:no-underline font-medium text-amber-100"
               >
                 Add API keys
               </Link>
@@ -217,9 +217,9 @@ export default function Home() {
       </div>
 
       {/* Footer */}
-      <div className="border-t border-gray-200 bg-gray-50/50">
+      <div className="border-t border-purple-700/50 bg-purple-900/30">
         <div className="max-w-6xl mx-auto px-4 py-8">
-          <div className="flex items-center justify-center space-x-6 text-sm text-gray-500">
+          <div className="flex items-center justify-center space-x-6 text-sm text-purple-200">
             <div className="flex items-center space-x-2">
               <Code className="h-4 w-4" />
               <span>Built with BMad Method</span>

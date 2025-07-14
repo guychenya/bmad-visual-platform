@@ -263,22 +263,22 @@ Please provide helpful, actionable guidance for this ${template} project. Be spe
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-purple-950 via-purple-900 to-indigo-950 flex flex-col">
       {/* Header */}
-      <div className="border-b border-gray-200 bg-white/95 backdrop-blur-sm sticky top-0 z-10">
+      <div className="border-b border-purple-700/50 bg-purple-900/95 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <Link 
                 href="/"
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-purple-800/50 rounded-lg transition-colors"
                 aria-label="Back to home"
               >
-                <ArrowLeft className="h-5 w-5 text-gray-600" />
+                <ArrowLeft className="h-5 w-5 text-purple-200" />
               </Link>
               
               <div 
-                className="flex items-center space-x-3 cursor-pointer p-2 hover:bg-gray-50 rounded-lg transition-colors"
+                className="flex items-center space-x-3 cursor-pointer p-2 hover:bg-purple-800/30 rounded-lg transition-colors"
                 onClick={() => setShowAgentSelector(!showAgentSelector)}
               >
                 <div className={`p-2 bg-gradient-to-r ${currentAgent.color} rounded-lg text-lg`}>
@@ -286,10 +286,10 @@ Please provide helpful, actionable guidance for this ${template} project. Be spe
                 </div>
                 <div>
                   <div className="flex items-center space-x-1">
-                    <h1 className="font-semibold text-gray-900">{currentAgent.name}</h1>
-                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                    <h1 className="font-semibold text-white">{currentAgent.name}</h1>
+                    <ChevronDown className="h-4 w-4 text-purple-300" />
                   </div>
-                  <p className="text-sm text-gray-500">{currentAgent.description}</p>
+                  <p className="text-sm text-purple-200">{currentAgent.description}</p>
                 </div>
               </div>
             </div>
@@ -297,8 +297,8 @@ Please provide helpful, actionable guidance for this ${template} project. Be spe
             <div className="flex items-center space-x-2">
               <div className={`px-3 py-1 rounded-full text-xs font-medium ${
                 hasApiKey 
-                  ? 'bg-green-100 text-green-700' 
-                  : 'bg-yellow-100 text-yellow-700'
+                  ? 'bg-green-900/50 text-green-200 border border-green-700/50' 
+                  : 'bg-yellow-900/50 text-yellow-200 border border-yellow-700/50'
               }`}>
                 {hasApiKey ? 'AI Ready' : 'Demo Mode'}
               </div>
@@ -307,25 +307,25 @@ Please provide helpful, actionable guidance for this ${template} project. Be spe
 
           {/* Agent Selector Dropdown */}
           {showAgentSelector && (
-            <div className="absolute top-full left-4 right-4 max-w-md mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-20">
+            <div className="absolute top-full left-4 right-4 max-w-md mt-2 bg-purple-900/95 border border-purple-700/50 rounded-xl shadow-lg backdrop-blur-sm z-20">
               <div className="p-2">
-                <h3 className="text-sm font-medium text-gray-900 mb-2 px-2">Switch Agent</h3>
+                <h3 className="text-sm font-medium text-white mb-2 px-2">Switch Agent</h3>
                 {Object.entries(AGENTS).map(([id, agent]) => (
                   <div
                     key={id}
                     onClick={() => handleAgentSwitch(id)}
                     className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-colors ${
                       id === agentId 
-                        ? 'bg-blue-50 text-blue-700' 
-                        : 'hover:bg-gray-50'
+                        ? 'bg-purple-700/50 text-purple-200' 
+                        : 'hover:bg-purple-800/30'
                     }`}
                   >
                     <div className={`p-2 bg-gradient-to-r ${agent.color} rounded-lg text-sm`}>
                       {agent.icon}
                     </div>
                     <div>
-                      <div className="font-medium text-sm">{agent.name}</div>
-                      <div className="text-xs text-gray-500">{agent.description}</div>
+                      <div className="font-medium text-sm text-white">{agent.name}</div>
+                      <div className="text-xs text-purple-300">{agent.description}</div>
                     </div>
                   </div>
                 ))}
@@ -362,10 +362,12 @@ Please provide helpful, actionable guidance for this ${template} project. Be spe
                 {/* Message */}
                 <div className={`p-4 rounded-2xl ${
                   msg.role === 'user'
-                    ? 'bg-blue-600 text-white rounded-br-md'
-                    : 'bg-white border border-gray-200 rounded-bl-md shadow-sm'
+                    ? 'bg-purple-600 text-white rounded-br-md'
+                    : 'bg-purple-900/50 border border-purple-700/50 rounded-bl-md shadow-sm backdrop-blur-sm'
                 }`}>
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                  <p className={`text-sm leading-relaxed whitespace-pre-wrap ${
+                    msg.role === 'user' ? 'text-white' : 'text-gray-100'
+                  }`}>
                     {msg.content}
                   </p>
                   <span className="text-xs opacity-70 mt-2 block">
@@ -383,10 +385,10 @@ Please provide helpful, actionable guidance for this ${template} project. Be spe
                 <div className={`p-2 bg-gradient-to-r ${currentAgent.color} rounded-lg`}>
                   <span className="text-sm">{currentAgent.icon}</span>
                 </div>
-                <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-md shadow-sm p-4">
+                <div className="bg-purple-900/50 border border-purple-700/50 rounded-2xl rounded-bl-md shadow-sm backdrop-blur-sm p-4">
                   <div className="flex items-center space-x-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
-                    <span className="text-sm text-gray-600">Thinking...</span>
+                    <Loader2 className="h-4 w-4 animate-spin text-purple-300" />
+                    <span className="text-sm text-gray-200">Thinking...</span>
                   </div>
                 </div>
               </div>
@@ -398,7 +400,7 @@ Please provide helpful, actionable guidance for this ${template} project. Be spe
       </div>
 
       {/* Input */}
-      <div className="border-t border-gray-200 bg-white/95 backdrop-blur-sm">
+      <div className="border-t border-purple-700/50 bg-purple-900/95 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <form onSubmit={handleSendMessage} className="flex items-end space-x-3">
             <div className="flex-1 relative">
@@ -410,14 +412,14 @@ Please provide helpful, actionable guidance for this ${template} project. Be spe
                 placeholder={`Message ${currentAgent.name}...`}
                 disabled={isLoading}
                 rows={1}
-                className="w-full resize-none border border-gray-300 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white disabled:bg-gray-50 disabled:text-gray-500"
+                className="w-full resize-none border border-purple-600/50 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-purple-800/30 text-white placeholder-purple-300 disabled:bg-purple-900/50 disabled:text-purple-400 backdrop-blur-sm"
                 style={{ minHeight: '48px', maxHeight: '120px' }}
               />
             </div>
             <Button 
               type="submit" 
               disabled={isLoading || !message.trim()}
-              className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl shadow-sm transition-all duration-200 disabled:opacity-50"
+              className="bg-purple-600 hover:bg-purple-700 text-white p-3 rounded-xl shadow-sm transition-all duration-200 disabled:opacity-50"
             >
               {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -429,11 +431,11 @@ Please provide helpful, actionable guidance for this ${template} project. Be spe
           
           {!hasApiKey && (
             <div className="mt-3 text-center">
-              <p className="text-xs text-yellow-600">
+              <p className="text-xs text-yellow-200">
                 Running in demo mode. 
                 <Link 
                   href="/dashboard/settings?tab=api" 
-                  className="underline hover:no-underline ml-1"
+                  className="underline hover:no-underline ml-1 text-yellow-100"
                 >
                   Add API keys
                 </Link> for full AI capabilities.
@@ -450,11 +452,11 @@ export default function ChatPage() {
   return (
     <Suspense 
       fallback={
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-gradient-to-br from-purple-950 via-purple-900 to-indigo-950 flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Loading BMad Chat</h3>
-            <p className="text-gray-600">Setting up your AI workspace...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400 mx-auto mb-4"></div>
+            <h3 className="text-lg font-medium text-white mb-2">Loading BMad Chat</h3>
+            <p className="text-purple-200">Setting up your AI workspace...</p>
           </div>
         </div>
       }
