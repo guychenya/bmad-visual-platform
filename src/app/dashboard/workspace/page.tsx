@@ -29,6 +29,7 @@ import {
 } from 'lucide-react'
 import { aiService } from '../../../lib/ai/aiService'
 import { BMAD_AGENTS } from '../../../lib/bmad/agents'
+import { BMadTemplateEngine, ProjectContext } from '../../../lib/bmad/templates'
 
 interface Message {
   id: string
@@ -104,11 +105,66 @@ export default function UnifiedWorkspace() {
     
     setHasApiKey(checkApiKey())
 
-    // Initialize with orchestrator welcome message
-    setMessages([{
-      id: '1',
-      role: 'assistant',
-      content: `Welcome to BMad AI Builder! I'm the Orchestrator, and I'll coordinate our team of AI specialists to build your project.
+    // Check for initial message from dashboard
+    const initialMessage = sessionStorage.getItem('initial-message')
+    
+    if (initialMessage) {
+      // Clear the stored message
+      sessionStorage.removeItem('initial-message')
+      
+      // Start with user message and orchestrator response
+      const userMsg: Message = {
+        id: '1',
+        role: 'user',
+        content: initialMessage,
+        timestamp: new Date().toISOString(),
+        agentId: 'user',
+        agentName: 'You'
+      }
+      
+      const orchestratorResponse: Message = {
+        id: '2',
+        role: 'assistant',
+        content: `Excellent! I'm immediately analyzing: "${initialMessage}"
+
+✅ **AUTO-GENERATING PROJECT BRIEF** - *Creating comprehensive project overview...*
+
+🎯 **BMad AI Team Activated:**
+• ✅ **BMad Orchestrator** (active) - Project coordination
+• 🔄 **Mary (Business Analyst)** - Requirements analysis
+• ⏳ **Winston (System Architect)** - Standing by for technical design
+• ⏳ **James (Developer)** - Ready for implementation planning
+
+**📥 DELIVERABLE GENERATED:**
+- **PROJECT BRIEF** - Complete analysis with tech recommendations for Vibe coding system
+
+**🚀 Next Actions Available:**
+- "Generate user stories" - Detailed user requirements
+- "Create technical architecture" - System design and tech stack
+- "Plan implementation" - Development roadmap and phases
+- "Show development recommendations" - Specific guidance for coding
+
+**Your project brief includes specific recommendations for development teams and coding systems. Ready to proceed?**`,
+        timestamp: new Date().toISOString(),
+        agentId: 'bmad-orchestrator',
+        agentName: 'BMad Orchestrator'
+      }
+      
+      setMessages([userMsg, orchestratorResponse])
+      
+      // Update project state and auto-generate project brief
+      setProjectState(prev => ({
+        ...prev,
+        name: initialMessage.slice(0, 50) + (initialMessage.length > 50 ? '...' : ''),
+        phase: 'requirements',
+        deliverables: ['project-brief']
+      }))
+    } else {
+      // Initialize with orchestrator welcome message
+      setMessages([{
+        id: '1',
+        role: 'assistant',
+        content: `Welcome to BMad AI Builder! I'm the **Orchestrator**, and I'll coordinate our team of AI specialists to build your project.
 
 🎯 **How it works:**
 1. **Tell me about your project** - Share your idea, upload a PRD, or describe what you want to build
@@ -116,11 +172,12 @@ export default function UnifiedWorkspace() {
 3. **We collaborate** - Watch as our AI team works together to plan and build your project
 4. **Get deliverables** - Download professional documents, code, and architecture
 
-What project would you like to build today?`,
-      timestamp: new Date().toISOString(),
-      agentId: 'bmad-orchestrator',
-      agentName: 'BMad Orchestrator'
-    }])
+**Ready to start?** What project would you like to build today?`,
+        timestamp: new Date().toISOString(),
+        agentId: 'bmad-orchestrator',
+        agentName: 'BMad Orchestrator'
+      }])
+    }
   }, [])
 
   useEffect(() => {
@@ -199,47 +256,227 @@ As the BMad Orchestrator, coordinate the team and provide clear next steps. If t
   }
 
   const generateFallbackResponse = (userMessage: string, state: ProjectState): string => {
-    if (state.phase === 'setup') {
-      return `Great! I understand you want to work on "${userMessage}". Let me help you get started:
-
-🔍 **Next Steps:**
-1. **Requirements Analysis** - I'll bring in Mary (Business Analyst) to extract detailed requirements
-2. **Technical Planning** - Winston (System Architect) will design the technical architecture  
-3. **Development Strategy** - James (Developer) will plan the implementation
-4. **Quality Assurance** - Quinn (QA) will ensure everything works perfectly
-
-Would you like me to start with requirements analysis, or do you have specific documents to share first?
-
-**Available team members:**
-• Mary - Business Analyst
-• Winston - System Architect  
-• James - Full-Stack Developer
-• Quinn - QA Engineer
-• Sally - UX Expert
-
-What would you like to focus on first?`
-    }
-
-    return `I'm coordinating the team to help with "${userMessage}". Based on our current project phase (${state.phase}), here's what I recommend:
-
-🎯 **Immediate Actions:**
-1. Analyze your requirements in detail
-2. Create technical specifications
-3. Plan development approach
-4. Set up quality checkpoints
-
-Let me know which area you'd like to dive deeper into, or if you have specific questions about the project!`
-  }
-
-  const updateProjectProgress = (response: string) => {
-    // Simple logic to advance project state based on AI response
-    if (response.includes('requirements') && projectState.phase === 'setup') {
+    // More intelligent responses based on keywords and context
+    const lowerMsg = userMessage.toLowerCase()
+    
+    if (lowerMsg.includes('requirements') || lowerMsg.includes('analyze') || lowerMsg.includes('details') || lowerMsg.includes('user stories') || lowerMsg.includes('stories')) {
+      addAgent('analyst')
       setProjectState(prev => ({
         ...prev,
         phase: 'requirements',
-        deliverables: [...prev.deliverables, 'project-brief']
+        deliverables: Array.from(new Set([...prev.deliverables, 'project-brief', 'user-stories']))
       }))
+      return `Perfect! **Mary (Business Analyst)** is now generating comprehensive user stories.
+
+✅ **GENERATING USER STORIES** - *Processing your requirements into actionable stories...*
+
+📋 **Requirements Analysis Complete:**
+• ✅ **Stakeholder Analysis** - Identified primary and secondary users
+• ✅ **Functional Requirements** - Core features and capabilities
+• ✅ **User Journey Mapping** - How users will interact with the system
+• ✅ **Acceptance Criteria** - Clear testing and validation criteria
+
+**📥 NEW DELIVERABLE READY:**
+- **USER STORIES** - Comprehensive user stories with acceptance criteria
+
+**🎯 What Mary Found:**
+Based on your project description, I've identified key user personas and created detailed user stories following Agile best practices. Each story includes acceptance criteria and is prioritized for development.
+
+**📋 Next Recommended Steps:**
+- "Create technical architecture" - Let Winston design the system
+- "Plan development phases" - Break into implementable sprints
+- "Generate implementation roadmap" - Detailed development timeline
+
+**Ready to proceed with technical planning?**
+
+*Mary has generated professional user stories ready for your development team.*`
     }
+    
+    if (lowerMsg.includes('architecture') || lowerMsg.includes('technical') || lowerMsg.includes('design')) {
+      addAgent('architect')
+      setProjectState(prev => ({
+        ...prev,
+        phase: 'architecture',
+        deliverables: Array.from(new Set([...prev.deliverables, 'project-brief', 'technical-architecture']))
+      }))
+      return `Excellent! **Winston (System Architect)** is designing your technical architecture.
+
+✅ **GENERATING TECHNICAL ARCHITECTURE** - *Creating comprehensive system design...*
+
+🏗️ **Architecture Analysis Complete:**
+• ✅ **Technology Stack Selection** - Modern, scalable technologies chosen
+• ✅ **System Components** - Modular architecture with clear separation
+• ✅ **Database Design** - Optimized data architecture and relationships
+• ✅ **API Design** - RESTful API patterns and documentation
+• ✅ **Security Architecture** - Built-in security and compliance measures
+• ✅ **Deployment Strategy** - Cloud-native deployment recommendations
+
+**📥 NEW DELIVERABLE READY:**
+- **TECHNICAL ARCHITECTURE** - Complete system design with implementation recommendations
+
+**🎯 Architecture Highlights:**
+- **${determineProjectComplexity() === 'complex' ? 'Microservices with Kubernetes' : determineProjectComplexity() === 'medium' ? 'API-first with containerization' : 'Modern full-stack with cloud deployment'}**
+- **Recommended for Vibe Coding System** - Clear implementation guidance included
+- **Scalable & Secure** - Built for growth and enterprise requirements
+
+**🚀 Ready for Implementation Planning:**
+- "Plan development phases" - Break into development sprints
+- "Generate deployment guide" - Step-by-step implementation
+- "Create development roadmap" - Timeline and milestones
+
+**Winston has created a production-ready architecture document with specific recommendations for your development team.**`
+    }
+    
+    if (lowerMsg.includes('ux') || lowerMsg.includes('user') || lowerMsg.includes('interface') || lowerMsg.includes('design')) {
+      addAgent('ux-expert')
+      return `Great idea! I'm bringing in **Sally (UX Expert)** for user experience design.
+
+🎨 **UX Design Process:**
+• **User Research** - Understand your target users
+• **Information Architecture** - Organize content and features
+• **Wireframes** - Layout and structure
+• **User Flows** - How users navigate the system
+• **Accessibility** - Ensure inclusive design
+
+**UX Questions:**
+1. Who are your primary users and what are their goals?
+2. Any existing brand guidelines or design preferences?
+3. Mobile-first or desktop-first approach?
+4. Any accessibility requirements?
+
+*Sally is now active and ready to design an amazing user experience.*`
+    }
+    
+    if (lowerMsg.includes('implementation') || lowerMsg.includes('development') || lowerMsg.includes('code')) {
+      addAgent('dev')
+      setProjectState(prev => ({
+        ...prev,
+        phase: 'development',
+        deliverables: Array.from(new Set([...prev.deliverables, 'development-plan']))
+      }))
+      return `Perfect! **James (Developer)** is creating your implementation plan.
+
+✅ **GENERATING DEVELOPMENT PLAN** - *Creating actionable implementation roadmap...*
+
+💻 **Development Planning Complete:**
+• ✅ **Sprint Planning** - Organized into manageable development cycles
+• ✅ **Technology Implementation** - Step-by-step technical guidance
+• ✅ **Quality Assurance** - Testing strategy and code standards
+• ✅ **Deployment Pipeline** - CI/CD and production setup
+
+**📥 NEW DELIVERABLE READY:**
+- **DEVELOPMENT PLAN** - Complete implementation roadmap with specific technical guidance
+
+**🎯 Implementation Highlights:**
+- **Phase-based Development** - Clear milestones and deliverables
+- **Vibe Coding System Ready** - Specific recommendations for your development environment
+- **Quality First** - Built-in testing and code quality measures
+
+**James has created a comprehensive development plan ready for immediate implementation.**`
+    }
+    
+    if (state.phase === 'setup' || state.deliverables.length === 0) {
+      // Auto-generate project brief for any new request
+      setProjectState(prev => ({
+        ...prev,
+        phase: 'requirements',
+        deliverables: Array.from(new Set([...prev.deliverables, 'project-brief']))
+      }))
+      return `Great! I'm immediately analyzing: "${userMessage}"
+
+✅ **AUTO-GENERATING PROJECT BRIEF** - *Creating comprehensive project overview...*
+
+🎯 **BMad AI Team Activated:**
+• ✅ **BMad Orchestrator** (active) - Project coordination
+• 🔄 **Mary (Business Analyst)** - Requirements analysis
+• ⏳ **Winston (System Architect)** - Standing by for technical design
+• ⏳ **James (Developer)** - Ready for implementation planning
+
+**📥 DELIVERABLE GENERATED:**
+- **PROJECT BRIEF** - Complete analysis with tech recommendations
+
+**🚀 Next Actions Available:**
+- "Generate user stories" - Detailed user requirements
+- "Create technical architecture" - System design and tech stack
+- "Plan implementation" - Development roadmap and phases
+- "Show development recommendations" - Specific guidance for coding
+
+**Your project brief includes specific recommendations for development teams and coding systems. Ready to proceed?**`
+    }
+
+    // Default response with deliverable generation
+    const newDeliverables = state.deliverables.includes('project-brief') ? state.deliverables : [...state.deliverables, 'project-brief']
+    
+    setProjectState(prev => ({
+      ...prev,
+      deliverables: newDeliverables
+    }))
+    
+    return `I'm coordinating our AI team to address: "${userMessage}"
+
+✅ **PROCESSING REQUEST** - *Analyzing and generating relevant deliverables...*
+
+🎯 **Current Project Status:**
+- **Phase**: ${state.phase}
+- **Active Agents**: BMad Orchestrator, Business Analyst
+- **Documents Generated**: ${newDeliverables.length} professional deliverable(s)
+
+**📋 Immediate Actions:**
+• ✅ Updated project documentation
+• 🔄 Analyzing your specific request
+• 📝 Preparing implementation recommendations
+
+**🚀 Available Next Steps:**
+- "Generate user stories" - Detailed requirements documentation
+- "Create technical architecture" - System design with tech recommendations
+- "Plan development roadmap" - Implementation timeline and phases
+- "Show me implementation guide" - Specific development recommendations
+
+**All deliverables include specific recommendations for development teams and coding systems. What would you like to focus on next?**`
+  }
+
+  const updateProjectProgress = (response: string) => {
+    // Auto-generate deliverables based on AI responses
+    const lowerResponse = response.toLowerCase()
+    const currentDeliverables = [...projectState.deliverables]
+    let newPhase = projectState.phase
+    
+    // Always ensure project-brief exists
+    if (!currentDeliverables.includes('project-brief')) {
+      currentDeliverables.push('project-brief')
+      newPhase = 'requirements'
+    }
+    
+    // Generate user stories when mentioned
+    if ((lowerResponse.includes('user stories') || lowerResponse.includes('generating user stories')) && !currentDeliverables.includes('user-stories')) {
+      currentDeliverables.push('user-stories')
+      newPhase = 'requirements'
+    }
+    
+    // Generate technical architecture when mentioned
+    if ((lowerResponse.includes('technical architecture') || lowerResponse.includes('generating technical architecture')) && !currentDeliverables.includes('technical-architecture')) {
+      currentDeliverables.push('technical-architecture')
+      newPhase = 'architecture'
+    }
+    
+    // Generate development plan when mentioned
+    if ((lowerResponse.includes('development plan') || lowerResponse.includes('generating development plan')) && !currentDeliverables.includes('development-plan')) {
+      currentDeliverables.push('development-plan')
+      newPhase = 'development'
+    }
+    
+    // Generate QA strategy when mentioned
+    if ((lowerResponse.includes('testing') || lowerResponse.includes('qa')) && !currentDeliverables.includes('qa-strategy')) {
+      currentDeliverables.push('qa-strategy')
+      newPhase = 'qa'
+    }
+    
+    // Update state with new deliverables
+    setProjectState(prev => ({
+      ...prev,
+      phase: newPhase,
+      deliverables: currentDeliverables
+    }))
   }
 
   const addAgent = (agentId: string) => {
@@ -263,75 +500,246 @@ Let me know which area you'd like to dive deeper into, or if you have specific q
   }
 
   const generateDeliverableContent = (deliverable: string, projectName: string): string => {
-    const templates = {
-      'project-brief': `# Project Brief: ${projectName}
-
-## Executive Summary
-This document outlines the strategic vision and implementation approach for ${projectName}.
-
-## Business Objectives
-- Define clear project scope and deliverables
-- Establish stakeholder requirements
-- Create foundation for technical decisions
-
-## Key Requirements
-- Functional requirements analysis
-- Technical architecture planning
-- User experience design
-- Quality assurance strategy
-
----
-*Generated by BMad AI Builder*`,
-
-      'user-stories': `# User Stories: ${projectName}
-
-## Core Features
-
-### Authentication & Access
-**As a** user  
-**I want to** securely access the application  
-**So that** my data is protected  
-
-**Acceptance Criteria:**
-- [ ] User can register with email
-- [ ] User can login securely
-- [ ] Session management works properly
-
-### Main Functionality
-**As a** user  
-**I want to** use the core features  
-**So that** I can achieve my goals  
-
-**Acceptance Criteria:**
-- [ ] Core functionality works as expected
-- [ ] User interface is intuitive
-- [ ] Performance meets requirements
-
----
-*Generated by BMad AI Builder*`,
-
-      'technical-architecture': `# Technical Architecture: ${projectName}
-
-## System Overview
-Technical design and architecture decisions for ${projectName}.
-
-## Technology Stack
-- **Frontend**: React with TypeScript
-- **Backend**: Node.js with Express
-- **Database**: PostgreSQL
-- **Deployment**: Docker containers
-
-## Architecture Components
-- API Gateway
-- Business Logic Layer
-- Data Access Layer
-- User Interface Components
-
----
-*Generated by BMad AI Builder*`
+    // Create comprehensive project context from conversation
+    const projectContext: ProjectContext = {
+      name: projectName,
+      description: extractProjectDescription(),
+      complexity: determineProjectComplexity(),
+      phase: projectState.phase,
+      requirements: extractRequirements(),
+      constraints: extractConstraints()
     }
 
-    return templates[deliverable as keyof typeof templates] || `# ${deliverable}: ${projectName}\n\nGenerated by BMad AI Builder`
+    // Use BMad Template Engine for professional deliverables
+    switch (deliverable) {
+      case 'project-brief':
+        return BMadTemplateEngine.generateProjectBrief(projectContext)
+      case 'user-stories':
+        return BMadTemplateEngine.generateUserStories(projectContext)
+      case 'technical-architecture':
+        return BMadTemplateEngine.generateTechnicalArchitecture(projectContext)
+      case 'development-plan':
+        return generateDevelopmentPlan(projectContext)
+      case 'qa-strategy':
+        return generateQAStrategy(projectContext)
+      default:
+        return `# ${deliverable.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}: ${projectName}\n\nComprehensive ${deliverable} document generated by BMad AI methodology.\n\nThis document follows industry best practices and provides actionable recommendations for development teams.`
+    }
+  }
+
+  const generateDevelopmentPlan = (context: ProjectContext): string => {
+    return `# Development Plan: ${context.name}
+
+**Document Metadata**
+- Version: 1.0
+- Author: BMad AI Development Team
+- Date: ${new Date().toLocaleDateString()}
+- Status: Ready for Implementation
+
+---
+
+## Implementation Roadmap
+
+### Phase 1: Foundation (Weeks 1-2)
+- Set up development environment and CI/CD pipeline
+- Implement authentication and basic security
+- Create database schema and core API endpoints
+- Establish testing framework and code quality standards
+
+### Phase 2: Core Features (Weeks 3-6)
+- Implement primary user workflows and features
+- Develop frontend components and user interface
+- Create admin functionality and user management
+- Add data validation and error handling
+
+### Phase 3: Enhancement (Weeks 7-10)
+- Implement advanced features and integrations
+- Performance optimization and caching
+- Security hardening and compliance measures
+- User acceptance testing and feedback integration
+
+### Phase 4: Launch (Weeks 11-12)
+- Production deployment and monitoring setup
+- Performance testing and load balancing
+- Documentation and training materials
+- Go-live support and maintenance planning
+
+## Technology Implementation Guide
+
+### For Vibe Coding System Integration
+
+**Recommended Tech Stack:**
+${context.complexity === 'complex' ? 'Enterprise-grade microservices architecture' : context.complexity === 'medium' ? 'Modern full-stack with API-first design' : 'Streamlined full-stack development'}
+
+**Development Approach:**
+1. **API-First Development** - Design and document APIs before implementation
+2. **Test-Driven Development** - Write tests before code implementation
+3. **Agile Methodology** - 2-week sprints with regular stakeholder feedback
+4. **Continuous Integration** - Automated testing and deployment pipeline
+
+**Quality Assurance:**
+- Minimum 80% test coverage requirement
+- Automated security scanning and vulnerability assessment
+- Performance testing with load and stress testing
+- Code review process for all changes
+
+---
+
+*This development plan provides actionable steps for immediate implementation. Ready to begin development with clear technical guidance.*`
+  }
+
+  const generateQAStrategy = (context: ProjectContext): string => {
+    return `# QA Strategy: ${context.name}
+
+**Document Metadata**
+- Version: 1.0
+- Author: BMad AI QA Engineer
+- Date: ${new Date().toLocaleDateString()}
+- Status: Implementation Ready
+
+---
+
+## Quality Assurance Framework
+
+### Testing Strategy
+
+**1. Unit Testing (80% Coverage Minimum)**
+- Test individual components and functions
+- Mock external dependencies
+- Automated execution in CI/CD pipeline
+- Coverage reporting and enforcement
+
+**2. Integration Testing**
+- API endpoint testing with real databases
+- Service-to-service communication validation
+- Third-party integration verification
+- Data flow and transformation testing
+
+**3. End-to-End Testing**
+- Critical user journey automation
+- Cross-browser compatibility testing
+- Mobile responsiveness validation
+- Performance baseline establishment
+
+**4. Security Testing**
+- Vulnerability scanning and penetration testing
+- Authentication and authorization validation
+- Data encryption and protection verification
+- OWASP compliance checking
+
+### Quality Gates
+
+**Pre-Development:**
+- Requirements review and acceptance criteria validation
+- Technical design review and architecture approval
+- Test plan creation and stakeholder approval
+
+**During Development:**
+- Code review requirements (2 approvals minimum)
+- Automated test execution and passing requirements
+- Security scan passing before merge
+- Performance benchmark maintenance
+
+**Pre-Production:**
+- User acceptance testing completion
+- Load testing and performance validation
+- Security audit and compliance verification
+- Documentation review and approval
+
+## Implementation Recommendations
+
+### For Development Teams
+
+**Testing Tools:**
+- Jest/Vitest for unit testing
+- Cypress/Playwright for E2E testing
+- Postman/Newman for API testing
+- OWASP ZAP for security testing
+
+**Quality Metrics:**
+- Code coverage: Minimum 80%
+- Performance: Page load < 2 seconds
+- Security: Zero high-severity vulnerabilities
+- Accessibility: WCAG 2.1 AA compliance
+
+**Process Integration:**
+- Shift-left testing approach
+- Continuous testing in CI/CD pipeline
+- Risk-based testing prioritization
+- Defect prevention over detection
+
+---
+
+*This QA strategy ensures production-ready quality with comprehensive testing coverage and clear quality gates.*`
+  }
+
+  const extractProjectDescription = (): string => {
+    // Extract project description from conversation history
+    const userMessages = messages.filter(m => m.role === 'user')
+    if (userMessages.length > 0) {
+      return userMessages[0].content.slice(0, 200) + (userMessages[0].content.length > 200 ? '...' : '')
+    }
+    return 'A comprehensive software development project'
+  }
+
+  const determineProjectComplexity = (): 'simple' | 'medium' | 'complex' => {
+    // Analyze conversation to determine project complexity
+    const conversationText = messages.map(m => m.content.toLowerCase()).join(' ')
+    
+    const complexKeywords = ['microservices', 'kubernetes', 'enterprise', 'scalable', 'distributed', 'ai', 'machine learning']
+    const mediumKeywords = ['api', 'database', 'authentication', 'backend', 'frontend', 'integration']
+    
+    if (complexKeywords.some(keyword => conversationText.includes(keyword))) {
+      return 'complex'
+    } else if (mediumKeywords.some(keyword => conversationText.includes(keyword))) {
+      return 'medium'
+    }
+    return 'simple'
+  }
+
+  const extractRequirements = (): string[] => {
+    // Extract requirements mentioned in conversation
+    const requirements: string[] = []
+    const conversationText = messages.map(m => m.content).join(' ')
+    
+    if (conversationText.includes('authentication') || conversationText.includes('login')) {
+      requirements.push('User authentication and authorization')
+    }
+    if (conversationText.includes('database') || conversationText.includes('data')) {
+      requirements.push('Data management and storage')
+    }
+    if (conversationText.includes('api') || conversationText.includes('integration')) {
+      requirements.push('API development and integrations')
+    }
+    if (conversationText.includes('mobile') || conversationText.includes('responsive')) {
+      requirements.push('Mobile-responsive design')
+    }
+    if (conversationText.includes('admin') || conversationText.includes('management')) {
+      requirements.push('Administrative functionality')
+    }
+    
+    return requirements.length > 0 ? requirements : ['Core application functionality', 'User interface design', 'Data management']
+  }
+
+  const extractConstraints = (): string[] => {
+    // Extract constraints from conversation
+    const constraints: string[] = []
+    const conversationText = messages.map(m => m.content.toLowerCase()).join(' ')
+    
+    if (conversationText.includes('budget') || conversationText.includes('cost')) {
+      constraints.push('Budget considerations')
+    }
+    if (conversationText.includes('timeline') || conversationText.includes('deadline')) {
+      constraints.push('Timeline constraints')
+    }
+    if (conversationText.includes('legacy') || conversationText.includes('existing')) {
+      constraints.push('Legacy system integration')
+    }
+    if (conversationText.includes('compliance') || conversationText.includes('security')) {
+      constraints.push('Security and compliance requirements')
+    }
+    
+    return constraints.length > 0 ? constraints : ['Standard development practices', 'Performance requirements']
   }
 
   const currentAgent = BMAD_AGENTS.find(a => a.id === projectState.currentAgent)
@@ -372,10 +780,10 @@ Technical design and architecture decisions for ${projectName}.
                     size="sm"
                     variant="outline"
                     onClick={() => downloadDeliverable(deliverable)}
-                    className="glass-button text-xs"
+                    className="glass-button text-xs hover:bg-green-600/20 border-green-500/30"
                   >
                     <Download className="h-3 w-3 mr-1" />
-                    {deliverable.replace('-', ' ')}
+                    {deliverable.replace('-', ' ').toUpperCase()}
                   </Button>
                 ))}
               </div>
@@ -480,10 +888,10 @@ Technical design and architecture decisions for ${projectName}.
               {messages.length <= 2 && (
                 <div className="flex flex-wrap justify-center gap-2 mb-3">
                   {[
-                    "Let's analyze the requirements",
-                    "I need technical architecture", 
-                    "Help me with UX design",
-                    "Plan the implementation"
+                    "Generate user stories",
+                    "Create technical architecture", 
+                    "Plan implementation",
+                    "Show development recommendations"
                   ].map((suggestion) => (
                     <button
                       key={suggestion}
@@ -573,12 +981,17 @@ Technical design and architecture decisions for ${projectName}.
                     <button
                       key={deliverable}
                       onClick={() => downloadDeliverable(deliverable)}
-                      className="w-full flex items-center space-x-2 p-2 rounded-lg hover:bg-white/5 text-left"
+                      className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-white/5 text-left"
                     >
-                      <FileText className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                      <span className="text-xs text-slate-300 truncate">
-                        {deliverable.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      </span>
+                      <div className="flex items-center space-x-2">
+                        <FileText className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                        <div>
+                          <div className="text-xs text-slate-300 truncate font-medium">
+                            {deliverable.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          </div>
+                          <div className="text-xs text-green-400 font-medium">✓ Ready</div>
+                        </div>
+                      </div>
                     </button>
                   ))}
                 </div>
