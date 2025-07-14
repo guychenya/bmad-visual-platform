@@ -133,14 +133,82 @@ What would you like to work on today? Let's start vibing! ✨`,
       type: 'text'
     }
     setMessages([greeting])
+  }, [agentId, template, currentAgent])
 
-    // Auto-send initial prompt if provided
-    if (initialPrompt && initialPrompt.trim()) {
+  // Separate effect for initial prompt to avoid dependency issues
+  useEffect(() => {
+    if (initialPrompt && initialPrompt.trim() && messages.length > 0) {
       setTimeout(() => {
-        handleSendMessage(null, initialPrompt)
+        // Send the initial prompt
+        const userMessage: Message = {
+          id: Date.now().toString(),
+          role: 'user',
+          content: initialPrompt,
+          timestamp: new Date().toISOString(),
+          type: 'text'
+        }
+
+        setMessages(prev => [...prev, userMessage])
+        setIsLoading(true)
+
+        // Send to AI service
+        const sendToAI = async () => {
+          try {
+            const contextualMessage = `VibeDev Project: "${template}" (ID: ${project})
+Agent Role: ${currentAgent.name} - ${currentAgent.specialty}
+User Request: ${initialPrompt}
+
+As a VibeDev AI agent, provide comprehensive, actionable guidance with:
+1. Clear next steps and recommendations
+2. Code examples when relevant
+3. Best practices and optimization tips
+4. Integration with modern development workflows
+
+Focus on practical, implementable solutions for professional development teams.`
+
+            const aiResponse = await aiService.chatWithAgent(
+              agentId,
+              contextualMessage,
+              []
+            )
+
+            const aiMessage: Message = {
+              id: (Date.now() + 1).toString(),
+              role: 'assistant',
+              content: aiResponse || `I apologize, but I encountered an issue processing your request. As ${currentAgent.name}, I'm still here to help with your ${template} project! Please try asking again or let me know how else I can assist you with development workflows.`,
+              timestamp: new Date().toISOString(),
+              type: aiResponse?.includes('```') ? 'code' : 'text'
+            }
+            
+            setMessages(prev => [...prev, aiMessage])
+          } catch (error) {
+            console.error('Error getting AI response:', error)
+            
+            const errorMessage: Message = {
+              id: (Date.now() + 1).toString(),
+              role: 'assistant',
+              content: `🚧 I encountered a technical issue, but I'm still here to help with your ${template} project! 
+
+As ${currentAgent.name}, I can assist you with:
+• ${currentAgent.specialty}
+• Code examples and best practices
+• Project planning and optimization
+• Development workflow recommendations
+
+Please try your request again, or let me know how else I can help! 💪`,
+              timestamp: new Date().toISOString(),
+              type: 'text'
+            }
+            setMessages(prev => [...prev, errorMessage])
+          } finally {
+            setIsLoading(false)
+          }
+        }
+
+        sendToAI()
       }, 1000)
     }
-  }, [agentId, template, currentAgent, initialPrompt])
+  }, [initialPrompt, messages.length, template, project, currentAgent, agentId])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
