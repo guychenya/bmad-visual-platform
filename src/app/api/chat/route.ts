@@ -15,8 +15,8 @@ interface ChatRequest {
 
 // OpenAI API Integration
 async function chatWithOpenAI(model: string, messages: ChatMessage[]): Promise<string> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  if (!apiKey || apiKey === 'your_openai_api_key_here') {
     throw new Error('OpenAI API key not configured');
   }
 
@@ -45,8 +45,8 @@ async function chatWithOpenAI(model: string, messages: ChatMessage[]): Promise<s
 
 // Claude API Integration
 async function chatWithClaude(model: string, messages: ChatMessage[]): Promise<string> {
-  const apiKey = process.env.CLAUDE_API_KEY;
-  if (!apiKey) {
+  const apiKey = process.env.CLAUDE_API_KEY?.trim();
+  if (!apiKey || apiKey === 'your_claude_api_key_here') {
     throw new Error('Claude API key not configured');
   }
 
@@ -80,8 +80,8 @@ async function chatWithClaude(model: string, messages: ChatMessage[]): Promise<s
 
 // Groq API Integration
 async function chatWithGroq(model: string, messages: ChatMessage[]): Promise<string> {
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) {
+  const apiKey = process.env.GROQ_API_KEY?.trim();
+  if (!apiKey || apiKey === 'your_groq_api_key_here') {
     throw new Error('Groq API key not configured');
   }
 
@@ -110,8 +110,8 @@ async function chatWithGroq(model: string, messages: ChatMessage[]): Promise<str
 
 // Gemini API Integration
 async function chatWithGemini(model: string, messages: ChatMessage[]): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
+  if (!apiKey || apiKey === 'your_gemini_api_key_here') {
     throw new Error('Gemini API key not configured');
   }
 
@@ -202,12 +202,20 @@ export async function POST(request: NextRequest) {
       response = getSimulationResponse(message, agentId);
     }
 
+    // Check if we have any valid API keys
+    const hasValidOpenAI = !!(process.env.OPENAI_API_KEY?.trim() && process.env.OPENAI_API_KEY !== 'your_openai_api_key_here');
+    const hasValidClaude = !!(process.env.CLAUDE_API_KEY?.trim() && process.env.CLAUDE_API_KEY !== 'your_claude_api_key_here');
+    const hasValidGroq = !!(process.env.GROQ_API_KEY?.trim() && process.env.GROQ_API_KEY !== 'your_groq_api_key_here');
+    const hasValidGemini = !!(process.env.GEMINI_API_KEY?.trim() && process.env.GEMINI_API_KEY !== 'your_gemini_api_key_here');
+    
+    const isSimulation = !hasValidOpenAI && !hasValidClaude && !hasValidGroq && !hasValidGemini;
+
     return NextResponse.json({
       success: true,
       response,
       provider,
       model: model || 'default',
-      isSimulation: !process.env.OPENAI_API_KEY && !process.env.CLAUDE_API_KEY && !process.env.GROQ_API_KEY && !process.env.GEMINI_API_KEY
+      isSimulation
     });
 
   } catch (error) {

@@ -4,22 +4,22 @@ export async function GET(request: NextRequest) {
   try {
     const providers = {
       openai: {
-        available: !!process.env.OPENAI_API_KEY,
+        available: !!(process.env.OPENAI_API_KEY?.trim() && process.env.OPENAI_API_KEY !== 'your_openai_api_key_here'),
         models: ['gpt-4', 'gpt-3.5-turbo', 'gpt-4-turbo'],
         name: 'OpenAI'
       },
       claude: {
-        available: !!process.env.CLAUDE_API_KEY,
+        available: !!(process.env.CLAUDE_API_KEY?.trim() && process.env.CLAUDE_API_KEY !== 'your_claude_api_key_here'),
         models: ['claude-3-sonnet-20240229', 'claude-3-haiku-20240307', 'claude-3-opus-20240229'],
         name: 'Claude (Anthropic)'
       },
       groq: {
-        available: !!process.env.GROQ_API_KEY,
+        available: !!(process.env.GROQ_API_KEY?.trim() && process.env.GROQ_API_KEY !== 'your_groq_api_key_here'),
         models: ['llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768'],
         name: 'Groq'
       },
       gemini: {
-        available: !!process.env.GEMINI_API_KEY,
+        available: !!(process.env.GEMINI_API_KEY?.trim() && process.env.GEMINI_API_KEY !== 'your_gemini_api_key_here'),
         models: ['gemini-pro', 'gemini-pro-vision'],
         name: 'Google Gemini'
       }
