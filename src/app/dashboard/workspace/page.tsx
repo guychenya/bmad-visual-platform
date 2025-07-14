@@ -467,7 +467,7 @@ Technical design and architecture decisions for ${projectName}.
           <div className="p-4 border-t border-white/10 glass-nav">
             <div className="max-w-4xl mx-auto space-y-3">
               
-              {/* API Key Warning */}
+              {/* API Key Warning & Quick Suggestions */}
               {!hasApiKey && (
                 <div className="text-center py-2">
                   <p className="text-xs text-amber-300 bg-amber-500/10 px-3 py-1 rounded-full inline-block">
@@ -476,12 +476,38 @@ Technical design and architecture decisions for ${projectName}.
                 </div>
               )}
               
+              {/* Quick Suggestion Chips */}
+              {messages.length <= 2 && (
+                <div className="flex flex-wrap justify-center gap-2 mb-3">
+                  {[
+                    "Let's analyze the requirements",
+                    "I need technical architecture", 
+                    "Help me with UX design",
+                    "Plan the implementation"
+                  ].map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      onClick={() => setMessage(suggestion)}
+                      className="px-3 py-1 text-xs bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 rounded-full transition-colors"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              )}
+              
               {/* Input Form */}
               <form onSubmit={handleSendMessage} className="flex space-x-3">
                 <Input
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Describe your project, ask questions, or upload requirements..."
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault()
+                      handleSendMessage(e)
+                    }
+                  }}
+                  placeholder="Ask about requirements, architecture, development, or anything else..."
                   disabled={isLoading}
                   className="flex-1 glass-card border-slate-600/50 text-white placeholder-slate-400 rounded-xl px-4 py-3 min-h-[48px] text-sm"
                 />
