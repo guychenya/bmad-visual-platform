@@ -197,9 +197,23 @@ export class AIService {
       console.log(`${this.config.provider?.toUpperCase()} API response status:`, response.status)
 
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error(`${this.config.provider?.toUpperCase()} API error response:`, errorText)
-        throw new Error(`${this.config.provider?.toUpperCase()} API error: ${response.statusText}`)
+        let errorData
+        try {
+          errorData = await response.json()
+        } catch {
+          errorData = { error: { message: response.statusText } }
+        }
+        
+        console.error(`${this.config.provider?.toUpperCase()} API error response:`, errorData)
+        
+        // For quota/rate limit errors, fall back to simulation immediately
+        if (response.status === 429 || 
+            (errorData.error && (errorData.error.code === 'insufficient_quota' || errorData.error.type === 'insufficient_quota'))) {
+          console.log('API quota exceeded, falling back to simulation')
+          return this.simulateChatResponse(agentId, message)
+        }
+        
+        throw new Error(`${this.config.provider?.toUpperCase()} API error: ${errorData.error?.message || response.statusText}`)
       }
 
       data = await response.json()

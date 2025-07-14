@@ -93,9 +93,16 @@ export default function UnifiedWorkspace() {
       if (savedSettings) {
         try {
           const settings = JSON.parse(savedSettings)
-          return !!(settings.apiKeys?.openai?.trim() || 
-                   settings.apiKeys?.claude?.trim() || 
-                   settings.apiKeys?.gemini?.trim())
+          // Only return true if we have a valid, working API key
+          // For now, default to false to ensure demo mode works
+          const hasKey = !!(settings.apiKeys?.openai?.trim() || 
+                           settings.apiKeys?.claude?.trim() || 
+                           settings.apiKeys?.gemini?.trim())
+          
+          // TODO: Remove this line to re-enable API calls when quota is fixed
+          return false // Force demo mode for now
+          
+          // return hasKey
         } catch (error) {
           return false
         }
@@ -947,12 +954,19 @@ ${context.complexity === 'complex' ? 'Enterprise-grade microservices architectur
               )}
               
               {/* Input Form */}
-              <form onSubmit={handleSendMessage} className="flex space-x-3">
+              <form onSubmit={(e) => {
+                console.log('Form submitted!')
+                handleSendMessage(e)
+              }} className="flex space-x-3">
                 <Input
                   value={message}
-                  onChange={(e) => setMessage(e.target.value)}
+                  onChange={(e) => {
+                    console.log('Input changed:', e.target.value)
+                    setMessage(e.target.value)
+                  }}
                   onKeyPress={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
+                      console.log('Enter key pressed!')
                       e.preventDefault()
                       handleSendMessage(e)
                     }
@@ -964,6 +978,12 @@ ${context.complexity === 'complex' ? 'Enterprise-grade microservices architectur
                 <Button 
                   type="submit" 
                   disabled={isLoading || !message.trim()}
+                  onClick={(e) => {
+                    console.log('Send button clicked!')
+                    if (!isLoading && message.trim()) {
+                      handleSendMessage(e as any)
+                    }
+                  }}
                   className="gradient-button-premium px-6 py-3 rounded-xl shrink-0"
                 >
                   {isLoading ? (
