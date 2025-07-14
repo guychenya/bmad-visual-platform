@@ -16,7 +16,8 @@ export default function SettingsPage() {
   const [showApiKeys, setShowApiKeys] = useState({
     openai: false,
     claude: false,
-    gemini: false
+    gemini: false,
+    groq: false
   })
   const [isSaving, setIsSaving] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
@@ -35,7 +36,8 @@ export default function SettingsPage() {
     apiKeys: {
       openai: '',
       claude: '',
-      gemini: ''
+      gemini: '',
+      groq: ''
     }
   })
 
@@ -425,6 +427,38 @@ export default function SettingsPage() {
                         {showApiKeys.gemini ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="groq" className="text-white">Groq API Key</Label>
+                    <div className="relative">
+                      <Input
+                        id="groq"
+                        type={showApiKeys.groq ? 'text' : 'password'}
+                        value={settings.apiKeys.groq}
+                        onChange={(e) => updateSetting('apiKeys', 'groq', e.target.value)}
+                        placeholder="gsk_..."
+                        className="glass-input pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowApiKeys(prev => ({ ...prev, groq: !prev.groq }))}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white"
+                      >
+                        {showApiKeys.groq ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6 p-4 bg-slate-800/50 rounded-lg">
+                    <h4 className="text-white font-medium mb-3">Where to get API keys:</h4>
+                    <div className="space-y-2 text-sm text-slate-300">
+                      <div>• <strong>OpenAI:</strong> <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline">platform.openai.com/api-keys</a></div>
+                      <div>• <strong>Claude:</strong> <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline">console.anthropic.com</a></div>
+                      <div>• <strong>Gemini:</strong> <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline">aistudio.google.com/app/apikey</a></div>
+                      <div>• <strong>Groq:</strong> <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline">console.groq.com/keys</a></div>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-3">💡 Groq offers fast inference with generous free tier limits - great for development!</p>
                   </div>
                 </div>
               </CardContent>

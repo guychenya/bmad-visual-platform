@@ -10,7 +10,7 @@ export interface AIResponse {
 
 export interface AIConfig {
   apiKey?: string
-  provider?: 'openai' | 'gemini' | 'claude'
+  provider?: 'openai' | 'gemini' | 'claude' | 'groq'
   model: string
   temperature: number
   maxTokens: number
@@ -20,6 +20,7 @@ export interface APIKeys {
   openai?: string
   gemini?: string
   claude?: string
+  groq?: string
 }
 
 export class AIService {
@@ -64,27 +65,31 @@ export class AIService {
     return {}
   }
   
-  private getAvailableProvider(): 'openai' | 'gemini' | 'claude' {
+  private getAvailableProvider(): 'openai' | 'gemini' | 'claude' | 'groq' {
+    // Prioritize Claude and Groq as they tend to have better rate limits
+    if (this.apiKeys.claude?.trim()) return 'claude'
+    if (this.apiKeys.groq?.trim()) return 'groq'
     if (this.apiKeys.openai?.trim()) return 'openai'
     if (this.apiKeys.gemini?.trim()) return 'gemini'
-    if (this.apiKeys.claude?.trim()) return 'claude'
     return 'openai' // fallback
   }
   
-  private getAPIKeyForProvider(provider: 'openai' | 'gemini' | 'claude'): string {
+  private getAPIKeyForProvider(provider: 'openai' | 'gemini' | 'claude' | 'groq'): string {
     switch (provider) {
       case 'openai': return this.apiKeys.openai || ''
       case 'gemini': return this.apiKeys.gemini || ''
       case 'claude': return this.apiKeys.claude || ''
+      case 'groq': return this.apiKeys.groq || ''
       default: return ''
     }
   }
   
-  private getDefaultModel(provider: 'openai' | 'gemini' | 'claude'): string {
+  private getDefaultModel(provider: 'openai' | 'gemini' | 'claude' | 'groq'): string {
     switch (provider) {
       case 'openai': return 'gpt-4'
       case 'gemini': return 'gemini-pro'
-      case 'claude': return 'claude-3-sonnet-20240229'
+      case 'claude': return 'claude-3-5-sonnet-20241022'
+      case 'groq': return 'llama-3.1-70b-versatile'
       default: return 'gpt-4'
     }
   }
@@ -190,6 +195,22 @@ export class AIService {
           })
           break
           
+        case 'groq':
+          response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${this.config.apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: this.config.model,
+              messages,
+              temperature: this.config.temperature,
+              max_tokens: this.config.maxTokens,
+            }),
+          })
+          break
+          
         default:
           throw new Error(`Unsupported provider: ${this.config.provider}`)
       }
@@ -229,6 +250,10 @@ export class AIService {
           break
         case 'claude':
           content = data.content[0]?.text || ''
+          break
+          
+        case 'groq':
+          content = data.choices[0]?.message?.content || ''
           break
       }
       

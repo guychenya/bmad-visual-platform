@@ -97,12 +97,11 @@ export default function UnifiedWorkspace() {
           // For now, default to false to ensure demo mode works
           const hasKey = !!(settings.apiKeys?.openai?.trim() || 
                            settings.apiKeys?.claude?.trim() || 
-                           settings.apiKeys?.gemini?.trim())
+                           settings.apiKeys?.gemini?.trim() || 
+                           settings.apiKeys?.groq?.trim())
           
-          // TODO: Remove this line to re-enable API calls when quota is fixed
-          return false // Force demo mode for now
-          
-          // return hasKey
+          // Re-enabled API calls to test new Claude key
+          return hasKey
         } catch (error) {
           return false
         }
