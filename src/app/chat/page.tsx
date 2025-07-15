@@ -40,7 +40,12 @@ import {
   VolumeX,
   Check,
   Moon,
-  Sun
+  Sun,
+  Mic,
+  Paperclip,
+  Camera,
+  FileImage,
+  Video
 } from 'lucide-react';
 
 interface Message {
@@ -215,6 +220,8 @@ export default function ModernChatPage() {
   const [copyFeedback, setCopyFeedback] = useState<{[key: string]: boolean}>({});
   const [showUploadPanel, setShowUploadPanel] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -331,6 +338,63 @@ export default function ModernChatPage() {
     }
   };
 
+  // Voice recording functionality
+  const handleVoiceRecording = () => {
+    if (isRecording) {
+      setIsRecording(false);
+      // TODO: Stop recording and process audio
+      console.log('Stopping voice recording...');
+    } else {
+      setIsRecording(true);
+      // TODO: Start recording audio
+      console.log('Starting voice recording...');
+    }
+  };
+
+  // Attachment menu options
+  const attachmentOptions = [
+    {
+      name: 'Photo',
+      description: 'Upload an image',
+      icon: <Camera className="w-4 h-4" />,
+      action: () => {
+        setShowAttachmentMenu(false);
+        // TODO: Open camera/photo picker
+        console.log('Opening photo picker...');
+      }
+    },
+    {
+      name: 'Document',
+      description: 'Upload a file',
+      icon: <FileText className="w-4 h-4" />,
+      action: () => {
+        setShowAttachmentMenu(false);
+        // TODO: Open file picker
+        console.log('Opening file picker...');
+      }
+    },
+    {
+      name: 'Image',
+      description: 'Upload from gallery',
+      icon: <FileImage className="w-4 h-4" />,
+      action: () => {
+        setShowAttachmentMenu(false);
+        // TODO: Open image gallery
+        console.log('Opening image gallery...');
+      }
+    },
+    {
+      name: 'Video',
+      description: 'Record or upload video',
+      icon: <Video className="w-4 h-4" />,
+      action: () => {
+        setShowAttachmentMenu(false);
+        // TODO: Open video recorder
+        console.log('Opening video recorder...');
+      }
+    }
+  ];
+
   // Slash commands definitions
   const slashCommands = [
     {
@@ -355,11 +419,11 @@ export default function ModernChatPage() {
       }
     },
     {
-      name: 'upload',
-      description: 'Upload file or image',
-      icon: <Upload className="w-4 h-4" />,
+      name: 'attach',
+      description: 'Attach files or media',
+      icon: <Paperclip className="w-4 h-4" />,
       action: () => {
-        setShowUploadPanel(true);
+        setShowAttachmentMenu(true);
       }
     }
   ];
@@ -900,33 +964,8 @@ How can I assist you today?`,
               </span>
             </Badge>
             
-            {/* Control Buttons */}
+            {/* Essential Controls */}
             <div className="flex items-center space-x-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowAgentSelector(!showAgentSelector)}
-                className={`h-9 px-3 rounded-lg transition-all duration-200 ${
-                  darkMode
-                    ? 'hover:bg-gray-700 text-gray-300 hover:text-white'
-                    : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <User className="w-4 h-4 mr-2" />
-                Switch
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSoundEnabled(!soundEnabled)}
-                className={`h-9 w-9 rounded-lg transition-all duration-200 ${
-                  darkMode
-                    ? 'hover:bg-gray-700 text-gray-300 hover:text-white'
-                    : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-              </Button>
               <Button
                 variant="ghost"
                 size="sm"
@@ -938,18 +977,6 @@ How can I assist you today?`,
                 }`}
               >
                 {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowUploadPanel(!showUploadPanel)}
-                className={`h-9 w-9 rounded-lg transition-all duration-200 ${
-                  darkMode
-                    ? 'hover:bg-gray-700 text-gray-300 hover:text-white'
-                    : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <Upload className="w-4 h-4" />
               </Button>
               <Button
                 variant="ghost"
@@ -1008,44 +1035,6 @@ How can I assist you today?`,
           </div>
         )}
 
-        {/* Upload Panel */}
-        {showUploadPanel && (
-          <div className="border-t border-slate-200 bg-slate-50 p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex items-center space-x-3 p-4 border border-slate-200 rounded-xl hover:bg-white hover:shadow-sm cursor-pointer transition-all duration-200">
-                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
-                  <Image className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <div className="text-sm font-semibold text-slate-900">Upload Image</div>
-                  <div className="text-xs text-slate-500">JPG, PNG, WebP</div>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3 p-4 border border-slate-200 rounded-xl hover:bg-white hover:shadow-sm cursor-pointer transition-all duration-200">
-                <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <div className="text-sm font-semibold text-slate-900">Upload File</div>
-                  <div className="text-xs text-slate-500">MD, TXT, CSV</div>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3 p-4 border border-slate-200 rounded-xl hover:bg-white hover:shadow-sm cursor-pointer transition-all duration-200">
-                <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
-                  <Github className="w-5 h-5 text-purple-600" />
-                </div>
-                <div>
-                  <div className="text-sm font-semibold text-slate-900">GitHub Repo</div>
-                  <div className="text-xs text-slate-500">Paste URL</div>
-                </div>
-              </div>
-            </div>
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg text-center">
-              <div className="text-sm text-blue-700 font-medium">🚧 File upload coming soon!</div>
-              <div className="text-xs text-blue-600 mt-1">Try web search: &quot;search: your query&quot;</div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Messages */}
@@ -1179,13 +1168,108 @@ How can I assist you today?`,
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
-      <div className={`border-t p-6 transition-colors duration-200 ${
+      {/* Input Area with Embedded Controls */}
+      <div className={`border-t p-4 transition-colors duration-200 ${
         darkMode 
           ? 'border-gray-700 bg-gray-800' 
           : 'border-slate-200 bg-white'
       }`}>
-        <form onSubmit={handleSendMessage} className="flex items-center space-x-3">
+        {/* Chat Controls Row */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center space-x-3">
+            {/* Agent Switch Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAgentSelector(!showAgentSelector)}
+              className={`h-8 px-3 rounded-lg transition-all duration-200 ${
+                darkMode
+                  ? 'hover:bg-gray-700 text-gray-300 hover:text-white'
+                  : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <User className="w-3 h-3 mr-2" />
+              <span className="text-xs">Switch Agent</span>
+            </Button>
+            
+            {/* Sound Toggle */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className={`h-8 w-8 rounded-lg transition-all duration-200 ${
+                darkMode
+                  ? 'hover:bg-gray-700 text-gray-300 hover:text-white'
+                  : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              {soundEnabled ? <Volume2 className="w-3 h-3" /> : <VolumeX className="w-3 h-3" />}
+            </Button>
+          </div>
+          
+          <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+            {selectedAgent.name} • {apiStatus.demoMode ? 'Demo' : 'Live AI'}
+          </div>
+        </div>
+
+        {/* Input Row */}
+        <form onSubmit={handleSendMessage} className="flex items-end space-x-2">
+          {/* Attachment Button */}
+          <div className="relative">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
+              className={`h-10 w-10 rounded-full transition-all duration-200 ${
+                darkMode
+                  ? 'hover:bg-gray-700 text-gray-400 hover:text-white'
+                  : 'hover:bg-slate-100 text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <Paperclip className="w-4 h-4" />
+            </Button>
+            
+            {/* Attachment Menu */}
+            {showAttachmentMenu && (
+              <div className={`absolute bottom-12 left-0 rounded-xl shadow-lg border p-2 min-w-48 z-50 ${
+                darkMode
+                  ? 'bg-gray-800 border-gray-700'
+                  : 'bg-white border-slate-200'
+              }`}>
+                <div className={`text-xs font-medium uppercase tracking-wider mb-2 px-2 ${
+                  darkMode ? 'text-gray-400' : 'text-slate-500'
+                }`}>
+                  Attach
+                </div>
+                {attachmentOptions.map((option, index) => (
+                  <div
+                    key={option.name}
+                    onClick={option.action}
+                    className={`flex items-center space-x-3 p-2 rounded-lg cursor-pointer transition-all duration-150 ${
+                      darkMode
+                        ? 'hover:bg-gray-700 text-gray-300'
+                        : 'hover:bg-slate-50 text-slate-700'
+                    }`}
+                  >
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                      darkMode ? 'bg-gray-700' : 'bg-slate-100'
+                    }`}>
+                      {option.icon}
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium">{option.name}</div>
+                      <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                        {option.description}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          {/* Input Field */}
           <div className="flex-1 relative">
             <Input
               ref={inputRef}
@@ -1193,7 +1277,7 @@ How can I assist you today?`,
               onChange={handleInputChange}
               placeholder={`Message ${selectedAgent.name}... (@ for agents, / for apps)`}
               disabled={isLoading}
-              className={`transition-all duration-200 pr-16 py-4 rounded-xl resize-none ${
+              className={`transition-all duration-200 pr-12 py-3 rounded-2xl ${
                 darkMode
                   ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
                   : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
@@ -1208,83 +1292,42 @@ How can I assist you today?`,
                 if (e.key === 'Escape') {
                   setShowAgentPicker(false);
                   setShowSlashCommands(false);
+                  setShowAttachmentMenu(false);
                 }
               }}
             />
+            
+            {/* Microphone Button - Inside Input */}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleVoiceRecording}
+              className={`absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 rounded-full transition-all duration-200 ${
+                isRecording
+                  ? 'bg-red-500 text-white hover:bg-red-600'
+                  : darkMode
+                  ? 'hover:bg-gray-600 text-gray-400 hover:text-white'
+                  : 'hover:bg-slate-200 text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <Mic className={`w-4 h-4 ${isRecording ? 'animate-pulse' : ''}`} />
+            </Button>
           </div>
           
+          {/* Send Button */}
           <Button
             type="submit"
             disabled={isLoading || !inputValue.trim()}
-            className="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-3 h-12 w-12 shadow-sm transition-all duration-200 hover:shadow-md flex-shrink-0"
+            className="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-3 h-10 w-10 shadow-sm transition-all duration-200 hover:shadow-md flex-shrink-0"
           >
             {isLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <Send className="w-5 h-5" />
+              <Send className="w-4 h-4" />
             )}
           </Button>
         </form>
-        
-        <div className={`flex items-center justify-between mt-4 text-xs transition-colors duration-200 ${
-          darkMode ? 'text-gray-400' : 'text-slate-500'
-        }`}>
-          <div className="flex items-center space-x-4">
-            <span>BMad Framework • {selectedAgent.name}</span>
-            <div className="flex items-center space-x-2">
-              {/* Status Icon */}
-              {apiStatus.status === 'ready' && !apiStatus.demoMode ? (
-                <div className="flex items-center space-x-1">
-                  {apiStatus.connectionQuality === 'excellent' ? (
-                    <Lightning className="w-3 h-3 text-green-500" />
-                  ) : (
-                    <Wifi className="w-3 h-3 text-green-500" />
-                  )}
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                </div>
-              ) : apiStatus.status === 'testing' ? (
-                <div className="flex items-center space-x-1">
-                  <Loader2 className="w-3 h-3 text-blue-400 animate-spin" />
-                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                </div>
-              ) : apiStatus.status === 'loading' ? (
-                <div className="flex items-center space-x-1">
-                  <Loader2 className="w-3 h-3 text-yellow-400 animate-spin" />
-                  <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
-                </div>
-              ) : apiStatus.demoMode ? (
-                <div className="flex items-center space-x-1">
-                  <Bot className="w-3 h-3 text-purple-400" />
-                  <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-1">
-                  <WifiOff className="w-3 h-3 text-red-400" />
-                  <div className="w-2 h-2 bg-red-400 rounded-full"></div>
-                </div>
-              )}
-              
-              {/* Status Text */}
-              <span className="font-medium">
-                {apiStatus.status === 'ready' && !apiStatus.demoMode 
-                  ? `🔥 AI-LIVE ${apiStatus.activeProvider ? `(${apiStatus.activeProvider})` : ''}`
-                  : apiStatus.status === 'testing' 
-                  ? '🔍 TESTING CONNECTION...'
-                  : apiStatus.status === 'loading' 
-                  ? '⏳ INITIALIZING...' 
-                  : apiStatus.demoMode 
-                  ? '🎭 DEMO MODE'
-                  : '❌ OFFLINE'
-                }
-              </span>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Zap className="w-3 h-3" />
-            <span>Press Enter to send</span>
-          </div>
-        </div>
       </div>
 
       {/* Settings Modal */}
