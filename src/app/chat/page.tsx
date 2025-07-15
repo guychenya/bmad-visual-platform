@@ -197,6 +197,8 @@ export default function ModernChatPage() {
   const [showSlashCommands, setShowSlashCommands] = useState(false);
   const [agentPickerPosition, setAgentPickerPosition] = useState({ x: 0, y: 0 });
   const [slashCommandsPosition, setSlashCommandsPosition] = useState({ x: 0, y: 0 });
+  const [selectedAgentIndex, setSelectedAgentIndex] = useState(0);
+  const [selectedSlashIndex, setSelectedSlashIndex] = useState(0);
   const [selectedAgent, setSelectedAgent] = useState<BMadAgent>(BMAD_AGENTS[0]);
   const [showAgentSelector, setShowAgentSelector] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
@@ -447,6 +449,7 @@ export default function ModernChatPage() {
       const afterAt = value.substring(atIndex + 1, cursorPosition);
       if (!afterAt.includes(' ')) {
         setShowAgentPicker(true);
+        setSelectedAgentIndex(0); // Reset selection when showing picker
         // Position picker above input, WhatsApp style
         const rect = e.target.getBoundingClientRect();
         setAgentPickerPosition({ 
@@ -464,6 +467,7 @@ export default function ModernChatPage() {
       const afterSlash = value.substring(slashIndex + 1, cursorPosition);
       if (!afterSlash.includes(' ')) {
         setShowSlashCommands(true);
+        setSelectedSlashIndex(0); // Reset selection when showing commands
         // Position commands relative to input
         const rect = e.target.getBoundingClientRect();
         setSlashCommandsPosition({ x: rect.left + 10, y: rect.top - 200 });
@@ -1887,6 +1891,29 @@ How can I assist you today?`,
                   setShowAgentPicker(false);
                   setShowSlashCommands(false);
                   setShowAttachmentMenu(false);
+                } else if (showAgentPicker) {
+                  if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setSelectedAgentIndex(prev => (prev + 1) % BMAD_AGENTS.length);
+                  } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setSelectedAgentIndex(prev => (prev - 1 + BMAD_AGENTS.length) % BMAD_AGENTS.length);
+                  } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAgentSelect(BMAD_AGENTS[selectedAgentIndex]);
+                  }
+                } else if (showSlashCommands) {
+                  if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setSelectedSlashIndex(prev => (prev + 1) % slashCommands.length);
+                  } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setSelectedSlashIndex(prev => (prev - 1 + slashCommands.length) % slashCommands.length);
+                  } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const command = slashCommands[selectedSlashIndex];
+                    handleSlashCommand(command.name, command.action);
+                  }
                 }
               }}
             />
@@ -2307,9 +2334,13 @@ How can I assist you today?`,
                   key={agent.id}
                   onClick={() => handleAgentSelect(agent)}
                   className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-all duration-150 ${
-                    darkMode
-                      ? 'hover:bg-gray-700 active:bg-gray-600'
-                      : 'hover:bg-slate-50 active:bg-slate-100'
+                    selectedAgentIndex === index
+                      ? darkMode
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-blue-100 border border-blue-300 text-blue-900'
+                      : darkMode
+                        ? 'hover:bg-gray-700 active:bg-gray-600'
+                        : 'hover:bg-slate-50 active:bg-slate-100'
                   }`}
                   style={{ animationDelay: `${index * 30}ms` }}
                 >
@@ -2384,9 +2415,13 @@ How can I assist you today?`,
                   key={command.name}
                   onClick={() => handleSlashCommand(command.name, command.action)}
                   className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-all duration-150 ${
-                    darkMode
-                      ? 'hover:bg-gray-700 active:bg-gray-600'
-                      : 'hover:bg-slate-50 active:bg-slate-100'
+                    selectedSlashIndex === index
+                      ? darkMode
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-blue-100 border border-blue-300 text-blue-900'
+                      : darkMode
+                        ? 'hover:bg-gray-700 active:bg-gray-600'
+                        : 'hover:bg-slate-50 active:bg-slate-100'
                   }`}
                   style={{ animationDelay: `${index * 30}ms` }}
                 >

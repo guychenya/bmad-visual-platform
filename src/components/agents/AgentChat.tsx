@@ -596,6 +596,10 @@ export function AgentChat({ agentId }: AgentChatProps) {
       
       {/* Sidebar */}
       <div className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 overflow-hidden border-r border-border glass-sidebar flex-shrink-0 md:relative fixed z-50 h-full md:z-auto`}>
+        {/* Sidebar Edge Indicator - when collapsed */}
+        {!sidebarOpen && (
+          <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-1 h-16 bg-blue-500/50 rounded-r-full animate-pulse md:hidden" />
+        )}
         <div className="flex flex-col h-full">
           {/* Sidebar Header */}
           <div className="p-4 border-b border-border">
@@ -606,14 +610,14 @@ export function AgentChat({ agentId }: AgentChatProps) {
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-white">{agent.name}</h2>
-                  <p className="text-xs text-slate-400">{agent.title}</p>
+                  <p className="text-xs text-slate-300">{agent.title}</p>
                 </div>
               </div>
               <div className="flex items-center space-x-1">
                 <div className={`w-2 h-2 rounded-full ${
                   hasApiKey ? 'bg-green-400' : 'bg-slate-500'
                 }`}></div>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-slate-300">
                   {hasApiKey ? 'Online' : 'Offline'}
                 </span>
               </div>
@@ -643,7 +647,7 @@ export function AgentChat({ agentId }: AgentChatProps) {
           {/* Conversations List */}
           <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800">
             <div className="p-3">
-              <h3 className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3 px-2">
+              <h3 className="text-xs font-medium text-slate-300 uppercase tracking-wider mb-3 px-2">
                 Recent Conversations
               </h3>
               <div className="space-y-1">
@@ -660,15 +664,15 @@ export function AgentChat({ agentId }: AgentChatProps) {
                       }`}
                     >
                       <div className="flex items-center space-x-3 flex-1 min-w-0">
-                        <MessageSquare className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                        <MessageSquare className="h-4 w-4 text-slate-300 flex-shrink-0" />
                         <div className="min-w-0 flex-1">
                           <p className="text-sm text-white font-medium truncate">
                             {conversation.title}
                           </p>
-                          <p className="text-xs text-slate-400 truncate">
+                          <p className="text-xs text-slate-300 truncate">
                             {conversation.lastMessage}
                           </p>
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-slate-400">
                             {new Date(conversation.timestamp).toLocaleDateString()}
                           </p>
                         </div>
@@ -709,11 +713,15 @@ export function AgentChat({ agentId }: AgentChatProps) {
               variant="ghost"
               size="sm"
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="text-slate-400 hover:text-white bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg px-3 py-2"
+              className={`text-slate-400 hover:text-white border rounded-lg px-3 py-2 transition-all duration-200 ${
+                sidebarOpen 
+                  ? 'bg-white/10 hover:bg-white/20 border-white/20' 
+                  : 'bg-blue-500/20 hover:bg-blue-500/30 border-blue-500/50 text-blue-300 hover:text-blue-200 animate-pulse'
+              }`}
               title={sidebarOpen ? "Hide chat history" : "Show chat history"}
             >
               {sidebarOpen ? <ChevronLeft className="h-5 w-5" /> : <History className="h-5 w-5" />}
-              <span className="ml-2 text-sm hidden sm:inline">
+              <span className="ml-2 text-sm hidden sm:inline font-medium">
                 {sidebarOpen ? "Hide" : "History"}
               </span>
             </Button>

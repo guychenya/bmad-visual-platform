@@ -302,6 +302,20 @@
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-right: 1px solid var(--glass-border);
+    box-shadow: 4px 0 24px 0 var(--glass-shadow);
+  }
+  
+  /* Improved text contrast for sidebar */
+  .glass-sidebar .text-white {
+    color: rgb(255, 255, 255) !important;
+  }
+  
+  .glass-sidebar .text-slate-400 {
+    color: rgb(148, 163, 184) !important;
+  }
+  
+  .glass-sidebar .text-slate-300 {
+    color: rgb(203, 213, 225) !important;
   }
   
   /* Gradient Components */
