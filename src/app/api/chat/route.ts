@@ -11,19 +11,25 @@ interface ChatRequest {
   message: string;
   history: ChatMessage[];
   agentId?: string;
+  apiKeys?: {
+    openai?: string;
+    claude?: string;
+    groq?: string;
+    gemini?: string;
+  };
 }
 
 // OpenAI API Integration
-async function chatWithOpenAI(model: string, messages: ChatMessage[]): Promise<string> {
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
-  if (!apiKey || apiKey === 'your_openai_api_key_here') {
+async function chatWithOpenAI(model: string, messages: ChatMessage[], apiKey?: string): Promise<string> {
+  const key = apiKey?.trim() || process.env.OPENAI_API_KEY?.trim();
+  if (!key || key === 'your_openai_api_key_here') {
     throw new Error('OpenAI API key not configured');
   }
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
+      'Authorization': `Bearer ${key}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -44,9 +50,9 @@ async function chatWithOpenAI(model: string, messages: ChatMessage[]): Promise<s
 }
 
 // Claude API Integration
-async function chatWithClaude(model: string, messages: ChatMessage[]): Promise<string> {
-  const apiKey = process.env.CLAUDE_API_KEY?.trim();
-  if (!apiKey || apiKey === 'your_claude_api_key_here') {
+async function chatWithClaude(model: string, messages: ChatMessage[], apiKey?: string): Promise<string> {
+  const key = apiKey?.trim() || process.env.CLAUDE_API_KEY?.trim();
+  if (!key || key === 'your_claude_api_key_here') {
     throw new Error('Claude API key not configured');
   }
 
@@ -57,7 +63,7 @@ async function chatWithClaude(model: string, messages: ChatMessage[]): Promise<s
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
-      'x-api-key': apiKey,
+      'x-api-key': key,
       'Content-Type': 'application/json',
       'anthropic-version': '2023-06-01',
     },
@@ -79,16 +85,16 @@ async function chatWithClaude(model: string, messages: ChatMessage[]): Promise<s
 }
 
 // Groq API Integration
-async function chatWithGroq(model: string, messages: ChatMessage[]): Promise<string> {
-  const apiKey = process.env.GROQ_API_KEY?.trim();
-  if (!apiKey || apiKey === 'your_groq_api_key_here') {
+async function chatWithGroq(model: string, messages: ChatMessage[], apiKey?: string): Promise<string> {
+  const key = apiKey?.trim() || process.env.GROQ_API_KEY?.trim();
+  if (!key || key === 'your_groq_api_key_here') {
     throw new Error('Groq API key not configured');
   }
 
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
+      'Authorization': `Bearer ${key}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -109,9 +115,9 @@ async function chatWithGroq(model: string, messages: ChatMessage[]): Promise<str
 }
 
 // Gemini API Integration
-async function chatWithGemini(model: string, messages: ChatMessage[]): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY?.trim();
-  if (!apiKey || apiKey === 'your_gemini_api_key_here') {
+async function chatWithGemini(model: string, messages: ChatMessage[], apiKey?: string): Promise<string> {
+  const key = apiKey?.trim() || process.env.GEMINI_API_KEY?.trim();
+  if (!key || key === 'your_gemini_api_key_here') {
     throw new Error('Gemini API key not configured');
   }
 
@@ -122,7 +128,7 @@ async function chatWithGemini(model: string, messages: ChatMessage[]): Promise<s
   }));
 
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model || 'gemini-pro'}:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${model || 'gemini-pro'}:generateContent?key=${key}`,
     {
       method: 'POST',
       headers: {
@@ -161,7 +167,7 @@ function getSimulationResponse(message: string, agentId?: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { provider, model, message, history, agentId }: ChatRequest = await request.json();
+    const { provider, model, message, history, agentId, apiKeys }: ChatRequest = await request.json();
 
     if (!provider || !message) {
       return NextResponse.json(
@@ -181,16 +187,16 @@ export async function POST(request: NextRequest) {
     try {
       switch (provider) {
         case 'openai':
-          response = await chatWithOpenAI(model || 'gpt-4', messages);
+          response = await chatWithOpenAI(model || 'gpt-4', messages, apiKeys?.openai);
           break;
         case 'claude':
-          response = await chatWithClaude(model || 'claude-3-sonnet-20240229', messages);
+          response = await chatWithClaude(model || 'claude-3-sonnet-20240229', messages, apiKeys?.claude);
           break;
         case 'groq':
-          response = await chatWithGroq(model || 'llama3-8b-8192', messages);
+          response = await chatWithGroq(model || 'llama3-8b-8192', messages, apiKeys?.groq);
           break;
         case 'gemini':
-          response = await chatWithGemini(model || 'gemini-pro', messages);
+          response = await chatWithGemini(model || 'gemini-pro', messages, apiKeys?.gemini);
           break;
         default:
           throw new Error(`Unsupported provider: ${provider}`);

@@ -20,7 +20,12 @@ import {
   Zap,
   Shield,
   Palette,
-  BarChart3
+  BarChart3,
+  X,
+  Key,
+  Save,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 interface Message {
@@ -149,12 +154,63 @@ export default function ModernChatPage() {
   });
   const [selectedProvider, setSelectedProvider] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<string>('');
+  const [showSettings, setShowSettings] = useState(false);
+  const [apiKeys, setApiKeys] = useState({
+    openai: '',
+    claude: '',
+    gemini: '',
+    groq: ''
+  });
+  const [showKeys, setShowKeys] = useState({
+    openai: false,
+    claude: false,
+    gemini: false,
+    groq: false
+  });
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const loadApiKeys = () => {
+    if (typeof window !== 'undefined') {
+      const savedKeys = localStorage.getItem('bmad-api-keys');
+      if (savedKeys) {
+        try {
+          const keys = JSON.parse(savedKeys);
+          setApiKeys(keys);
+        } catch (error) {
+          console.error('Error loading API keys:', error);
+        }
+      }
+    }
+  };
+
+  const saveApiKeys = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('bmad-api-keys', JSON.stringify(apiKeys));
+      setShowSettings(false);
+      // Refresh API status after saving keys
+      checkApiStatus();
+    }
+  };
+
+  const handleApiKeyChange = (provider: string, value: string) => {
+    setApiKeys(prev => ({
+      ...prev,
+      [provider]: value
+    }));
+  };
+
+  const toggleKeyVisibility = (provider: string) => {
+    setShowKeys(prev => ({
+      ...prev,
+      [provider]: !prev[provider as keyof typeof prev]
+    }));
+  };
+
   useEffect(() => {
     const initializeBMad = async () => {
+      loadApiKeys();
       await checkApiStatus();
       
       // Add welcome message
@@ -189,8 +245,23 @@ How can I assist you today?`,
 
   const checkApiStatus = async () => {
     try {
-      const response = await fetch('/api/chat/status');
-      const data = await response.json();
+      // Try POST with API keys first
+      const response = await fetch('/api/chat/status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ apiKeys })
+      });
+      
+      let data;
+      if (response.ok) {
+        data = await response.json();
+      } else {
+        // Fallback to GET if POST fails
+        const getResponse = await fetch('/api/chat/status');
+        data = await getResponse.json();
+      }
       
       setApiStatus({
         status: data.success ? 'ready' : 'error',
@@ -284,7 +355,8 @@ How can I assist you today?`,
             name: selectedAgent.name,
             title: selectedAgent.title,
             role: selectedAgent.description
-          }
+          },
+          apiKeys: apiKeys
         })
       });
 
@@ -375,6 +447,7 @@ How can I assist you today?`,
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => setShowSettings(true)}
               className="text-gray-400 hover:text-white hover:bg-gray-800"
             >
               <Settings className="w-4 h-4" />
@@ -575,6 +648,139 @@ How can I assist you today?`,
           </div>
         </div>
       </div>
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-white flex items-center">
+                <Key className="w-5 h-5 mr-2" />
+                API Configuration
+              </h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSettings(false)}
+                className="text-gray-400 hover:text-white hover:bg-gray-800"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-sm text-gray-400 mb-4">
+                Add your API keys to enable real AI responses. Keys are stored locally in your browser.
+              </p>
+
+              {/* OpenAI */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300">OpenAI API Key</label>
+                <div className="relative">
+                  <Input
+                    type={showKeys.openai ? 'text' : 'password'}
+                    value={apiKeys.openai}
+                    onChange={(e) => handleApiKeyChange('openai', e.target.value)}
+                    placeholder="sk-..."
+                    className="bg-gray-800 border-gray-700 text-white pr-10"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleKeyVisibility('openai')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                  >
+                    {showKeys.openai ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Claude */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300">Claude API Key</label>
+                <div className="relative">
+                  <Input
+                    type={showKeys.claude ? 'text' : 'password'}
+                    value={apiKeys.claude}
+                    onChange={(e) => handleApiKeyChange('claude', e.target.value)}
+                    placeholder="sk-ant-..."
+                    className="bg-gray-800 border-gray-700 text-white pr-10"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleKeyVisibility('claude')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                  >
+                    {showKeys.claude ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Gemini */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300">Gemini API Key</label>
+                <div className="relative">
+                  <Input
+                    type={showKeys.gemini ? 'text' : 'password'}
+                    value={apiKeys.gemini}
+                    onChange={(e) => handleApiKeyChange('gemini', e.target.value)}
+                    placeholder="AI..."
+                    className="bg-gray-800 border-gray-700 text-white pr-10"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleKeyVisibility('gemini')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                  >
+                    {showKeys.gemini ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Groq */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300">Groq API Key</label>
+                <div className="relative">
+                  <Input
+                    type={showKeys.groq ? 'text' : 'password'}
+                    value={apiKeys.groq}
+                    onChange={(e) => handleApiKeyChange('groq', e.target.value)}
+                    placeholder="gsk_..."
+                    className="bg-gray-800 border-gray-700 text-white pr-10"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleKeyVisibility('groq')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                  >
+                    {showKeys.groq ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => setShowSettings(false)}
+                className="border-gray-600 text-gray-300 hover:bg-gray-800"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={saveApiKeys}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Save Keys
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
