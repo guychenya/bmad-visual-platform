@@ -38,8 +38,6 @@ import {
   Image,
   Volume2,
   VolumeX,
-  Sun,
-  Moon,
   Check
 } from 'lucide-react';
 
@@ -166,7 +164,7 @@ const BMAD_AGENTS: BMadAgent[] = [
 ];
 
 interface ApiStatus {
-  status: 'loading' | 'ready' | 'error' | 'testing';
+  status: 'loading' | 'ready' | 'error' | 'testing' | 'disconnected';
   message: string;
   hasApiKeys: boolean;
   providers: Array<{id: string; name: string; models: string[]}>;
@@ -206,7 +204,7 @@ export default function ModernChatPage() {
   });
   const [testResults, setTestResults] = useState<{[key: string]: any}>({});
   const [testingProviders, setTestingProviders] = useState<{[key: string]: boolean}>({});
-  const [darkMode, setDarkMode] = useState(true);
+  // Removed darkMode - using clean white design
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [copyFeedback, setCopyFeedback] = useState<{[key: string]: boolean}>({});
   const [showUploadPanel, setShowUploadPanel] = useState(false);
@@ -650,69 +648,86 @@ How can I assist you today?`,
   };
 
   return (
-    <div className={`h-screen ${
-      darkMode 
-        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
-        : 'bg-gradient-to-br from-blue-50 via-white to-blue-50'
-    } flex flex-col transition-colors duration-300`}>
+    <div className="h-screen bg-white flex flex-col">
       {/* Header */}
-      <div className="border-b border-gray-700/50 bg-gray-900/50 backdrop-blur-md">
+      <div className="border-b border-slate-200 bg-white/95 backdrop-blur-md">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center space-x-4">
             <div className="relative">
-              <div className={`w-12 h-12 rounded-full ${selectedAgent.gradient} flex items-center justify-center text-white font-bold shadow-lg`}>
-                {selectedAgent.icon}
+              <div className={`w-12 h-12 rounded-xl ${selectedAgent.gradient} flex items-center justify-center text-white font-bold shadow-lg`}>
+                {selectedAgent.avatar}
               </div>
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-gray-900"></div>
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-white">{selectedAgent.name}</h1>
-              <p className="text-sm text-gray-400">{selectedAgent.title}</p>
+              <h1 className="text-xl font-bold text-slate-900">BMad Chat</h1>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-slate-600">{selectedAgent.name}</span>
+                <span className="text-slate-400">•</span>
+                <span className="text-sm text-slate-600">{selectedAgent.title}</span>
+              </div>
             </div>
           </div>
           
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowAgentSelector(!showAgentSelector)}
-              className="text-gray-400 hover:text-white hover:bg-gray-800"
+          <div className="flex items-center space-x-3">
+            {/* API Status */}
+            <Badge 
+              className={`flex items-center space-x-2 px-4 py-2 rounded-full font-medium ${
+                apiStatus.status === 'ready' 
+                  ? (apiStatus.demoMode ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-green-50 text-green-700 border border-green-200')
+                  : apiStatus.status === 'testing'
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200 animate-pulse'
+                  : 'bg-slate-50 text-slate-700 border border-slate-200'
+              }`}
             >
-              <User className="w-4 h-4 mr-2" />
-              Switch Agent
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSoundEnabled(!soundEnabled)}
-              className="text-gray-400 hover:text-white hover:bg-gray-800"
-            >
-              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setDarkMode(!darkMode)}
-              className="text-gray-400 hover:text-white hover:bg-gray-800"
-            >
-              {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowUploadPanel(!showUploadPanel)}
-              className="text-gray-400 hover:text-white hover:bg-gray-800"
-            >
-              <Upload className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowSettings(true)}
-              className="text-gray-400 hover:text-white hover:bg-gray-800"
-            >
-              <Settings className="w-4 h-4" />
-            </Button>
+              {apiStatus.status === 'ready' && !apiStatus.demoMode && <Wifi className="w-4 h-4" />}
+              {apiStatus.status === 'ready' && apiStatus.demoMode && <WifiOff className="w-4 h-4" />}
+              {apiStatus.status === 'testing' && <Loader2 className="w-4 h-4 animate-spin" />}
+              {apiStatus.status === 'disconnected' && <XCircle className="w-4 h-4" />}
+              <span className="text-sm">
+                {apiStatus.status === 'ready' && !apiStatus.demoMode && 'AI LIVE'}
+                {apiStatus.status === 'ready' && apiStatus.demoMode && 'DEMO MODE'}
+                {apiStatus.status === 'testing' && 'TESTING'}
+                {apiStatus.status === 'disconnected' && 'OFFLINE'}
+              </span>
+            </Badge>
+            
+            {/* Control Buttons */}
+            <div className="flex items-center space-x-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAgentSelector(!showAgentSelector)}
+                className="h-9 px-3 rounded-lg hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-all duration-200"
+              >
+                <User className="w-4 h-4 mr-2" />
+                Switch
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSoundEnabled(!soundEnabled)}
+                className="h-9 w-9 rounded-lg hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-all duration-200"
+              >
+                {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowUploadPanel(!showUploadPanel)}
+                className="h-9 w-9 rounded-lg hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-all duration-200"
+              >
+                <Upload className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSettings(true)}
+                className="h-9 w-9 rounded-lg hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-all duration-200"
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </div>
         
@@ -759,39 +774,46 @@ How can I assist you today?`,
 
         {/* Upload Panel */}
         {showUploadPanel && (
-          <div className="border-t border-gray-700/50 p-4 bg-gray-800/30">
+          <div className="border-t border-slate-200 bg-slate-50 p-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex items-center space-x-2 p-3 border border-gray-600 rounded-lg hover:bg-gray-700/50 cursor-pointer">
-                <Image className="w-5 h-5 text-blue-400" />
+              <div className="flex items-center space-x-3 p-4 border border-slate-200 rounded-xl hover:bg-white hover:shadow-sm cursor-pointer transition-all duration-200">
+                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                  <Image className="w-5 h-5 text-blue-600" />
+                </div>
                 <div>
-                  <div className="text-sm font-medium text-white">Upload Image</div>
-                  <div className="text-xs text-gray-400">JPG, PNG, WebP</div>
+                  <div className="text-sm font-semibold text-slate-900">Upload Image</div>
+                  <div className="text-xs text-slate-500">JPG, PNG, WebP</div>
                 </div>
               </div>
-              <div className="flex items-center space-x-2 p-3 border border-gray-600 rounded-lg hover:bg-gray-700/50 cursor-pointer">
-                <FileText className="w-5 h-5 text-green-400" />
+              <div className="flex items-center space-x-3 p-4 border border-slate-200 rounded-xl hover:bg-white hover:shadow-sm cursor-pointer transition-all duration-200">
+                <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-green-600" />
+                </div>
                 <div>
-                  <div className="text-sm font-medium text-white">Upload File</div>
-                  <div className="text-xs text-gray-400">MD, TXT, CSV</div>
+                  <div className="text-sm font-semibold text-slate-900">Upload File</div>
+                  <div className="text-xs text-slate-500">MD, TXT, CSV</div>
                 </div>
               </div>
-              <div className="flex items-center space-x-2 p-3 border border-gray-600 rounded-lg hover:bg-gray-700/50 cursor-pointer">
-                <Github className="w-5 h-5 text-purple-400" />
+              <div className="flex items-center space-x-3 p-4 border border-slate-200 rounded-xl hover:bg-white hover:shadow-sm cursor-pointer transition-all duration-200">
+                <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
+                  <Github className="w-5 h-5 text-purple-600" />
+                </div>
                 <div>
-                  <div className="text-sm font-medium text-white">GitHub Repo</div>
-                  <div className="text-xs text-gray-400">Paste URL</div>
+                  <div className="text-sm font-semibold text-slate-900">GitHub Repo</div>
+                  <div className="text-xs text-slate-500">Paste URL</div>
                 </div>
               </div>
             </div>
-            <div className="mt-3 text-xs text-gray-500 text-center">
-              🚧 File upload features coming soon! For now, you can use web search with &quot;search: your query&quot;
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg text-center">
+              <div className="text-sm text-blue-700 font-medium">🚧 File upload coming soon!</div>
+              <div className="text-xs text-blue-600 mt-1">Try web search: &quot;search: your query&quot;</div>
             </div>
           </div>
         )}
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -800,7 +822,7 @@ How can I assist you today?`,
             <div className={`max-w-[80%] ${message.role === 'user' ? 'order-2' : 'order-1'}`}>
               <div className={`flex items-start space-x-3 ${message.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
                 {/* Avatar */}
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm ${
                   message.role === 'user' 
                     ? 'bg-blue-500' 
                     : selectedAgent.gradient
@@ -808,16 +830,16 @@ How can I assist you today?`,
                   {message.role === 'user' ? (
                     <User className="w-4 h-4 text-white" />
                   ) : (
-                    selectedAgent.icon
+                    <span className="text-white font-medium">{selectedAgent.avatar}</span>
                   )}
                 </div>
                 
                 {/* Message Content */}
                 <div className={`group ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
-                  <div className={`rounded-2xl px-4 py-3 ${
+                  <div className={`rounded-2xl px-4 py-3 shadow-sm ${
                     message.role === 'user'
                       ? 'bg-blue-500 text-white'
-                      : 'bg-gray-800 text-gray-100'
+                      : 'bg-white text-slate-900 border border-slate-200'
                   }`}>
                     <div className="whitespace-pre-wrap text-sm leading-relaxed">
                       {message.content}
@@ -900,14 +922,14 @@ How can I assist you today?`,
         {isLoading && (
           <div className="flex justify-start">
             <div className="flex items-start space-x-3">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${selectedAgent.gradient}`}>
-                {selectedAgent.icon}
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm ${selectedAgent.gradient}`}>
+                <span className="text-white font-medium">{selectedAgent.avatar}</span>
               </div>
-              <div className="bg-gray-800 rounded-2xl px-4 py-3">
+              <div className="bg-white border border-slate-200 rounded-2xl px-4 py-3 shadow-sm">
                 <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                 </div>
               </div>
             </div>
@@ -918,25 +940,16 @@ How can I assist you today?`,
       </div>
 
       {/* Input */}
-      <div className="border-t border-gray-700/50 bg-gray-900/50 backdrop-blur-md p-6">
+      <div className="border-t border-slate-200 bg-white p-6">
         <form onSubmit={handleSendMessage} className="flex items-end space-x-3">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-gray-400 hover:text-white hover:bg-gray-800 mb-2"
-          >
-            <Plus className="w-4 h-4" />
-          </Button>
-          
           <div className="flex-1 relative">
             <Input
               ref={inputRef}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder={`Message ${selectedAgent.name}...`}
+              placeholder={`Message ${selectedAgent.name}... (try "search: your query")`}
               disabled={isLoading}
-              className="bg-gray-800/50 border-gray-700/50 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12 py-3 rounded-2xl resize-none"
+              className="bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-12 py-4 rounded-xl resize-none transition-all duration-200"
               onKeyPress={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -948,14 +961,14 @@ How can I assist you today?`,
             <Button
               type="submit"
               disabled={isLoading || !inputValue.trim()}
-              className="absolute right-2 bottom-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2 h-8 w-8"
+              className="absolute right-2 bottom-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2 h-9 w-9 shadow-sm transition-all duration-200 hover:shadow-md"
             >
               <Send className="w-4 h-4" />
             </Button>
           </div>
         </form>
         
-        <div className="flex items-center justify-between mt-3 text-xs text-gray-500">
+        <div className="flex items-center justify-between mt-4 text-xs text-slate-500">
           <div className="flex items-center space-x-4">
             <span>BMad Framework • {selectedAgent.name}</span>
             <div className="flex items-center space-x-2">
@@ -963,11 +976,11 @@ How can I assist you today?`,
               {apiStatus.status === 'ready' && !apiStatus.demoMode ? (
                 <div className="flex items-center space-x-1">
                   {apiStatus.connectionQuality === 'excellent' ? (
-                    <Lightning className="w-3 h-3 text-green-400" />
+                    <Lightning className="w-3 h-3 text-green-500" />
                   ) : (
-                    <Wifi className="w-3 h-3 text-green-400" />
+                    <Wifi className="w-3 h-3 text-green-500" />
                   )}
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 </div>
               ) : apiStatus.status === 'testing' ? (
                 <div className="flex items-center space-x-1">
