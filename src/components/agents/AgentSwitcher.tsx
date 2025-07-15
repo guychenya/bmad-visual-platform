@@ -4,8 +4,6 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '../ui/button'
 import { Card, CardContent } from '../ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
-import { Badge } from '../ui/badge'
 import { ChevronDown, Users } from 'lucide-react'
 import { AgentPersonality, AGENT_PERSONALITIES } from '../../types/agents'
 
@@ -53,37 +51,21 @@ export function AgentSwitcher({ currentAgent, onAgentSwitch }: AgentSwitcherProp
                     >
                       <Button
                         variant="ghost"
-                        className="w-full justify-start p-3 h-auto"
+                        className="w-full justify-start p-3 h-auto hover:bg-slate-100/5"
                         onClick={() => {
                           onAgentSwitch(agent.id)
                           setIsOpen(false)
                         }}
                       >
-                        <Avatar className="h-10 w-10 mr-3">
-                          <AvatarImage src={agent.avatar} alt={agent.name} />
-                          <AvatarFallback 
-                            style={{ backgroundColor: agent.color.secondary }}
-                            className="text-white font-semibold"
-                          >
-                            {agent.name.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
+                        <div className="h-10 w-10 mr-3 flex items-center justify-center bg-slate-100/10 rounded-lg">
+                          <Users className="h-5 w-5 text-slate-400" />
+                        </div>
                         <div className="flex-1 text-left">
                           <div className="flex items-center space-x-2">
-                            <span className="font-medium">{agent.name}</span>
-                            <Badge 
-                              variant="secondary" 
-                              className="text-xs"
-                              style={{ 
-                                backgroundColor: agent.color.secondary,
-                                color: agent.color.accent
-                              }}
-                            >
-                              {agent.title}
-                            </Badge>
+                            <span className="font-medium text-slate-200">{agent.name}</span>
                           </div>
-                          <p className="text-sm text-muted-foreground truncate">
-                            {agent.description}
+                          <p className="text-sm text-slate-400 truncate">
+                            {agent.title}
                           </p>
                         </div>
                       </Button>

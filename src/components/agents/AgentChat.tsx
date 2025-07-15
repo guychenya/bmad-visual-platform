@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
-import { Send, Loader2, ArrowLeft, Brain, Code, TestTube, Users, User, Palette, Settings, Key, ExternalLink, Plus, MessageSquare, ChevronLeft, Menu, History, MoreHorizontal, Crown } from 'lucide-react'
+import { Send, Loader2, ArrowLeft, Brain, Code, TestTube, Users, User, Palette, Settings, Key, ExternalLink, Plus, MessageSquare, ChevronLeft, Menu, History, MoreHorizontal, Crown, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { routes } from '../../lib/routes'
 import { useRouter } from 'next/navigation'
@@ -429,6 +429,11 @@ export function AgentChat({ agentId }: AgentChatProps) {
       setCurrentConversationId(conversationId)
       setMessages(conversation.messages)
       
+      // Auto-close sidebar on mobile after selecting conversation
+      if (window.innerWidth < 768) {
+        setSidebarOpen(false)
+      }
+      
       // If switching to different agent, update URL
       if (conversation.agentId !== agentId) {
         router.push(routes.dashboard.agentDetail(conversation.agentId))
@@ -444,6 +449,17 @@ export function AgentChat({ agentId }: AgentChatProps) {
     
     // If deleting current conversation, start a new one
     if (conversationId === currentConversationId) {
+      createNewConversation()
+    }
+  }
+
+  const clearAllConversations = () => {
+    if (window.confirm('Are you sure you want to delete all conversations? This action cannot be undone.')) {
+      const updatedConversations = conversations.filter(conv => conv.agentId !== agentId)
+      setConversations(updatedConversations)
+      localStorage.setItem('viby-conversations', JSON.stringify(updatedConversations))
+      
+      // Start a new conversation for the current agent
       createNewConversation()
     }
   }
@@ -569,9 +585,17 @@ export function AgentChat({ agentId }: AgentChatProps) {
   }
 
   return (
-    <div className="flex h-full bg-background overflow-hidden">
+    <div className="flex h-full bg-background overflow-hidden relative">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      
       {/* Sidebar */}
-      <div className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 overflow-hidden border-r border-border glass-sidebar`}>
+      <div className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 overflow-hidden border-r border-border glass-sidebar flex-shrink-0 md:relative fixed z-50 h-full md:z-auto`}>
         <div className="flex flex-col h-full">
           {/* Sidebar Header */}
           <div className="p-4 border-b border-border">
@@ -595,19 +619,30 @@ export function AgentChat({ agentId }: AgentChatProps) {
               </div>
             </div>
             
-            <Button 
-              onClick={createNewConversation}
-              className="w-full gradient-button text-sm"
-              disabled={!hasApiKey}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New Chat
-            </Button>
+            <div className="flex space-x-2">
+              <Button 
+                onClick={createNewConversation}
+                className="flex-1 gradient-button text-sm"
+                disabled={!hasApiKey}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                New Chat
+              </Button>
+              <Button 
+                onClick={clearAllConversations}
+                variant="outline"
+                className="glass-button text-sm px-3"
+                disabled={!hasApiKey || conversations.filter(conv => conv.agentId === agentId).length === 0}
+                title="Clear all conversations for this agent"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
           
           {/* Conversations List */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="p-2">
+          <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800">
+            <div className="p-3">
               <h3 className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3 px-2">
                 Recent Conversations
               </h3>
@@ -642,7 +677,8 @@ export function AgentChat({ agentId }: AgentChatProps) {
                         variant="ghost"
                         size="sm"
                         onClick={(e) => deleteConversation(conversation.id, e)}
-                        className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-400 h-6 w-6 p-0"
+                        className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-400 hover:bg-red-400/20 h-8 w-8 p-0 rounded-md transition-all duration-200"
+                        title="Delete conversation"
                       >
                         ×
                       </Button>
@@ -673,9 +709,13 @@ export function AgentChat({ agentId }: AgentChatProps) {
               variant="ghost"
               size="sm"
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="text-slate-400 hover:text-white"
+              className="text-slate-400 hover:text-white bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg px-3 py-2"
+              title={sidebarOpen ? "Hide chat history" : "Show chat history"}
             >
-              {sidebarOpen ? <ChevronLeft className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {sidebarOpen ? <ChevronLeft className="h-5 w-5" /> : <History className="h-5 w-5" />}
+              <span className="ml-2 text-sm hidden sm:inline">
+                {sidebarOpen ? "Hide" : "History"}
+              </span>
             </Button>
             
             <div className="flex items-center space-x-3">
