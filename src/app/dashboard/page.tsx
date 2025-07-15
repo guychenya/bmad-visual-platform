@@ -79,20 +79,27 @@ export default function OpenAIStyleDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-3/4 left-1/2 w-48 h-48 bg-pink-500/10 rounded-full blur-3xl animate-pulse delay-2000"></div>
+      </div>
+      
+      <div className="max-w-6xl mx-auto px-4 py-8 relative z-10">
         
         {/* Header */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center mb-6">
-            <div className="w-16 h-16 bg-gradient-viby rounded-2xl flex items-center justify-center mr-4">
-              <Sparkles className="w-8 h-8 text-white" />
+        <div className="text-center mb-16">
+          <div className="flex items-center justify-center mb-8">
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl flex items-center justify-center mr-6 shadow-2xl">
+              <Sparkles className="w-10 h-10 text-white" />
             </div>
             <div className="text-left">
-              <h1 className="text-4xl font-bold gradient-text">
+              <h1 className="text-5xl font-bold gradient-text mb-2">
                 BMad AI Builder
               </h1>
-              <p className="text-slate-400 text-lg">
+              <p className="text-slate-300 text-xl font-medium">
                 Your AI development team
               </p>
             </div>
@@ -151,33 +158,33 @@ export default function OpenAIStyleDashboard() {
         </div>
 
         {/* Conversation Starters */}
-        <div className="mb-12">
-          <h2 className="text-xl font-semibold text-white mb-6 text-center">
+        <div className="mb-16">
+          <h2 className="text-3xl font-semibold text-white mb-8 text-center">
             Popular project types
           </h2>
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid md:grid-cols-2 gap-6">
             {CONVERSATION_STARTERS.map((starter, index) => {
               const Icon = starter.icon
               return (
                 <Card 
                   key={index}
-                  className="glass-card hover:glass-card-premium transition-all cursor-pointer group"
+                  className="glass-card hover:glass-card-premium transition-all cursor-pointer group border-2 border-transparent hover:border-blue-400/30 rounded-2xl"
                   onClick={() => handleStartConversation(starter.prompt)}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-start space-x-3">
-                      <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
-                        <Icon className="h-5 w-5 text-white" />
+                  <CardContent className="p-6">
+                    <div className="flex items-start space-x-4">
+                      <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl shadow-lg">
+                        <Icon className="h-6 w-6 text-white" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-medium text-white mb-1 group-hover:text-blue-300 transition-colors">
+                        <h3 className="font-bold text-white text-lg mb-2 group-hover:text-blue-300 transition-colors">
                           {starter.title}
                         </h3>
-                        <p className="text-sm text-slate-400">
+                        <p className="text-base text-slate-300 leading-relaxed">
                           {starter.description}
                         </p>
                       </div>
-                      <ArrowRight className="h-4 w-4 text-slate-500 group-hover:text-white transition-colors" />
+                      <ArrowRight className="h-5 w-5 text-slate-500 group-hover:text-white transition-colors" />
                     </div>
                   </CardContent>
                 </Card>
@@ -223,7 +230,15 @@ export default function OpenAIStyleDashboard() {
         </div>
 
         {/* Dashboard Accordion */}
-        <div className="mb-12">
+        <div className="mb-16">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-semibold text-white mb-3">
+              Dashboard Overview
+            </h2>
+            <p className="text-slate-300 text-lg">
+              Manage your projects, settings, and team collaboration
+            </p>
+          </div>
           <DashboardAccordion 
             defaultOpen={["navigation"]}
             currentPath="/dashboard"

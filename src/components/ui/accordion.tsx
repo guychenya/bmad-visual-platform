@@ -45,7 +45,7 @@ const Accordion = React.forwardRef<HTMLDivElement, AccordionProps>(
 
     return (
       <AccordionContext.Provider value={contextValue}>
-        <div ref={ref} className={cn("space-y-2", className)}>
+        <div ref={ref} className={cn("space-y-4", className)}>
           {children}
         </div>
       </AccordionContext.Provider>
@@ -106,7 +106,8 @@ const AccordionTrigger = React.forwardRef<HTMLButtonElement, AccordionTriggerPro
       <button
         ref={ref}
         className={cn(
-          "flex w-full items-center justify-between px-6 py-4 text-left font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+          "flex w-full items-center justify-between px-6 py-5 text-left font-medium transition-all duration-200 hover:bg-white/5 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg",
+          isOpen && "bg-white/5 text-white",
           className
         )}
         onClick={() => context.togglePanel(panelId)}
@@ -118,7 +119,7 @@ const AccordionTrigger = React.forwardRef<HTMLButtonElement, AccordionTriggerPro
               {icon}
             </div>
           )}
-          <span className="text-sm font-semibold">{children}</span>
+          <span className="text-base font-semibold">{children}</span>
         </div>
         <motion.div
           animate={{ rotate: isOpen ? 180 : 0 }}
