@@ -178,6 +178,15 @@ interface ApiStatus {
   demoMode: boolean;
   activeProvider?: string;
   connectionQuality?: 'excellent' | 'good' | 'poor';
+  connectedProviders: string[];
+  failoverActive: boolean;
+  lastFailover: { from: string; to: string; timestamp: Date } | null;
+  validatedConnections: Record<string, { 
+    isValid: boolean; 
+    lastTested: Date; 
+    responseTime: number; 
+    priority: number; 
+  }>;
 }
 
 export default function ModernChatPage() {
@@ -196,7 +205,11 @@ export default function ModernChatPage() {
     message: 'Initializing BMad system...', 
     hasApiKeys: false,
     providers: [],
-    demoMode: true
+    demoMode: true,
+    connectedProviders: [],
+    failoverActive: false,
+    lastFailover: null,
+    validatedConnections: {}
   });
   const [selectedProvider, setSelectedProvider] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<string>('');
@@ -232,9 +245,194 @@ export default function ModernChatPage() {
     size: number;
     mimeType: string;
   }[]>([]);
+
+  // Chat history and navigation state
+  const [chatHistory, setChatHistory] = useState<{
+    id: string;
+    title: string;
+    timestamp: Date;
+    messages: Message[];
+    stage: 'discovery' | 'analysis' | 'development' | 'testing' | 'deployment' | 'completed';
+    deliverables: {
+      type: 'document' | 'code' | 'report' | 'specification';
+      title: string;
+      content: string;
+      downloadUrl?: string;
+      isReady: boolean;
+    }[];
+    agent: BMadAgent;
+  }[]>([]);
+  
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [showChatHistory, setShowChatHistory] = useState(false);
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Chat history management
+  const createNewChat = () => {
+    const newChatId = Date.now().toString();
+    const newChat = {
+      id: newChatId,
+      title: `Chat with ${selectedAgent.name}`,
+      timestamp: new Date(),
+      messages: [],
+      stage: 'discovery' as const,
+      deliverables: [],
+      agent: selectedAgent
+    };
+    
+    setChatHistory(prev => [newChat, ...prev]);
+    setCurrentChatId(newChatId);
+    setMessages([]);
+  };
+
+  const saveCurrentChat = () => {
+    if (!currentChatId) return;
+    
+    setChatHistory(prev => prev.map(chat => 
+      chat.id === currentChatId 
+        ? { ...chat, messages: [...messages], timestamp: new Date() }
+        : chat
+    ));
+  };
+
+  const loadChat = (chatId: string) => {
+    const chat = chatHistory.find(c => c.id === chatId);
+    if (chat) {
+      setCurrentChatId(chatId);
+      setMessages(chat.messages);
+      setSelectedAgent(chat.agent);
+    }
+  };
+
+  const generateDeliverables = (messages: Message[], stage: string) => {
+    const deliverables = [];
+    
+    if (stage === 'analysis' || stage === 'development') {
+      const requirements = messages.filter(m => 
+        m.content.toLowerCase().includes('requirement') || 
+        m.content.toLowerCase().includes('need') ||
+        m.content.toLowerCase().includes('feature')
+      );
+      
+      if (requirements.length > 0) {
+        deliverables.push({
+          type: 'document' as const,
+          title: 'Requirements Document',
+          content: requirements.map(m => `- ${m.content}`).join('\n'),
+          isReady: true
+        });
+      }
+    }
+    
+    if (stage === 'development' || stage === 'testing') {
+      const codeMessages = messages.filter(m => m.content.includes('```'));
+      if (codeMessages.length > 0) {
+        deliverables.push({
+          type: 'code' as const,
+          title: 'Code Implementation',
+          content: codeMessages.map(m => m.content).join('\n\n'),
+          isReady: true
+        });
+      }
+    }
+    
+    if (stage === 'testing' || stage === 'deployment') {
+      const testMessages = messages.filter(m => 
+        m.content.toLowerCase().includes('test') || 
+        m.content.toLowerCase().includes('verify')
+      );
+      
+      if (testMessages.length > 0) {
+        deliverables.push({
+          type: 'report' as const,
+          title: 'Test Report',
+          content: testMessages.map(m => `- ${m.content}`).join('\n'),
+          isReady: true
+        });
+      }
+    }
+    
+    return deliverables;
+  };
+
+  const determineStage = (messages: Message[]): 'discovery' | 'analysis' | 'development' | 'testing' | 'deployment' | 'completed' => {
+    const messageCount = messages.length;
+    const hasCodeContent = messages.some(m => m.content.includes('```'));
+    const hasTestingKeywords = messages.some(m => m.content.toLowerCase().includes('test'));
+    
+    if (messageCount < 5) return 'discovery';
+    if (messageCount < 10 && !hasCodeContent) return 'analysis';
+    if (hasCodeContent && !hasTestingKeywords) return 'development';
+    if (hasTestingKeywords) return 'testing';
+    return 'deployment';
+  };
+
+  const downloadDeliverable = (deliverable: any) => {
+    const blob = new Blob([deliverable.content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${deliverable.title}.${deliverable.type === 'code' ? 'js' : 'txt'}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Intelligent failover system
+  const attemptFailover = async (failedProvider: string): Promise<string | null> => {
+    console.log(`Attempting failover from ${failedProvider}`);
+    
+    const validConnections = Object.entries(apiStatus.validatedConnections)
+      .filter(([provider, config]) => 
+        config.isValid && 
+        provider !== failedProvider &&
+        apiStatus.connectedProviders.includes(provider)
+      )
+      .sort((a, b) => a[1].priority - b[1].priority);
+
+    if (validConnections.length === 0) {
+      console.log('No valid connections available for failover');
+      return null;
+    }
+
+    const fallbackProvider = validConnections[0][0];
+    console.log(`Failing over to ${fallbackProvider}`);
+    
+    setApiStatus(prev => ({
+      ...prev,
+      failoverActive: true,
+      lastFailover: {
+        from: failedProvider,
+        to: fallbackProvider,
+        timestamp: new Date()
+      }
+    }));
+
+    setSelectedProvider(fallbackProvider);
+    return fallbackProvider;
+  };
+
+  const updateConnectionStatus = (provider: string, isValid: boolean, responseTime: number = 0) => {
+    setApiStatus(prev => ({
+      ...prev,
+      validatedConnections: {
+        ...prev.validatedConnections,
+        [provider]: {
+          isValid,
+          lastTested: new Date(),
+          responseTime,
+          priority: ['groq', 'openai', 'claude', 'gemini'].indexOf(provider) + 1
+        }
+      },
+      connectedProviders: isValid 
+        ? [...prev.connectedProviders.filter(p => p !== provider), provider]
+        : prev.connectedProviders.filter(p => p !== provider)
+    }));
+  };
 
   // Handle input change for @ and / triggers
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -728,7 +926,22 @@ How can I assist you today?`,
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+    
+    // Auto-save current chat when messages change
+    if (currentChatId && messages.length > 0) {
+      saveCurrentChat();
+      
+      // Update chat stage based on conversation progress
+      const stage = determineStage(messages);
+      const deliverables = generateDeliverables(messages, stage);
+      
+      setChatHistory(prev => prev.map(chat => 
+        chat.id === currentChatId 
+          ? { ...chat, stage, messages: [...messages], deliverables }
+          : chat
+      ));
+    }
+  }, [messages, currentChatId]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -821,32 +1034,109 @@ How can I assist you today?`,
       const useStreaming = ['openai', 'groq'].includes(selectedProvider);
       const endpoint = useStreaming ? '/api/chat/stream' : '/api/chat';
       
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          provider: selectedProvider,
-          model: selectedModel,
-          message: processedMessage,
-          history,
-          agentId: targetAgent.id,
-          agentContext: {
-            name: targetAgent.name,
-            title: targetAgent.title,
-            role: targetAgent.description,
-            specialties: targetAgent.specialties,
-            capabilities: targetAgent.specialties, // Use specialties as capabilities for now
-            persona: `I am ${targetAgent.name}, ${targetAgent.title}. ${targetAgent.description}`,
-            bmadFramework: true
+      let currentProvider = selectedProvider;
+      let response: Response;
+      
+      // Try primary provider first, then failover if needed
+      try {
+        response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
-          originalMessage: userMessage.content,
-          mentionedAgent: agentMentionMatch ? targetAgent.id : null,
-          apiKeys: apiKeys,
-          attachments: userMessage.attachments
-        })
-      });
+          body: JSON.stringify({
+            provider: currentProvider,
+            model: selectedModel,
+            message: processedMessage,
+            history,
+            agentId: targetAgent.id,
+            agentContext: {
+              name: targetAgent.name,
+              title: targetAgent.title,
+              role: targetAgent.description,
+              specialties: targetAgent.specialties,
+              capabilities: targetAgent.specialties, // Use specialties as capabilities for now
+              persona: `I am ${targetAgent.name}, ${targetAgent.title}. ${targetAgent.description}`,
+              bmadFramework: true
+            },
+            originalMessage: userMessage.content,
+            mentionedAgent: agentMentionMatch ? targetAgent.id : null,
+            apiKeys: apiKeys,
+            attachments: userMessage.attachments
+          })
+        });
+        
+        // If primary provider fails, attempt failover
+        if (!response.ok) {
+          const fallbackProvider = await attemptFailover(currentProvider);
+          if (fallbackProvider) {
+            currentProvider = fallbackProvider;
+            const fallbackEndpoint = ['openai', 'groq'].includes(fallbackProvider) ? '/api/chat/stream' : '/api/chat';
+            
+            response = await fetch(fallbackEndpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                provider: fallbackProvider,
+                model: selectedModel,
+                message: processedMessage,
+                history,
+                agentId: targetAgent.id,
+                agentContext: {
+                  name: targetAgent.name,
+                  title: targetAgent.title,
+                  role: targetAgent.description,
+                  specialties: targetAgent.specialties,
+                  capabilities: targetAgent.specialties,
+                  persona: `I am ${targetAgent.name}, ${targetAgent.title}. ${targetAgent.description}`,
+                  bmadFramework: true
+                },
+                originalMessage: userMessage.content,
+                mentionedAgent: agentMentionMatch ? targetAgent.id : null,
+                apiKeys: apiKeys,
+                attachments: userMessage.attachments
+              })
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Primary provider failed:', error);
+        const fallbackProvider = await attemptFailover(currentProvider);
+        if (fallbackProvider) {
+          currentProvider = fallbackProvider;
+          // Retry with fallback provider
+          response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              provider: fallbackProvider,
+              model: selectedModel,
+              message: processedMessage,
+              history,
+              agentId: targetAgent.id,
+              agentContext: {
+                name: targetAgent.name,
+                title: targetAgent.title,
+                role: targetAgent.description,
+                specialties: targetAgent.specialties,
+                capabilities: targetAgent.specialties,
+                persona: `I am ${targetAgent.name}, ${targetAgent.title}. ${targetAgent.description}`,
+                bmadFramework: true
+              },
+              originalMessage: userMessage.content,
+              mentionedAgent: agentMentionMatch ? targetAgent.id : null,
+              apiKeys: apiKeys,
+              attachments: userMessage.attachments
+            })
+          });
+        } else {
+          throw error;
+        }
+      }
 
       if (useStreaming && response.ok) {
         // Handle streaming response
@@ -985,11 +1275,107 @@ How can I assist you today?`,
   };
 
   return (
-    <div className={`h-screen flex flex-col transition-colors duration-200 ${
+    <div className={`h-screen flex transition-colors duration-200 ${
       darkMode 
         ? 'bg-gray-900' 
         : 'bg-white'
     }`}>
+      {/* Left Sidebar - Chat History */}
+      <div className={`${showChatHistory ? 'w-80' : 'w-12'} transition-all duration-300 border-r ${
+        darkMode ? 'border-gray-700 bg-gray-800' : 'border-slate-200 bg-slate-50'
+      } flex flex-col`}>
+        {/* Sidebar Header */}
+        <div className="p-3 border-b border-gray-700/50">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowChatHistory(!showChatHistory)}
+            className={`w-full justify-start ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-slate-200'}`}
+          >
+            <BarChart3 className="w-4 h-4 mr-2" />
+            {showChatHistory && <span className="text-sm">Chat History</span>}
+          </Button>
+        </div>
+
+        {showChatHistory && (
+          <>
+            {/* New Chat Button */}
+            <div className="p-3 border-b border-gray-700/50">
+              <Button
+                onClick={createNewChat}
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Chat
+              </Button>
+            </div>
+
+            {/* Chat History Tree */}
+            <div className="flex-1 overflow-y-auto">
+              {chatHistory.map((chat) => (
+                <div key={chat.id} className="p-2 border-b border-gray-700/30">
+                  <div 
+                    className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
+                      currentChatId === chat.id 
+                        ? 'bg-blue-500/20 border border-blue-500/50' 
+                        : darkMode ? 'hover:bg-gray-700' : 'hover:bg-slate-200'
+                    }`}
+                    onClick={() => loadChat(chat.id)}
+                  >
+                    <div className="flex items-center space-x-2 flex-1 min-w-0">
+                      <div className={`w-6 h-6 rounded-full ${chat.agent.gradient} flex items-center justify-center text-xs text-white`}>
+                        {chat.agent.avatar}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium truncate text-gray-200">
+                          {chat.title}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {chat.timestamp.toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <div className={`w-2 h-2 rounded-full ${
+                        chat.stage === 'discovery' ? 'bg-blue-500' :
+                        chat.stage === 'analysis' ? 'bg-yellow-500' :
+                        chat.stage === 'development' ? 'bg-orange-500' :
+                        chat.stage === 'testing' ? 'bg-purple-500' :
+                        chat.stage === 'deployment' ? 'bg-green-500' :
+                        'bg-gray-500'
+                      }`} />
+                    </div>
+                  </div>
+                  
+                  {/* Deliverables */}
+                  {chat.deliverables.length > 0 && (
+                    <div className="mt-2 ml-4 space-y-1">
+                      {chat.deliverables.map((deliverable, idx) => (
+                        <div key={idx} className="flex items-center space-x-2 text-xs text-gray-400">
+                          <FileText className="w-3 h-3" />
+                          <span className="truncate">{deliverable.title}</span>
+                          {deliverable.isReady && (
+                            <button 
+                              onClick={() => downloadDeliverable(deliverable)}
+                              className="text-blue-400 hover:text-blue-300"
+                              title="Download deliverable"
+                            >
+                              <Upload className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col">
       {/* Hidden File Inputs */}
       <input
         ref={fileInputRef}
@@ -1060,27 +1446,50 @@ How can I assist you today?`,
           </div>
           
           <div className="flex items-center space-x-3">
-            {/* API Status */}
-            <Badge 
-              className={`flex items-center space-x-2 px-4 py-2 rounded-full font-medium ${
-                apiStatus.status === 'ready' 
-                  ? (apiStatus.demoMode ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-green-50 text-green-700 border border-green-200')
-                  : apiStatus.status === 'testing'
-                  ? 'bg-blue-50 text-blue-700 border border-blue-200 animate-pulse'
-                  : 'bg-slate-50 text-slate-700 border border-slate-200'
-              }`}
-            >
-              {apiStatus.status === 'ready' && !apiStatus.demoMode && <Wifi className="w-4 h-4" />}
-              {apiStatus.status === 'ready' && apiStatus.demoMode && <WifiOff className="w-4 h-4" />}
-              {apiStatus.status === 'testing' && <Loader2 className="w-4 h-4 animate-spin" />}
-              {apiStatus.status === 'disconnected' && <XCircle className="w-4 h-4" />}
-              <span className="text-sm">
-                {apiStatus.status === 'ready' && !apiStatus.demoMode && 'AI LIVE'}
-                {apiStatus.status === 'ready' && apiStatus.demoMode && 'DEMO MODE'}
-                {apiStatus.status === 'testing' && 'TESTING'}
-                {apiStatus.status === 'disconnected' && 'OFFLINE'}
-              </span>
-            </Badge>
+            {/* Enhanced API Status */}
+            <div className="flex items-center space-x-2">
+              <Badge 
+                className={`flex items-center space-x-2 px-3 py-1 rounded-full font-medium ${
+                  apiStatus.status === 'ready' 
+                    ? (apiStatus.demoMode ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-green-50 text-green-700 border border-green-200')
+                    : apiStatus.status === 'testing'
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200 animate-pulse'
+                    : 'bg-slate-50 text-slate-700 border border-slate-200'
+                }`}
+              >
+                {apiStatus.status === 'ready' && !apiStatus.demoMode && (
+                  <div className="flex items-center space-x-1">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <Wifi className="w-3 h-3" />
+                  </div>
+                )}
+                {apiStatus.status === 'ready' && apiStatus.demoMode && <WifiOff className="w-3 h-3" />}
+                {apiStatus.status === 'testing' && <Loader2 className="w-3 h-3 animate-spin" />}
+                {apiStatus.status === 'disconnected' && <XCircle className="w-3 h-3" />}
+                <span className="text-xs">
+                  {apiStatus.status === 'ready' && !apiStatus.demoMode && (
+                    <div className="flex items-center space-x-1">
+                      <span>{selectedProvider.toUpperCase()}</span>
+                      {apiStatus.failoverActive && (
+                        <span className="text-orange-600">↻</span>
+                      )}
+                    </div>
+                  )}
+                  {apiStatus.status === 'ready' && apiStatus.demoMode && 'DEMO'}
+                  {apiStatus.status === 'testing' && 'TESTING'}
+                  {apiStatus.status === 'disconnected' && 'OFFLINE'}
+                </span>
+              </Badge>
+              
+              {/* Connection Quality Indicator */}
+              {apiStatus.status === 'ready' && !apiStatus.demoMode && (
+                <div className="text-xs text-gray-500">
+                  {apiStatus.connectionQuality === 'excellent' && '●●●'}
+                  {apiStatus.connectionQuality === 'good' && '●●○'}
+                  {apiStatus.connectionQuality === 'poor' && '●○○'}
+                </div>
+              )}
+            </div>
             
             {/* Essential Controls */}
             <div className="flex items-center space-x-1">
@@ -2005,6 +2414,8 @@ How can I assist you today?`,
           </div>
         </div>
       )}
+      </div>
+    </div>
     </div>
   );
 }

@@ -1,0 +1,19 @@
+TXT OS - Semantic Operating System
+    
+Quick Start Guide:
+1. Type 'Start' to begin
+2. Use natural language commands
+3. Build semantic memory with 'build'
+4. View memory with 'view'
+5. Access menu with 'menu'
+
+Commands:
+- Start: Begin reasoning + memory
+- view: See your semantic memory
+- build: Log a new memory node
+- menu: Show console options
+- kbtest: Test hallucination guard
+- WFGY 1.0 formula all "[topic]": Run full reasoning
+- config show: Reveal system settings
+
+Visit our website for more information.
