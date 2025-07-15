@@ -901,7 +901,11 @@ How can I assist you today?`,
         message: data.success ? 'BMad system ready' : 'Failed to initialize BMad system',
         hasApiKeys: data.hasApiKeys,
         providers: data.providers || [],
-        demoMode: data.demoMode
+        demoMode: data.demoMode,
+        connectedProviders: [],
+        failoverActive: false,
+        lastFailover: null,
+        validatedConnections: {}
       });
       
       if (data.hasApiKeys && data.providers.length > 0) {
@@ -919,7 +923,11 @@ How can I assist you today?`,
         message: 'Failed to initialize BMad system',
         hasApiKeys: false,
         providers: [],
-        demoMode: true
+        demoMode: true,
+        connectedProviders: [],
+        failoverActive: false,
+        lastFailover: null,
+        validatedConnections: {}
       });
     }
   };
@@ -2415,7 +2423,6 @@ How can I assist you today?`,
         </div>
       )}
       </div>
-    </div>
     </div>
   );
 }
