@@ -7,6 +7,7 @@ import { Input } from '../../components/ui/input'
 import { Sparkles, MessageSquare, Settings, Send, Zap, Brain, Code, TestTube, FileText, Plus, Lightbulb, Rocket, Users, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { DashboardAccordion } from '../../components/dashboard/dashboard-accordion'
 
 const CONVERSATION_STARTERS = [
   {
@@ -219,6 +220,15 @@ export default function OpenAIStyleDashboard() {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Dashboard Accordion */}
+        <div className="mb-12">
+          <DashboardAccordion 
+            defaultOpen={["navigation"]}
+            currentPath="/dashboard"
+            onNavigate={(path) => router.push(path)}
+          />
         </div>
 
         {/* Quick Actions */}
