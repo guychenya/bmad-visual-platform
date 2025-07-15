@@ -1393,80 +1393,39 @@ How can I assist you today?`,
               
               {/* API Configuration Section */}
               <div>
-                <h3 className={`text-xs font-medium uppercase tracking-wider mb-3 ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
-                  API Configuration
+                <h3 className={`text-xs font-semibold uppercase tracking-wider mb-4 ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                  API Keys
                 </h3>
-                
-                {/* API Keys List */}
-                <div className="space-y-2">
-                  {['OpenAI', 'Claude', 'Gemini', 'Groq'].map((provider) => (
-                    <div key={provider} className="flex items-center justify-between py-2">
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-7 h-7 rounded-md flex items-center justify-center text-xs ${
-                          darkMode 
-                            ? 'bg-gray-800 text-gray-400' 
-                            : 'bg-slate-100 text-slate-600'
-                        }`}>
-                          {provider === 'OpenAI' ? '🤖' : 
-                           provider === 'Claude' ? '🧠' :
-                           provider === 'Gemini' ? '💎' : '⚡'}
-                        </div>
-                        <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-slate-700'}`}>
-                          {provider}
-                        </span>
-                      </div>
-                      <Badge 
-                        variant={apiKeys[provider.toLowerCase() as keyof typeof apiKeys] ? 'default' : 'secondary'}
-                        className="text-xs px-2 py-0.5"
-                      >
-                        {apiKeys[provider.toLowerCase() as keyof typeof apiKeys] ? 'Connected' : 'Not Set'}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
                 
                 <Button
                   onClick={() => setShowSettings(true)}
-                  className="w-full mt-3 bg-blue-500 hover:bg-blue-600 text-white text-sm py-2 rounded-md font-medium"
+                  className={`w-full py-2.5 rounded-lg font-medium transition-colors ${
+                    darkMode 
+                      ? 'bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700' 
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
+                  }`}
                 >
-                  Configure API Keys
+                  <Key className="w-4 h-4 mr-2" />
+                  {apiStatus.demoMode ? 'Setup API Keys' : 'Manage Keys'}
                 </Button>
+                
+                {!apiStatus.demoMode && (
+                  <div className={`mt-3 text-xs ${darkMode ? 'text-gray-500' : 'text-slate-500'}`}>
+                    ✓ API keys configured
+                  </div>
+                )}
               </div>
 
-              {/* Chat Settings */}
+              {/* Settings */}
               <div>
-                <h3 className={`text-xs font-medium uppercase tracking-wider mb-3 ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
-                  Preferences
+                <h3 className={`text-xs font-semibold uppercase tracking-wider mb-4 ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                  Settings
                 </h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between py-1">
-                    <div className="flex items-center space-x-3">
-                      <Volume2 className={`w-4 h-4 ${darkMode ? 'text-gray-500' : 'text-slate-500'}`} />
-                      <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-slate-700'}`}>
-                        Sound Effects
-                      </span>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSoundEnabled(!soundEnabled)}
-                      className={`h-5 w-9 rounded-full transition-colors ${
-                        soundEnabled ? 'bg-blue-500' : darkMode ? 'bg-gray-700' : 'bg-slate-300'
-                      }`}
-                    >
-                      <div className={`w-3 h-3 rounded-full bg-white transition-transform duration-200 ${
-                        soundEnabled ? 'translate-x-4' : 'translate-x-0.5'
-                      }`} />
-                    </Button>
-                  </div>
-                  
-                  <div className="flex items-center justify-between py-1">
-                    <div className="flex items-center space-x-3">
-                      {darkMode ? <Sun className={`w-4 h-4 ${darkMode ? 'text-gray-500' : 'text-slate-500'}`} /> : <Moon className={`w-4 h-4 ${darkMode ? 'text-gray-500' : 'text-slate-500'}`} />}
-                      <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-slate-700'}`}>
-                        Dark Mode
-                      </span>
-                    </div>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-slate-700'}`}>
+                      Dark Mode
+                    </span>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -1480,72 +1439,42 @@ How can I assist you today?`,
                       }`} />
                     </Button>
                   </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-slate-700'}`}>
+                      Sound Effects
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSoundEnabled(!soundEnabled)}
+                      className={`h-5 w-9 rounded-full transition-colors ${
+                        soundEnabled ? 'bg-blue-500' : darkMode ? 'bg-gray-700' : 'bg-slate-300'
+                      }`}
+                    >
+                      <div className={`w-3 h-3 rounded-full bg-white transition-transform duration-200 ${
+                        soundEnabled ? 'translate-x-4' : 'translate-x-0.5'
+                      }`} />
+                    </Button>
+                  </div>
                 </div>
               </div>
 
               {/* Current Agent */}
               <div>
-                <h3 className={`text-xs font-medium uppercase tracking-wider mb-3 ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
-                  Current Agent
+                <h3 className={`text-xs font-semibold uppercase tracking-wider mb-4 ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                  Active Agent
                 </h3>
-                <div className={`p-3 rounded-md border ${darkMode ? 'bg-gray-800/50 border-gray-700/50' : 'bg-slate-50/50 border-slate-200/50'}`}>
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-8 h-8 rounded-lg ${selectedAgent.gradient} flex items-center justify-center text-white text-sm font-medium`}>
-                      {selectedAgent.avatar}
-                    </div>
-                    <div>
-                      <div className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                        {selectedAgent.name}
-                      </div>
-                      <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
-                        {selectedAgent.title}
-                      </div>
-                    </div>
+                <div className="flex items-center space-x-3">
+                  <div className={`w-8 h-8 rounded-lg ${selectedAgent.gradient} flex items-center justify-center text-white text-sm font-medium`}>
+                    {selectedAgent.avatar}
                   </div>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {selectedAgent.specialties.slice(0, 3).map((specialty, idx) => (
-                      <span
-                        key={idx}
-                        className={`text-xs px-1.5 py-0.5 rounded ${
-                          darkMode ? 'bg-gray-700/50 text-gray-300' : 'bg-slate-200/50 text-slate-600'
-                        }`}
-                      >
-                        {specialty}
-                      </span>
-                    ))}
-                    {selectedAgent.specialties.length > 3 && (
-                      <span className={`text-xs px-1.5 py-0.5 rounded ${
-                        darkMode ? 'bg-gray-700/50 text-gray-400' : 'bg-slate-200/50 text-slate-500'
-                      }`}>
-                        +{selectedAgent.specialties.length - 3}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Usage Stats */}
-              <div>
-                <h3 className={`text-xs font-medium uppercase tracking-wider mb-3 ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
-                  Session Stats
-                </h3>
-                <div className={`p-3 rounded-md border ${darkMode ? 'bg-gray-800/50 border-gray-700/50' : 'bg-slate-50/50 border-slate-200/50'}`}>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
-                        Messages
-                      </span>
-                      <span className={`text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>
-                        {messages.length}
-                      </span>
+                  <div>
+                    <div className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                      {selectedAgent.name}
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
-                        Mode
-                      </span>
-                      <span className={`text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>
-                        {apiStatus.demoMode ? 'Demo' : 'Live AI'}
-                      </span>
+                    <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                      {selectedAgent.title}
                     </div>
                   </div>
                 </div>
