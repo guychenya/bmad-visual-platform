@@ -224,6 +224,14 @@ export default function ModernChatPage() {
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [currentAttachments, setCurrentAttachments] = useState<{
+    type: 'image' | 'document' | 'video';
+    name: string;
+    url: string;
+    content: string;
+    size: number;
+    mimeType: string;
+  }[]>([]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -378,6 +386,49 @@ export default function ModernChatPage() {
   };
 
   // Attachment menu options
+  // File input refs
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle file attachment
+  const handleFileAttachment = (file: File, type: 'image' | 'document' | 'video') => {
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      
+      // Create attachment object
+      const attachment = {
+        type: type,
+        name: file.name,
+        url: content,
+        content: content,
+        size: file.size,
+        mimeType: file.type
+      };
+      
+      // Add to current attachments
+      setCurrentAttachments(prev => [...prev, attachment]);
+      
+      // Add file reference to input value
+      const fileReference = `📎 ${file.name}`;
+      const currentInput = inputValue.trim();
+      const newInput = currentInput ? `${currentInput}\n\n${fileReference}` : fileReference;
+      
+      setInputValue(newInput);
+      
+      console.log('File attached:', attachment);
+    };
+    
+    // Read file based on type
+    if (type === 'image' || type === 'video') {
+      reader.readAsDataURL(file);
+    } else {
+      reader.readAsText(file);
+    }
+  };
+
   const attachmentOptions = [
     {
       name: 'Photo',
@@ -385,8 +436,7 @@ export default function ModernChatPage() {
       icon: <Camera className="w-4 h-4" />,
       action: () => {
         setShowAttachmentMenu(false);
-        // TODO: Open camera/photo picker
-        console.log('Opening photo picker...');
+        imageInputRef.current?.click();
       }
     },
     {
@@ -395,8 +445,7 @@ export default function ModernChatPage() {
       icon: <FileText className="w-4 h-4" />,
       action: () => {
         setShowAttachmentMenu(false);
-        // TODO: Open file picker
-        console.log('Opening file picker...');
+        fileInputRef.current?.click();
       }
     },
     {
@@ -405,8 +454,7 @@ export default function ModernChatPage() {
       icon: <FileImage className="w-4 h-4" />,
       action: () => {
         setShowAttachmentMenu(false);
-        // TODO: Open image gallery
-        console.log('Opening image gallery...');
+        imageInputRef.current?.click();
       }
     },
     {
@@ -415,8 +463,7 @@ export default function ModernChatPage() {
       icon: <Video className="w-4 h-4" />,
       action: () => {
         setShowAttachmentMenu(false);
-        // TODO: Open video recorder
-        console.log('Opening video recorder...');
+        videoInputRef.current?.click();
       }
     }
   ];
@@ -738,11 +785,18 @@ How can I assist you today?`,
       id: Date.now().toString(),
       role: 'user',
       content: inputValue.trim(),
-      timestamp: new Date()
+      timestamp: new Date(),
+      attachments: currentAttachments.length > 0 ? currentAttachments.map(att => ({
+        type: att.type,
+        name: att.name,
+        url: att.url,
+        content: att.content
+      })) : undefined
     };
 
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
+    setCurrentAttachments([]);
     setIsLoading(true);
     setIsTyping(true);
 
@@ -789,7 +843,8 @@ How can I assist you today?`,
           },
           originalMessage: userMessage.content,
           mentionedAgent: agentMentionMatch ? targetAgent.id : null,
-          apiKeys: apiKeys
+          apiKeys: apiKeys,
+          attachments: userMessage.attachments
         })
       });
 
@@ -935,6 +990,43 @@ How can I assist you today?`,
         ? 'bg-gray-900' 
         : 'bg-white'
     }`}>
+      {/* Hidden File Inputs */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".txt,.pdf,.doc,.docx,.json,.csv,.md"
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) {
+            handleFileAttachment(file, 'document');
+          }
+        }}
+      />
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) {
+            handleFileAttachment(file, 'image');
+          }
+        }}
+      />
+      <input
+        ref={videoInputRef}
+        type="file"
+        accept="video/*"
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) {
+            handleFileAttachment(file, 'video');
+          }
+        }}
+      />
       {/* Header */}
       <div className={`border-b backdrop-blur-md transition-colors duration-200 ${
         darkMode
@@ -1102,6 +1194,56 @@ How can I assist you today?`,
                         <span className="inline-block w-2 h-4 bg-gray-400 ml-1 animate-pulse"></span>
                       )}
                     </div>
+
+                    {/* Attachments */}
+                    {message.attachments && message.attachments.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        {message.attachments.map((attachment, index) => (
+                          <div
+                            key={index}
+                            className={`flex items-center space-x-2 p-2 rounded-lg ${
+                              darkMode ? 'bg-gray-800/50' : 'bg-slate-100/50'
+                            }`}
+                          >
+                            {attachment.type === 'image' ? (
+                              <>
+                                <FileImage className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs font-medium truncate">{attachment.name}</div>
+                                  <img
+                                    src={attachment.url}
+                                    alt={attachment.name}
+                                    className="mt-1 max-w-full h-32 object-cover rounded-md"
+                                  />
+                                </div>
+                              </>
+                            ) : attachment.type === 'video' ? (
+                              <>
+                                <Video className="w-4 h-4 text-red-500 flex-shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs font-medium truncate">{attachment.name}</div>
+                                  <video
+                                    src={attachment.url}
+                                    controls
+                                    className="mt-1 max-w-full h-32 rounded-md"
+                                  />
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <FileText className="w-4 h-4 text-green-500 flex-shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs font-medium truncate">{attachment.name}</div>
+                                  <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                                    Document attached
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
                     {/* Search Results */}
                     {message.searchResults && (

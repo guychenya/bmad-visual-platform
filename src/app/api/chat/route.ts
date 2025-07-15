@@ -28,6 +28,12 @@ interface ChatRequest {
     groq?: string;
     gemini?: string;
   };
+  attachments?: {
+    type: 'image' | 'document' | 'video';
+    name: string;
+    url: string;
+    content?: string;
+  }[];
 }
 
 // OpenAI API Integration (Non-streaming for fallback)
@@ -125,21 +131,52 @@ async function chatWithGroq(model: string, messages: ChatMessage[], apiKey?: str
   return data.choices[0]?.message?.content || 'No response generated';
 }
 
-// Gemini API Integration
-async function chatWithGemini(model: string, messages: ChatMessage[], apiKey?: string): Promise<string> {
+// Gemini API Integration with multimodal support
+async function chatWithGemini(model: string, messages: ChatMessage[], apiKey?: string, attachments?: any[]): Promise<string> {
   const key = apiKey?.trim() || process.env.GEMINI_API_KEY?.trim();
   if (!key || key === 'your_gemini_api_key_here') {
     throw new Error('Gemini API key not configured');
   }
 
   // Convert messages to Gemini format
-  const contents = messages.map(msg => ({
-    role: msg.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: msg.content }]
-  }));
+  const contents = messages.map(msg => {
+    const parts: any[] = [{ text: msg.content }];
+    
+    // Add attachments to the last user message if they exist
+    if (msg.role === 'user' && attachments && attachments.length > 0) {
+      attachments.forEach(attachment => {
+        if (attachment.type === 'image') {
+          // Extract base64 data and mime type
+          const base64Match = attachment.url.match(/^data:(.+);base64,(.+)$/);
+          if (base64Match) {
+            parts.push({
+              inline_data: {
+                mime_type: base64Match[1],
+                data: base64Match[2]
+              }
+            });
+          }
+        } else if (attachment.type === 'document') {
+          // Include document content in text
+          parts.push({
+            text: `\n\nDocument: ${attachment.name}\nContent: ${attachment.content}`
+          });
+        }
+      });
+    }
+    
+    return {
+      role: msg.role === 'assistant' ? 'model' : 'user',
+      parts: parts
+    };
+  });
+
+  // Use gemini-pro-vision for multimodal or gemini-pro for text-only
+  const useVisionModel = attachments?.some(att => att.type === 'image');
+  const modelToUse = useVisionModel ? 'gemini-pro-vision' : (model || 'gemini-pro');
 
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model || 'gemini-pro'}:generateContent?key=${key}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${key}`,
     {
       method: 'POST',
       headers: {
@@ -187,7 +224,8 @@ export async function POST(request: NextRequest) {
       agentContext, 
       originalMessage, 
       mentionedAgent, 
-      apiKeys 
+      apiKeys,
+      attachments 
     }: ChatRequest = await request.json();
 
     if (!provider || !message) {
@@ -239,7 +277,7 @@ ${mentionedAgent ? `\nNote: The user has mentioned working with another agent. C
           response = await chatWithGroq(model || 'llama3-8b-8192', messages, apiKeys?.groq);
           break;
         case 'gemini':
-          response = await chatWithGemini(model || 'gemini-pro', messages, apiKeys?.gemini);
+          response = await chatWithGemini(model || 'gemini-pro', messages, apiKeys?.gemini, attachments);
           break;
         default:
           throw new Error(`Unsupported provider: ${provider}`);

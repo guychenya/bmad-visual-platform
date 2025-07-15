@@ -28,6 +28,12 @@ interface StreamRequest {
     groq?: string;
     gemini?: string;
   };
+  attachments?: {
+    type: 'image' | 'document' | 'video';
+    name: string;
+    url: string;
+    content?: string;
+  }[];
 }
 
 // OpenAI Streaming
