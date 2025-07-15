@@ -1375,16 +1375,16 @@ How can I assist you today?`,
             
             {/* Sidebar Header */}
             <div className={`flex items-center justify-between p-5 border-b ${darkMode ? 'border-gray-700/50' : 'border-slate-200/50'}`}>
-              <h2 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+              <h2 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                 Settings
               </h2>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowSidebar(false)}
-                className={`h-8 w-8 rounded-md ${darkMode ? 'hover:bg-gray-800 text-gray-400 hover:text-white' : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'} transition-colors`}
+                className={`h-10 w-10 rounded-lg ${darkMode ? 'hover:bg-gray-800 text-gray-400 hover:text-white' : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'} transition-colors`}
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </Button>
             </div>
 
@@ -1393,19 +1393,19 @@ How can I assist you today?`,
               
               {/* API Configuration Section */}
               <div>
-                <h3 className={`text-xs font-semibold uppercase tracking-wider mb-4 ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                <h3 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
                   API Keys
                 </h3>
                 
                 <Button
                   onClick={() => setShowSettings(true)}
-                  className={`w-full py-2.5 rounded-lg font-medium transition-colors ${
+                  className={`w-full py-3 rounded-lg font-medium transition-colors ${
                     darkMode 
                       ? 'bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700' 
                       : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
                   }`}
                 >
-                  <Key className="w-4 h-4 mr-2" />
+                  <Key className="w-5 h-5 mr-2" />
                   {apiStatus.demoMode ? 'Setup API Keys' : 'Manage Keys'}
                 </Button>
                 
@@ -1418,42 +1418,42 @@ How can I assist you today?`,
 
               {/* Settings */}
               <div>
-                <h3 className={`text-xs font-semibold uppercase tracking-wider mb-4 ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                <h3 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
                   Settings
                 </h3>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-slate-700'}`}>
+                    <span className={`text-base ${darkMode ? 'text-gray-200' : 'text-slate-700'}`}>
                       Dark Mode
                     </span>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setDarkMode(!darkMode)}
-                      className={`h-5 w-9 rounded-full transition-colors ${
+                      className={`h-6 w-11 rounded-full transition-colors ${
                         darkMode ? 'bg-blue-500' : 'bg-slate-300'
                       }`}
                     >
-                      <div className={`w-3 h-3 rounded-full bg-white transition-transform duration-200 ${
-                        darkMode ? 'translate-x-4' : 'translate-x-0.5'
+                      <div className={`w-4 h-4 rounded-full bg-white transition-transform duration-200 ${
+                        darkMode ? 'translate-x-5' : 'translate-x-0.5'
                       }`} />
                     </Button>
                   </div>
                   
                   <div className="flex items-center justify-between">
-                    <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-slate-700'}`}>
+                    <span className={`text-base ${darkMode ? 'text-gray-200' : 'text-slate-700'}`}>
                       Sound Effects
                     </span>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setSoundEnabled(!soundEnabled)}
-                      className={`h-5 w-9 rounded-full transition-colors ${
+                      className={`h-6 w-11 rounded-full transition-colors ${
                         soundEnabled ? 'bg-blue-500' : darkMode ? 'bg-gray-700' : 'bg-slate-300'
                       }`}
                     >
-                      <div className={`w-3 h-3 rounded-full bg-white transition-transform duration-200 ${
-                        soundEnabled ? 'translate-x-4' : 'translate-x-0.5'
+                      <div className={`w-4 h-4 rounded-full bg-white transition-transform duration-200 ${
+                        soundEnabled ? 'translate-x-5' : 'translate-x-0.5'
                       }`} />
                     </Button>
                   </div>
@@ -1462,7 +1462,7 @@ How can I assist you today?`,
 
               {/* Current Agent */}
               <div>
-                <h3 className={`text-xs font-semibold uppercase tracking-wider mb-4 ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                <h3 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
                   Active Agent
                 </h3>
                 <div className="flex items-center space-x-3">
@@ -1470,10 +1470,10 @@ How can I assist you today?`,
                     {selectedAgent.avatar}
                   </div>
                   <div>
-                    <div className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                    <div className={`text-base font-medium ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                       {selectedAgent.name}
                     </div>
-                    <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                    <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
                       {selectedAgent.title}
                     </div>
                   </div>
