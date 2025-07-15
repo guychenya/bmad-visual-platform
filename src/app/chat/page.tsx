@@ -1374,95 +1374,75 @@ How can I assist you today?`,
           } ${darkMode ? 'bg-gray-900' : 'bg-white'} border-r ${darkMode ? 'border-gray-700' : 'border-slate-200'} shadow-xl`}>
             
             {/* Sidebar Header */}
-            <div className={`flex items-center justify-between p-4 border-b ${darkMode ? 'border-gray-700' : 'border-slate-200'}`}>
-              <div className="flex items-center space-x-3">
-                <div className={`w-10 h-10 rounded-xl ${selectedAgent.gradient} flex items-center justify-center text-white font-bold shadow-lg`}>
-                  {selectedAgent.avatar}
-                </div>
-                <div>
-                  <h2 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                    BMad Settings
-                  </h2>
-                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
-                    Configure your AI experience
-                  </p>
-                </div>
-              </div>
+            <div className={`flex items-center justify-between p-5 border-b ${darkMode ? 'border-gray-700/50' : 'border-slate-200/50'}`}>
+              <h2 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                Settings
+              </h2>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowSidebar(false)}
-                className={`h-8 w-8 rounded-lg ${darkMode ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-slate-100 text-slate-600'}`}
+                className={`h-8 w-8 rounded-md ${darkMode ? 'hover:bg-gray-800 text-gray-400 hover:text-white' : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'} transition-colors`}
               >
                 <X className="w-4 h-4" />
               </Button>
             </div>
 
             {/* Sidebar Content */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-6">
+            <div className="flex-1 overflow-y-auto p-5 space-y-6">
               
               {/* API Configuration Section */}
               <div>
-                <h3 className={`text-sm font-medium mb-3 ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>
+                <h3 className={`text-xs font-medium uppercase tracking-wider mb-3 ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
                   API Configuration
                 </h3>
-                <div className={`p-3 rounded-lg border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-slate-50 border-slate-200'}`}>
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Key className="w-4 h-4 text-blue-500" />
-                    <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>
-                      API Keys
-                    </span>
-                  </div>
-                  <p className={`text-xs mb-3 ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
-                    Add your AI service API keys to enable real responses
-                  </p>
-                  
-                  {/* API Keys List */}
-                  <div className="space-y-3">
-                    {['OpenAI', 'Claude', 'Gemini', 'Groq'].map((provider) => (
-                      <div key={provider} className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                            provider === 'OpenAI' ? 'bg-green-100 text-green-600' :
-                            provider === 'Claude' ? 'bg-orange-100 text-orange-600' :
-                            provider === 'Gemini' ? 'bg-blue-100 text-blue-600' :
-                            'bg-purple-100 text-purple-600'
-                          }`}>
-                            {provider === 'OpenAI' ? '🤖' : 
-                             provider === 'Claude' ? '🧠' :
-                             provider === 'Gemini' ? '💎' : '⚡'}
-                          </div>
-                          <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>
-                            {provider}
-                          </span>
+                
+                {/* API Keys List */}
+                <div className="space-y-2">
+                  {['OpenAI', 'Claude', 'Gemini', 'Groq'].map((provider) => (
+                    <div key={provider} className="flex items-center justify-between py-2">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-7 h-7 rounded-md flex items-center justify-center text-xs ${
+                          darkMode 
+                            ? 'bg-gray-800 text-gray-400' 
+                            : 'bg-slate-100 text-slate-600'
+                        }`}>
+                          {provider === 'OpenAI' ? '🤖' : 
+                           provider === 'Claude' ? '🧠' :
+                           provider === 'Gemini' ? '💎' : '⚡'}
                         </div>
-                        <Badge variant={apiKeys[provider.toLowerCase() as keyof typeof apiKeys] ? 'default' : 'secondary'}>
-                          {apiKeys[provider.toLowerCase() as keyof typeof apiKeys] ? 'Connected' : 'Not Set'}
-                        </Badge>
+                        <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-slate-700'}`}>
+                          {provider}
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                  
-                  <Button
-                    onClick={() => setShowSettings(true)}
-                    className="w-full mt-3 bg-blue-500 hover:bg-blue-600 text-white"
-                  >
-                    <Settings className="w-4 h-4 mr-2" />
-                    Configure API Keys
-                  </Button>
+                      <Badge 
+                        variant={apiKeys[provider.toLowerCase() as keyof typeof apiKeys] ? 'default' : 'secondary'}
+                        className="text-xs px-2 py-0.5"
+                      >
+                        {apiKeys[provider.toLowerCase() as keyof typeof apiKeys] ? 'Connected' : 'Not Set'}
+                      </Badge>
+                    </div>
+                  ))}
                 </div>
+                
+                <Button
+                  onClick={() => setShowSettings(true)}
+                  className="w-full mt-3 bg-blue-500 hover:bg-blue-600 text-white text-sm py-2 rounded-md font-medium"
+                >
+                  Configure API Keys
+                </Button>
               </div>
 
               {/* Chat Settings */}
               <div>
-                <h3 className={`text-sm font-medium mb-3 ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>
-                  Chat Settings
+                <h3 className={`text-xs font-medium uppercase tracking-wider mb-3 ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                  Preferences
                 </h3>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Volume2 className="w-4 h-4 text-gray-500" />
-                      <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>
+                  <div className="flex items-center justify-between py-1">
+                    <div className="flex items-center space-x-3">
+                      <Volume2 className={`w-4 h-4 ${darkMode ? 'text-gray-500' : 'text-slate-500'}`} />
+                      <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-slate-700'}`}>
                         Sound Effects
                       </span>
                     </div>
@@ -1470,20 +1450,20 @@ How can I assist you today?`,
                       variant="ghost"
                       size="sm"
                       onClick={() => setSoundEnabled(!soundEnabled)}
-                      className={`h-8 w-12 rounded-full ${
-                        soundEnabled ? 'bg-blue-500' : darkMode ? 'bg-gray-700' : 'bg-slate-200'
+                      className={`h-5 w-9 rounded-full transition-colors ${
+                        soundEnabled ? 'bg-blue-500' : darkMode ? 'bg-gray-700' : 'bg-slate-300'
                       }`}
                     >
-                      <div className={`w-4 h-4 rounded-full bg-white transition-transform duration-200 ${
-                        soundEnabled ? 'translate-x-4' : 'translate-x-0'
+                      <div className={`w-3 h-3 rounded-full bg-white transition-transform duration-200 ${
+                        soundEnabled ? 'translate-x-4' : 'translate-x-0.5'
                       }`} />
                     </Button>
                   </div>
                   
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      {darkMode ? <Sun className="w-4 h-4 text-gray-500" /> : <Moon className="w-4 h-4 text-gray-500" />}
-                      <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>
+                  <div className="flex items-center justify-between py-1">
+                    <div className="flex items-center space-x-3">
+                      {darkMode ? <Sun className={`w-4 h-4 ${darkMode ? 'text-gray-500' : 'text-slate-500'}`} /> : <Moon className={`w-4 h-4 ${darkMode ? 'text-gray-500' : 'text-slate-500'}`} />}
+                      <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-slate-700'}`}>
                         Dark Mode
                       </span>
                     </div>
@@ -1491,12 +1471,12 @@ How can I assist you today?`,
                       variant="ghost"
                       size="sm"
                       onClick={() => setDarkMode(!darkMode)}
-                      className={`h-8 w-12 rounded-full ${
-                        darkMode ? 'bg-blue-500' : 'bg-slate-200'
+                      className={`h-5 w-9 rounded-full transition-colors ${
+                        darkMode ? 'bg-blue-500' : 'bg-slate-300'
                       }`}
                     >
-                      <div className={`w-4 h-4 rounded-full bg-white transition-transform duration-200 ${
-                        darkMode ? 'translate-x-4' : 'translate-x-0'
+                      <div className={`w-3 h-3 rounded-full bg-white transition-transform duration-200 ${
+                        darkMode ? 'translate-x-4' : 'translate-x-0.5'
                       }`} />
                     </Button>
                   </div>
@@ -1505,16 +1485,16 @@ How can I assist you today?`,
 
               {/* Current Agent */}
               <div>
-                <h3 className={`text-sm font-medium mb-3 ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>
+                <h3 className={`text-xs font-medium uppercase tracking-wider mb-3 ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
                   Current Agent
                 </h3>
-                <div className={`p-3 rounded-lg border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-slate-50 border-slate-200'}`}>
+                <div className={`p-3 rounded-md border ${darkMode ? 'bg-gray-800/50 border-gray-700/50' : 'bg-slate-50/50 border-slate-200/50'}`}>
                   <div className="flex items-center space-x-3">
-                    <div className={`w-10 h-10 rounded-full ${selectedAgent.gradient} flex items-center justify-center text-white font-medium`}>
+                    <div className={`w-8 h-8 rounded-lg ${selectedAgent.gradient} flex items-center justify-center text-white text-sm font-medium`}>
                       {selectedAgent.avatar}
                     </div>
                     <div>
-                      <div className={`font-medium ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                      <div className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                         {selectedAgent.name}
                       </div>
                       <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
@@ -1523,48 +1503,47 @@ How can I assist you today?`,
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-1 mt-2">
-                    {selectedAgent.specialties.map((specialty, idx) => (
+                    {selectedAgent.specialties.slice(0, 3).map((specialty, idx) => (
                       <span
                         key={idx}
-                        className={`text-xs px-2 py-1 rounded-full ${
-                          darkMode ? 'bg-gray-700 text-gray-300' : 'bg-slate-200 text-slate-600'
+                        className={`text-xs px-1.5 py-0.5 rounded ${
+                          darkMode ? 'bg-gray-700/50 text-gray-300' : 'bg-slate-200/50 text-slate-600'
                         }`}
                       >
                         {specialty}
                       </span>
                     ))}
+                    {selectedAgent.specialties.length > 3 && (
+                      <span className={`text-xs px-1.5 py-0.5 rounded ${
+                        darkMode ? 'bg-gray-700/50 text-gray-400' : 'bg-slate-200/50 text-slate-500'
+                      }`}>
+                        +{selectedAgent.specialties.length - 3}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
 
               {/* Usage Stats */}
               <div>
-                <h3 className={`text-sm font-medium mb-3 ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>
+                <h3 className={`text-xs font-medium uppercase tracking-wider mb-3 ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
                   Session Stats
                 </h3>
-                <div className={`p-3 rounded-lg border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-slate-50 border-slate-200'}`}>
+                <div className={`p-3 rounded-md border ${darkMode ? 'bg-gray-800/50 border-gray-700/50' : 'bg-slate-50/50 border-slate-200/50'}`}>
                   <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                    <div className="flex justify-between items-center">
+                      <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
                         Messages
                       </span>
-                      <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>
+                      <span className={`text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>
                         {messages.length}
                       </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
-                        Active Agent
-                      </span>
-                      <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>
-                        {selectedAgent.name}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                    <div className="flex justify-between items-center">
+                      <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
                         Mode
                       </span>
-                      <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>
+                      <span className={`text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>
                         {apiStatus.demoMode ? 'Demo' : 'Live AI'}
                       </span>
                     </div>
