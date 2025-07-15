@@ -11,6 +11,17 @@ interface StreamRequest {
   message: string;
   history: ChatMessage[];
   agentId?: string;
+  agentContext?: {
+    name: string;
+    title: string;
+    role: string;
+    specialties?: string[];
+    capabilities?: string[];
+    persona?: string;
+    bmadFramework?: boolean;
+  };
+  originalMessage?: string;
+  mentionedAgent?: string;
   apiKeys?: {
     openai?: string;
     claude?: string;
@@ -119,14 +130,46 @@ function processStreamingResponse(response: Response): ReadableStream {
 
 export async function POST(request: NextRequest) {
   try {
-    const { provider, model, message, history, apiKeys }: StreamRequest = await request.json();
+    const { 
+      provider, 
+      model, 
+      message, 
+      history, 
+      agentId, 
+      agentContext, 
+      originalMessage, 
+      mentionedAgent, 
+      apiKeys 
+    }: StreamRequest = await request.json();
 
     if (!provider || !message) {
       return new Response('Provider and message are required', { status: 400 });
     }
 
+    // Prepare system message with BMAD agent context
+    let systemMessage = '';
+    if (agentContext?.bmadFramework) {
+      systemMessage = `${agentContext.persona}
+
+You are part of the BMad Framework - a Universal AI Agent Framework for specialized AI expertise. Your role is to provide expert assistance in ${agentContext.role}.
+
+Key specialties: ${agentContext.specialties?.join(', ')}
+
+Instructions:
+- Stay in character as ${agentContext.name}
+- Focus on your area of expertise: ${agentContext.role}
+- Provide practical, actionable advice
+- If the user mentions another agent (with @), coordinate appropriately
+- For complex requests, suggest involving the BMad Orchestrator for workflow coordination
+- Be professional but friendly in your responses
+
+${mentionedAgent ? `\nNote: The user has mentioned working with another agent. Coordinate appropriately and suggest BMad Orchestrator if needed for complex multi-agent workflows.` : ''}
+`;
+    }
+
     // Prepare messages for API
     const messages = [
+      ...(systemMessage ? [{ role: 'system' as const, content: systemMessage }] : []),
       ...history,
       { role: 'user' as const, content: message }
     ];

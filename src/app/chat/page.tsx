@@ -38,7 +38,9 @@ import {
   Image,
   Volume2,
   VolumeX,
-  Check
+  Check,
+  Moon,
+  Sun
 } from 'lucide-react';
 
 interface Message {
@@ -177,6 +179,10 @@ export default function ModernChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showAgentPicker, setShowAgentPicker] = useState(false);
+  const [showSlashCommands, setShowSlashCommands] = useState(false);
+  const [agentPickerPosition, setAgentPickerPosition] = useState({ x: 0, y: 0 });
+  const [slashCommandsPosition, setSlashCommandsPosition] = useState({ x: 0, y: 0 });
   const [selectedAgent, setSelectedAgent] = useState<BMadAgent>(BMAD_AGENTS[0]);
   const [showAgentSelector, setShowAgentSelector] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
@@ -208,9 +214,155 @@ export default function ModernChatPage() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [copyFeedback, setCopyFeedback] = useState<{[key: string]: boolean}>({});
   const [showUploadPanel, setShowUploadPanel] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Handle input change for @ and / triggers
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const cursorPosition = e.target.selectionStart || 0;
+    
+    setInputValue(value);
+    
+    // Check for @ symbol to show agent picker
+    const atIndex = value.lastIndexOf('@', cursorPosition - 1);
+    if (atIndex !== -1 && (atIndex === 0 || value[atIndex - 1] === ' ')) {
+      const afterAt = value.substring(atIndex + 1, cursorPosition);
+      if (!afterAt.includes(' ')) {
+        setShowAgentPicker(true);
+        // Position picker above input, WhatsApp style
+        const rect = e.target.getBoundingClientRect();
+        setAgentPickerPosition({ 
+          x: rect.left + 10, 
+          y: rect.top - 320 // More space for WhatsApp-style list
+        });
+      }
+    } else {
+      setShowAgentPicker(false);
+    }
+    
+    // Check for / symbol to show slash commands
+    const slashIndex = value.lastIndexOf('/', cursorPosition - 1);
+    if (slashIndex !== -1 && (slashIndex === 0 || value[slashIndex - 1] === ' ')) {
+      const afterSlash = value.substring(slashIndex + 1, cursorPosition);
+      if (!afterSlash.includes(' ')) {
+        setShowSlashCommands(true);
+        // Position commands relative to input
+        const rect = e.target.getBoundingClientRect();
+        setSlashCommandsPosition({ x: rect.left + 10, y: rect.top - 200 });
+      }
+    } else {
+      setShowSlashCommands(false);
+    }
+  };
+  
+  // Handle agent selection from picker
+  const handleAgentSelect = (agent: BMadAgent) => {
+    const atIndex = inputValue.lastIndexOf('@');
+    if (atIndex !== -1) {
+      const beforeAt = inputValue.substring(0, atIndex);
+      const afterAt = inputValue.substring(inputValue.indexOf(' ', atIndex) === -1 ? inputValue.length : inputValue.indexOf(' ', atIndex));
+      setInputValue(beforeAt + `@${agent.name} ` + afterAt);
+    }
+    setShowAgentPicker(false);
+    inputRef.current?.focus();
+  };
+  
+  // Handle slash command selection
+  const handleSlashCommand = (command: string, action: () => void) => {
+    const slashIndex = inputValue.lastIndexOf('/');
+    if (slashIndex !== -1) {
+      const beforeSlash = inputValue.substring(0, slashIndex);
+      const afterSlash = inputValue.substring(inputValue.indexOf(' ', slashIndex) === -1 ? inputValue.length : inputValue.indexOf(' ', slashIndex));
+      setInputValue(beforeSlash + `/${command} ` + afterSlash);
+    }
+    setShowSlashCommands(false);
+    inputRef.current?.focus();
+    action();
+  };
+  
+  // Handle GitHub integration
+  const handleGitHubIntegration = async () => {
+    try {
+      const response = await fetch('/api/integrations/github', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'connect' })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        const integrationMessage: Message = {
+          id: Date.now().toString(),
+          role: 'system',
+          content: `🔗 **GitHub Integration**\n\n${data.message}\n\n${data.features.map((f: string) => `• ${f}`).join('\n')}`,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, integrationMessage]);
+      }
+    } catch (error) {
+      console.error('GitHub integration error:', error);
+    }
+  };
+
+  // Handle Google Drive integration
+  const handleDriveIntegration = async () => {
+    try {
+      const response = await fetch('/api/integrations/drive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'connect' })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        const integrationMessage: Message = {
+          id: Date.now().toString(),
+          role: 'system',
+          content: `📁 **Google Drive Integration**\n\n${data.message}\n\n${data.features.map((f: string) => `• ${f}`).join('\n')}`,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, integrationMessage]);
+      }
+    } catch (error) {
+      console.error('Google Drive integration error:', error);
+    }
+  };
+
+  // Slash commands definitions
+  const slashCommands = [
+    {
+      name: 'github',
+      description: 'Connect to GitHub repository',
+      icon: <Github className="w-4 h-4" />,
+      action: handleGitHubIntegration
+    },
+    {
+      name: 'drive',
+      description: 'Connect to Google Drive',
+      icon: <FileText className="w-4 h-4" />,
+      action: handleDriveIntegration
+    },
+    {
+      name: 'search',
+      description: 'Web search',
+      icon: <Search className="w-4 h-4" />,
+      action: () => {
+        // Auto-fill search command
+        setInputValue(inputValue.replace(/\/\w*$/, 'search: '));
+      }
+    },
+    {
+      name: 'upload',
+      description: 'Upload file or image',
+      icon: <Upload className="w-4 h-4" />,
+      action: () => {
+        setShowUploadPanel(true);
+      }
+    }
+  ];
 
   // Sound effects
   const playSound = (type: 'send' | 'receive') => {
@@ -468,6 +620,30 @@ How can I assist you today?`,
     
     if (!inputValue.trim() || isLoading) return;
     
+    // Parse message for agent mentions
+    const agentMentionMatch = inputValue.match(/@(\w+)/g);
+    let targetAgent = selectedAgent;
+    let processedMessage = inputValue.trim();
+    
+    // If agent is mentioned, switch to that agent or orchestrator coordination
+    if (agentMentionMatch) {
+      const mentionedAgentName = agentMentionMatch[0].substring(1);
+      const mentionedAgent = BMAD_AGENTS.find(agent => 
+        agent.name.toLowerCase().includes(mentionedAgentName.toLowerCase())
+      );
+      
+      if (mentionedAgent && mentionedAgent.id !== selectedAgent.id) {
+        // If it's the orchestrator or we're not currently on orchestrator, switch to orchestrator for coordination
+        if (mentionedAgent.id === 'bmad-orchestrator' || selectedAgent.id !== 'bmad-orchestrator') {
+          targetAgent = BMAD_AGENTS.find(agent => agent.id === 'bmad-orchestrator') || selectedAgent;
+          // Add coordination context to the message
+          processedMessage = `User wants to involve ${mentionedAgent.name} (${mentionedAgent.title}). Original message: ${processedMessage}`;
+        } else {
+          targetAgent = mentionedAgent;
+        }
+      }
+    }
+    
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -509,14 +685,20 @@ How can I assist you today?`,
         body: JSON.stringify({
           provider: selectedProvider,
           model: selectedModel,
-          message: userMessage.content,
+          message: processedMessage,
           history,
-          agentId: selectedAgent.id,
+          agentId: targetAgent.id,
           agentContext: {
-            name: selectedAgent.name,
-            title: selectedAgent.title,
-            role: selectedAgent.description
+            name: targetAgent.name,
+            title: targetAgent.title,
+            role: targetAgent.description,
+            specialties: targetAgent.specialties,
+            capabilities: targetAgent.specialties, // Use specialties as capabilities for now
+            persona: `I am ${targetAgent.name}, ${targetAgent.title}. ${targetAgent.description}`,
+            bmadFramework: true
           },
+          originalMessage: userMessage.content,
+          mentionedAgent: agentMentionMatch ? targetAgent.id : null,
           apiKeys: apiKeys
         })
       });
@@ -528,11 +710,16 @@ How can I assist you today?`,
           role: 'assistant',
           content: '',
           timestamp: new Date(),
-          agentId: selectedAgent.id,
-          agentName: selectedAgent.name,
+          agentId: targetAgent.id,
+          agentName: targetAgent.name,
           isStreaming: true,
           searchResults: searchResults ? { query: searchMatch![2], results: searchResults } : undefined
         };
+        
+        // Switch to target agent if different
+        if (targetAgent.id !== selectedAgent.id) {
+          setSelectedAgent(targetAgent);
+        }
 
         // Play receive sound when first token arrives
         let firstToken = true;
@@ -603,10 +790,15 @@ How can I assist you today?`,
             role: 'assistant',
             content: '',
             timestamp: new Date(),
-            agentId: selectedAgent.id,
-            agentName: selectedAgent.name,
+            agentId: targetAgent.id,
+            agentName: targetAgent.name,
             isStreaming: true
           };
+          
+          // Switch to target agent if different
+          if (targetAgent.id !== selectedAgent.id) {
+            setSelectedAgent(targetAgent);
+          }
           
           setMessages(prev => [...prev, assistantMessage]);
           
@@ -648,9 +840,17 @@ How can I assist you today?`,
   };
 
   return (
-    <div className="h-screen bg-white flex flex-col">
+    <div className={`h-screen flex flex-col transition-colors duration-200 ${
+      darkMode 
+        ? 'bg-gray-900' 
+        : 'bg-white'
+    }`}>
       {/* Header */}
-      <div className="border-b border-slate-200 bg-white/95 backdrop-blur-md">
+      <div className={`border-b backdrop-blur-md transition-colors duration-200 ${
+        darkMode
+          ? 'border-gray-700 bg-gray-800/95'
+          : 'border-slate-200 bg-white/95'
+      }`}>
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center space-x-4">
             <div className="relative">
@@ -660,11 +860,19 @@ How can I assist you today?`,
               <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900">BMad Chat</h1>
+              <h1 className={`text-xl font-bold transition-colors duration-200 ${
+                darkMode ? 'text-white' : 'text-slate-900'
+              }`}>BMad Chat</h1>
               <div className="flex items-center space-x-2">
-                <span className="text-sm text-slate-600">{selectedAgent.name}</span>
-                <span className="text-slate-400">•</span>
-                <span className="text-sm text-slate-600">{selectedAgent.title}</span>
+                <span className={`text-sm transition-colors duration-200 ${
+                  darkMode ? 'text-gray-300' : 'text-slate-600'
+                }`}>{selectedAgent.name}</span>
+                <span className={`transition-colors duration-200 ${
+                  darkMode ? 'text-gray-500' : 'text-slate-400'
+                }`}>•</span>
+                <span className={`text-sm transition-colors duration-200 ${
+                  darkMode ? 'text-gray-300' : 'text-slate-600'
+                }`}>{selectedAgent.title}</span>
               </div>
             </div>
           </div>
@@ -698,7 +906,11 @@ How can I assist you today?`,
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowAgentSelector(!showAgentSelector)}
-                className="h-9 px-3 rounded-lg hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-all duration-200"
+                className={`h-9 px-3 rounded-lg transition-all duration-200 ${
+                  darkMode
+                    ? 'hover:bg-gray-700 text-gray-300 hover:text-white'
+                    : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
+                }`}
               >
                 <User className="w-4 h-4 mr-2" />
                 Switch
@@ -707,15 +919,35 @@ How can I assist you today?`,
                 variant="ghost"
                 size="sm"
                 onClick={() => setSoundEnabled(!soundEnabled)}
-                className="h-9 w-9 rounded-lg hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-all duration-200"
+                className={`h-9 w-9 rounded-lg transition-all duration-200 ${
+                  darkMode
+                    ? 'hover:bg-gray-700 text-gray-300 hover:text-white'
+                    : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
+                }`}
               >
                 {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
+                onClick={() => setDarkMode(!darkMode)}
+                className={`h-9 w-9 rounded-lg transition-all duration-200 ${
+                  darkMode
+                    ? 'hover:bg-gray-700 text-gray-300 hover:text-white'
+                    : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setShowUploadPanel(!showUploadPanel)}
-                className="h-9 w-9 rounded-lg hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-all duration-200"
+                className={`h-9 w-9 rounded-lg transition-all duration-200 ${
+                  darkMode
+                    ? 'hover:bg-gray-700 text-gray-300 hover:text-white'
+                    : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
+                }`}
               >
                 <Upload className="w-4 h-4" />
               </Button>
@@ -723,7 +955,11 @@ How can I assist you today?`,
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowSettings(true)}
-                className="h-9 w-9 rounded-lg hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-all duration-200"
+                className={`h-9 w-9 rounded-lg transition-all duration-200 ${
+                  darkMode
+                    ? 'hover:bg-gray-700 text-gray-300 hover:text-white'
+                    : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
+                }`}
               >
                 <Settings className="w-4 h-4" />
               </Button>
@@ -813,7 +1049,9 @@ How can I assist you today?`,
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50">
+      <div className={`flex-1 overflow-y-auto p-6 space-y-6 transition-colors duration-200 ${
+        darkMode ? 'bg-gray-800' : 'bg-slate-50'
+      }`}>
         {messages.map((message) => (
           <div
             key={message.id}
@@ -836,9 +1074,11 @@ How can I assist you today?`,
                 
                 {/* Message Content */}
                 <div className={`group ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
-                  <div className={`rounded-2xl px-4 py-3 shadow-sm ${
+                  <div className={`rounded-2xl px-4 py-3 shadow-sm transition-colors duration-200 ${
                     message.role === 'user'
                       ? 'bg-blue-500 text-white'
+                      : darkMode
+                      ? 'bg-gray-700 text-gray-100 border border-gray-600'
                       : 'bg-white text-slate-900 border border-slate-200'
                   }`}>
                     <div className="whitespace-pre-wrap text-sm leading-relaxed">
@@ -940,35 +1180,55 @@ How can I assist you today?`,
       </div>
 
       {/* Input */}
-      <div className="border-t border-slate-200 bg-white p-6">
-        <form onSubmit={handleSendMessage} className="flex items-end space-x-3">
+      <div className={`border-t p-6 transition-colors duration-200 ${
+        darkMode 
+          ? 'border-gray-700 bg-gray-800' 
+          : 'border-slate-200 bg-white'
+      }`}>
+        <form onSubmit={handleSendMessage} className="flex items-center space-x-3">
           <div className="flex-1 relative">
             <Input
               ref={inputRef}
               value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder={`Message ${selectedAgent.name}... (try "search: your query")`}
+              onChange={handleInputChange}
+              placeholder={`Message ${selectedAgent.name}... (@ for agents, / for apps)`}
               disabled={isLoading}
-              className="bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-12 py-4 rounded-xl resize-none transition-all duration-200"
+              className={`transition-all duration-200 pr-16 py-4 rounded-xl resize-none ${
+                darkMode
+                  ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+                  : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+              }`}
               onKeyPress={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   handleSendMessage(e as any);
                 }
               }}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  setShowAgentPicker(false);
+                  setShowSlashCommands(false);
+                }
+              }}
             />
-            
-            <Button
-              type="submit"
-              disabled={isLoading || !inputValue.trim()}
-              className="absolute right-2 bottom-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2 h-9 w-9 shadow-sm transition-all duration-200 hover:shadow-md"
-            >
-              <Send className="w-4 h-4" />
-            </Button>
           </div>
+          
+          <Button
+            type="submit"
+            disabled={isLoading || !inputValue.trim()}
+            className="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-3 h-12 w-12 shadow-sm transition-all duration-200 hover:shadow-md flex-shrink-0"
+          >
+            {isLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Send className="w-5 h-5" />
+            )}
+          </Button>
         </form>
         
-        <div className="flex items-center justify-between mt-4 text-xs text-slate-500">
+        <div className={`flex items-center justify-between mt-4 text-xs transition-colors duration-200 ${
+          darkMode ? 'text-gray-400' : 'text-slate-500'
+        }`}>
           <div className="flex items-center space-x-4">
             <span>BMad Framework • {selectedAgent.name}</span>
             <div className="flex items-center space-x-2">
@@ -1253,6 +1513,145 @@ How can I assist you today?`,
                 <Save className="w-4 h-4 mr-2" />
                 Save Keys
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Agent Picker Modal - WhatsApp Style */}
+      {showAgentPicker && (
+        <div 
+          className={`fixed z-50 rounded-xl shadow-xl max-w-sm w-80 transition-colors duration-200 ${
+            darkMode
+              ? 'bg-gray-800 border border-gray-700'
+              : 'bg-white border border-slate-200'
+          }`}
+          style={{ left: agentPickerPosition.x, top: agentPickerPosition.y }}
+        >
+          <div className="p-2">
+            <div className={`text-xs font-medium uppercase tracking-wider mb-2 px-3 py-2 flex items-center ${
+              darkMode ? 'text-gray-400' : 'text-slate-500'
+            }`}>
+              <User className="w-3 h-3 mr-2" />
+              BMad Agents
+            </div>
+            <div className="space-y-1 max-h-72 overflow-y-auto">
+              {BMAD_AGENTS.map((agent, index) => (
+                <div
+                  key={agent.id}
+                  onClick={() => handleAgentSelect(agent)}
+                  className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-all duration-150 ${
+                    darkMode
+                      ? 'hover:bg-gray-700 active:bg-gray-600'
+                      : 'hover:bg-slate-50 active:bg-slate-100'
+                  }`}
+                  style={{ animationDelay: `${index * 30}ms` }}
+                >
+                  <div className={`w-10 h-10 rounded-full ${agent.gradient} flex items-center justify-center text-white text-lg font-medium shadow-md`}>
+                    {agent.avatar}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-sm font-semibold ${
+                      darkMode ? 'text-gray-100' : 'text-slate-900'
+                    }`}>
+                      {agent.name}
+                    </div>
+                    <div className={`text-xs truncate ${
+                      darkMode ? 'text-gray-400' : 'text-slate-500'
+                    }`}>
+                      {agent.title}
+                    </div>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {agent.specialties.slice(0, 2).map((specialty, idx) => (
+                        <span
+                          key={idx}
+                          className={`text-xs px-2 py-0.5 rounded-full ${
+                            darkMode
+                              ? 'bg-gray-700 text-gray-300'
+                              : 'bg-slate-100 text-slate-600'
+                          }`}
+                        >
+                          {specialty}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className={`text-xs ${
+                    darkMode ? 'text-gray-500' : 'text-slate-400'
+                  }`}>
+                    @{agent.name.toLowerCase()}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className={`text-xs p-3 text-center border-t mt-2 ${
+              darkMode 
+                ? 'text-gray-500 border-gray-700' 
+                : 'text-slate-400 border-slate-200'
+            }`}>
+              Type @ followed by agent name
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Slash Commands Modal */}
+      {showSlashCommands && (
+        <div 
+          className={`fixed z-50 rounded-xl shadow-xl max-w-sm w-80 transition-colors duration-200 ${
+            darkMode
+              ? 'bg-gray-800 border border-gray-700'
+              : 'bg-white border border-slate-200'
+          }`}
+          style={{ left: slashCommandsPosition.x, top: slashCommandsPosition.y }}
+        >
+          <div className="p-2">
+            <div className={`text-xs font-medium uppercase tracking-wider mb-2 px-3 py-2 flex items-center ${
+              darkMode ? 'text-gray-400' : 'text-slate-500'
+            }`}>
+              <Zap className="w-3 h-3 mr-2" />
+              Quick Actions
+            </div>
+            <div className="space-y-1">
+              {slashCommands.map((command, index) => (
+                <div
+                  key={command.name}
+                  onClick={() => handleSlashCommand(command.name, command.action)}
+                  className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-all duration-150 ${
+                    darkMode
+                      ? 'hover:bg-gray-700 active:bg-gray-600'
+                      : 'hover:bg-slate-50 active:bg-slate-100'
+                  }`}
+                  style={{ animationDelay: `${index * 30}ms` }}
+                >
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center shadow-md ${
+                    darkMode
+                      ? 'bg-gray-700 text-gray-300'
+                      : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {command.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-sm font-semibold ${
+                      darkMode ? 'text-gray-100' : 'text-slate-900'
+                    }`}>
+                      /{command.name}
+                    </div>
+                    <div className={`text-xs ${
+                      darkMode ? 'text-gray-400' : 'text-slate-500'
+                    }`}>
+                      {command.description}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className={`text-xs p-3 text-center border-t mt-2 ${
+              darkMode 
+                ? 'text-gray-500 border-gray-700' 
+                : 'text-slate-400 border-slate-200'
+            }`}>
+              Type / for quick actions
             </div>
           </div>
         </div>
