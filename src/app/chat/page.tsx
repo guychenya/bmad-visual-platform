@@ -16,7 +16,6 @@ import {
   Sparkles,
   Brain,
   Code,
-  Search,
   Zap,
   Shield,
   Palette,
@@ -31,7 +30,17 @@ import {
   Loader2,
   Wifi,
   WifiOff,
-  Zap as Lightning
+  Zap as Lightning,
+  Search,
+  Upload,
+  FileText,
+  Github,
+  Image,
+  Volume2,
+  VolumeX,
+  Sun,
+  Moon,
+  Check
 } from 'lucide-react';
 
 interface Message {
@@ -42,6 +51,26 @@ interface Message {
   agentId?: string;
   agentName?: string;
   isStreaming?: boolean;
+  artifacts?: {
+    type: 'code' | 'markdown' | 'html';
+    content: string;
+    language?: string;
+  }[];
+  searchResults?: {
+    query: string;
+    results: Array<{
+      title: string;
+      url: string;
+      snippet: string;
+      source: string;
+    }>;
+  };
+  attachments?: {
+    type: 'image' | 'file' | 'github';
+    name: string;
+    url: string;
+    content?: string;
+  }[];
 }
 
 interface BMadAgent {
@@ -177,9 +206,69 @@ export default function ModernChatPage() {
   });
   const [testResults, setTestResults] = useState<{[key: string]: any}>({});
   const [testingProviders, setTestingProviders] = useState<{[key: string]: boolean}>({});
+  const [darkMode, setDarkMode] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [copyFeedback, setCopyFeedback] = useState<{[key: string]: boolean}>({});
+  const [showUploadPanel, setShowUploadPanel] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sound effects
+  const playSound = (type: 'send' | 'receive') => {
+    if (!soundEnabled) return;
+    
+    // Create audio context for sound effects
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    if (type === 'send') {
+      oscillator.frequency.value = 800;
+      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+    } else {
+      oscillator.frequency.value = 600;
+      gainNode.gain.setValueAtTime(0.05, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+    }
+
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + (type === 'send' ? 0.1 : 0.15));
+  };
+
+  // Copy to clipboard with feedback
+  const copyToClipboard = async (text: string, messageId: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyFeedback(prev => ({ ...prev, [messageId]: true }));
+      setTimeout(() => {
+        setCopyFeedback(prev => ({ ...prev, [messageId]: false }));
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+    }
+  };
+
+  // Web search function
+  const performWebSearch = async (query: string) => {
+    try {
+      const response = await fetch('/api/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, maxResults: 5 })
+      });
+
+      const data = await response.json();
+      return data.success ? data.results : [];
+    } catch (error) {
+      console.error('Web search error:', error);
+      return [];
+    }
+  };
 
   const loadApiKeys = () => {
     if (typeof window !== 'undefined') {
@@ -284,6 +373,7 @@ ${selectedAgent.specialties.map(s => `• ${s}`).join('\n')}
 • Type \`*help\` for available commands
 • Type \`*switch\` to change agents
 • Type \`*capabilities\` to see what I can do
+• Type \`search: your query\` for web search
 
 ${apiStatus.demoMode ? '🎭 **Demo Mode**: I\'m currently running in demo mode. Add API keys to enable real AI responses.' : '🚀 **Live AI**: Connected and ready to help!'}
 
@@ -392,6 +482,17 @@ How can I assist you today?`,
     setIsLoading(true);
     setIsTyping(true);
 
+    // Play send sound
+    playSound('send');
+
+    // Check if message contains web search request
+    const searchMatch = inputValue.match(/^(search|find|look up|web search):?\s*(.+)/i);
+    let searchResults = null;
+    if (searchMatch) {
+      const query = searchMatch[2];
+      searchResults = await performWebSearch(query);
+    }
+
     try {
       // Prepare conversation history
       const history = messages
@@ -431,8 +532,12 @@ How can I assist you today?`,
           timestamp: new Date(),
           agentId: selectedAgent.id,
           agentName: selectedAgent.name,
-          isStreaming: true
+          isStreaming: true,
+          searchResults: searchResults ? { query: searchMatch![2], results: searchResults } : undefined
         };
+
+        // Play receive sound when first token arrives
+        let firstToken = true;
         
         setMessages(prev => [...prev, assistantMessage]);
         
@@ -461,6 +566,12 @@ How can I assist you today?`,
                   try {
                     const parsed = JSON.parse(data);
                     if (parsed.content) {
+                      // Play receive sound on first token
+                      if (firstToken) {
+                        playSound('receive');
+                        firstToken = false;
+                      }
+                      
                       setMessages(prev => prev.map(msg => 
                         msg.id === assistantMessage.id 
                           ? { ...msg, content: msg.content + parsed.content }
@@ -533,16 +644,17 @@ How can I assist you today?`,
     }
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-  };
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   return (
-    <div className="h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex flex-col">
+    <div className={`h-screen ${
+      darkMode 
+        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
+        : 'bg-gradient-to-br from-blue-50 via-white to-blue-50'
+    } flex flex-col transition-colors duration-300`}>
       {/* Header */}
       <div className="border-b border-gray-700/50 bg-gray-900/50 backdrop-blur-md">
         <div className="flex items-center justify-between px-6 py-4">
@@ -568,6 +680,30 @@ How can I assist you today?`,
             >
               <User className="w-4 h-4 mr-2" />
               Switch Agent
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className="text-gray-400 hover:text-white hover:bg-gray-800"
+            >
+              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDarkMode(!darkMode)}
+              className="text-gray-400 hover:text-white hover:bg-gray-800"
+            >
+              {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowUploadPanel(!showUploadPanel)}
+              className="text-gray-400 hover:text-white hover:bg-gray-800"
+            >
+              <Upload className="w-4 h-4" />
             </Button>
             <Button
               variant="ghost"
@@ -620,6 +756,38 @@ How can I assist you today?`,
             </div>
           </div>
         )}
+
+        {/* Upload Panel */}
+        {showUploadPanel && (
+          <div className="border-t border-gray-700/50 p-4 bg-gray-800/30">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="flex items-center space-x-2 p-3 border border-gray-600 rounded-lg hover:bg-gray-700/50 cursor-pointer">
+                <Image className="w-5 h-5 text-blue-400" />
+                <div>
+                  <div className="text-sm font-medium text-white">Upload Image</div>
+                  <div className="text-xs text-gray-400">JPG, PNG, WebP</div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2 p-3 border border-gray-600 rounded-lg hover:bg-gray-700/50 cursor-pointer">
+                <FileText className="w-5 h-5 text-green-400" />
+                <div>
+                  <div className="text-sm font-medium text-white">Upload File</div>
+                  <div className="text-xs text-gray-400">MD, TXT, CSV</div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2 p-3 border border-gray-600 rounded-lg hover:bg-gray-700/50 cursor-pointer">
+                <Github className="w-5 h-5 text-purple-400" />
+                <div>
+                  <div className="text-sm font-medium text-white">GitHub Repo</div>
+                  <div className="text-xs text-gray-400">Paste URL</div>
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 text-xs text-gray-500 text-center">
+              🚧 File upload features coming soon! For now, you can use web search with &quot;search: your query&quot;
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Messages */}
@@ -657,6 +825,38 @@ How can I assist you today?`,
                         <span className="inline-block w-2 h-4 bg-gray-400 ml-1 animate-pulse"></span>
                       )}
                     </div>
+
+                    {/* Search Results */}
+                    {message.searchResults && (
+                      <div className="mt-3 pt-3 border-t border-gray-600">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <Search className="w-4 h-4 text-blue-400" />
+                          <span className="text-xs font-medium text-blue-400">
+                            Web Search: &quot;{message.searchResults.query}&quot;
+                          </span>
+                        </div>
+                        <div className="space-y-2">
+                          {message.searchResults.results.slice(0, 3).map((result, idx) => (
+                            <div key={idx} className="bg-gray-700 rounded-lg p-3">
+                              <a
+                                href={result.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-400 hover:text-blue-300 font-medium text-sm block mb-1"
+                              >
+                                {result.title}
+                              </a>
+                              <p className="text-xs text-gray-300 leading-relaxed">
+                                {result.snippet}
+                              </p>
+                              <span className="text-xs text-gray-500 mt-1 block">
+                                {result.source}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   
                   {/* Message Actions */}
@@ -666,10 +866,19 @@ How can I assist you today?`,
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => copyToClipboard(message.content)}
-                      className="text-gray-500 hover:text-gray-300 h-6 px-2"
+                      onClick={() => copyToClipboard(message.content, message.id)}
+                      className="text-gray-500 hover:text-gray-300 h-6 px-2 relative"
                     >
-                      <Copy className="w-3 h-3" />
+                      {copyFeedback[message.id] ? (
+                        <Check className="w-3 h-3 text-green-400" />
+                      ) : (
+                        <Copy className="w-3 h-3" />
+                      )}
+                      {copyFeedback[message.id] && (
+                        <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-green-500 text-white text-xs px-2 py-1 rounded shadow-lg">
+                          Copied!
+                        </span>
+                      )}
                     </Button>
                     <Button
                       variant="ghost"
