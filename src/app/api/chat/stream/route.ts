@@ -29,7 +29,7 @@ interface StreamRequest {
     gemini?: string;
   };
   attachments?: {
-    type: 'image' | 'document' | 'video';
+    type: 'image' | 'document' | 'video' | 'file' | 'github';
     name: string;
     url: string;
     content?: string;

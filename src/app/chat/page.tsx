@@ -71,7 +71,7 @@ interface Message {
     }>;
   };
   attachments?: {
-    type: 'image' | 'file' | 'github';
+    type: 'image' | 'document' | 'video' | 'file' | 'github';
     name: string;
     url: string;
     content?: string;
@@ -225,7 +225,7 @@ export default function ModernChatPage() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [currentAttachments, setCurrentAttachments] = useState<{
-    type: 'image' | 'document' | 'video';
+    type: 'image' | 'document' | 'video' | 'file';
     name: string;
     url: string;
     content: string;
@@ -392,7 +392,7 @@ export default function ModernChatPage() {
   const videoInputRef = useRef<HTMLInputElement>(null);
 
   // Handle file attachment
-  const handleFileAttachment = (file: File, type: 'image' | 'document' | 'video') => {
+  const handleFileAttachment = (file: File, type: 'image' | 'document' | 'video' | 'file') => {
     const reader = new FileReader();
     
     reader.onload = (e) => {
@@ -1229,13 +1229,23 @@ How can I assist you today?`,
                                   />
                                 </div>
                               </>
+                            ) : attachment.type === 'github' ? (
+                              <>
+                                <Github className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs font-medium truncate">{attachment.name}</div>
+                                  <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                                    GitHub file
+                                  </div>
+                                </div>
+                              </>
                             ) : (
                               <>
                                 <FileText className="w-4 h-4 text-green-500 flex-shrink-0" />
                                 <div className="flex-1 min-w-0">
                                   <div className="text-xs font-medium truncate">{attachment.name}</div>
                                   <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
-                                    Document attached
+                                    {attachment.type === 'document' ? 'Document' : 'File'} attached
                                   </div>
                                 </div>
                               </>
