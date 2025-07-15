@@ -25,7 +25,13 @@ import {
   Key,
   Save,
   Eye,
-  EyeOff
+  EyeOff,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  Wifi,
+  WifiOff,
+  Zap as Lightning
 } from 'lucide-react';
 
 interface Message {
@@ -131,11 +137,13 @@ const BMAD_AGENTS: BMadAgent[] = [
 ];
 
 interface ApiStatus {
-  status: 'loading' | 'ready' | 'error';
+  status: 'loading' | 'ready' | 'error' | 'testing';
   message: string;
   hasApiKeys: boolean;
   providers: Array<{id: string; name: string; models: string[]}>;
   demoMode: boolean;
+  activeProvider?: string;
+  connectionQuality?: 'excellent' | 'good' | 'poor';
 }
 
 export default function ModernChatPage() {
@@ -167,6 +175,8 @@ export default function ModernChatPage() {
     gemini: false,
     groq: false
   });
+  const [testResults, setTestResults] = useState<{[key: string]: any}>({});
+  const [testingProviders, setTestingProviders] = useState<{[key: string]: boolean}>({});
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -206,6 +216,54 @@ export default function ModernChatPage() {
       ...prev,
       [provider]: !prev[provider as keyof typeof prev]
     }));
+  };
+
+  const testConnection = async (provider: string) => {
+    const apiKey = apiKeys[provider as keyof typeof apiKeys];
+    if (!apiKey?.trim()) {
+      setTestResults(prev => ({
+        ...prev,
+        [provider]: { success: false, message: 'API key is required' }
+      }));
+      return;
+    }
+
+    setTestingProviders(prev => ({ ...prev, [provider]: true }));
+    setApiStatus(prev => ({ ...prev, status: 'testing' }));
+
+    try {
+      const response = await fetch('/api/chat/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider, apiKey })
+      });
+
+      const result = await response.json();
+      setTestResults(prev => ({ ...prev, [provider]: result }));
+      
+      if (result.success) {
+        // Update API status if this is the selected provider
+        if (provider === selectedProvider) {
+          setApiStatus(prev => ({
+            ...prev,
+            status: 'ready',
+            message: `${result.provider} connected`,
+            activeProvider: result.provider,
+            connectionQuality: result.responseTime < 1000 ? 'excellent' : result.responseTime < 3000 ? 'good' : 'poor'
+          }));
+        }
+      }
+    } catch (error) {
+      setTestResults(prev => ({
+        ...prev,
+        [provider]: { success: false, message: 'Connection failed' }
+      }));
+    } finally {
+      setTestingProviders(prev => ({ ...prev, [provider]: false }));
+      if (apiStatus.status === 'testing') {
+        setApiStatus(prev => ({ ...prev, status: 'ready' }));
+      }
+    }
   };
 
   useEffect(() => {
@@ -691,21 +749,52 @@ How can I assist you today?`,
         <div className="flex items-center justify-between mt-3 text-xs text-gray-500">
           <div className="flex items-center space-x-4">
             <span>BMad Framework • {selectedAgent.name}</span>
-            <div className="flex items-center space-x-1">
-              <div className={`w-2 h-2 rounded-full ${
-                apiStatus.status === 'ready' 
-                  ? 'bg-green-500' 
+            <div className="flex items-center space-x-2">
+              {/* Status Icon */}
+              {apiStatus.status === 'ready' && !apiStatus.demoMode ? (
+                <div className="flex items-center space-x-1">
+                  {apiStatus.connectionQuality === 'excellent' ? (
+                    <Lightning className="w-3 h-3 text-green-400" />
+                  ) : (
+                    <Wifi className="w-3 h-3 text-green-400" />
+                  )}
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                </div>
+              ) : apiStatus.status === 'testing' ? (
+                <div className="flex items-center space-x-1">
+                  <Loader2 className="w-3 h-3 text-blue-400 animate-spin" />
+                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                </div>
+              ) : apiStatus.status === 'loading' ? (
+                <div className="flex items-center space-x-1">
+                  <Loader2 className="w-3 h-3 text-yellow-400 animate-spin" />
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+                </div>
+              ) : apiStatus.demoMode ? (
+                <div className="flex items-center space-x-1">
+                  <Bot className="w-3 h-3 text-purple-400" />
+                  <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-1">
+                  <WifiOff className="w-3 h-3 text-red-400" />
+                  <div className="w-2 h-2 bg-red-400 rounded-full"></div>
+                </div>
+              )}
+              
+              {/* Status Text */}
+              <span className="font-medium">
+                {apiStatus.status === 'ready' && !apiStatus.demoMode 
+                  ? `🔥 AI-LIVE ${apiStatus.activeProvider ? `(${apiStatus.activeProvider})` : ''}`
+                  : apiStatus.status === 'testing' 
+                  ? '🔍 TESTING CONNECTION...'
                   : apiStatus.status === 'loading' 
-                  ? 'bg-yellow-500 animate-pulse' 
-                  : 'bg-red-500'
-              }`}></div>
-              <span>{
-                apiStatus.status === 'ready' 
-                  ? (apiStatus.demoMode ? 'Demo Mode' : 'Connected') 
-                  : apiStatus.status === 'loading' 
-                  ? 'Initializing...' 
-                  : 'Offline'
-              }</span>
+                  ? '⏳ INITIALIZING...' 
+                  : apiStatus.demoMode 
+                  ? '🎭 DEMO MODE'
+                  : '❌ OFFLINE'
+                }
+              </span>
             </div>
           </div>
           
@@ -749,17 +838,41 @@ How can I assist you today?`,
                     value={apiKeys.openai}
                     onChange={(e) => handleApiKeyChange('openai', e.target.value)}
                     placeholder="sk-..."
-                    className="bg-gray-800 border-gray-700 text-white pr-10"
+                    className="bg-gray-800 border-gray-700 text-white pr-20"
                   />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toggleKeyVisibility('openai')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-                  >
-                    {showKeys.openai ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </Button>
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => testConnection('openai')}
+                      disabled={!apiKeys.openai?.trim() || testingProviders.openai}
+                      className="text-gray-400 hover:text-white h-6 px-1"
+                    >
+                      {testingProviders.openai ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : testResults.openai?.success ? (
+                        <CheckCircle className="w-3 h-3 text-green-400" />
+                      ) : testResults.openai?.success === false ? (
+                        <XCircle className="w-3 h-3 text-red-400" />
+                      ) : (
+                        <Wifi className="w-3 h-3" />
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleKeyVisibility('openai')}
+                      className="text-gray-400 hover:text-white h-6 px-1"
+                    >
+                      {showKeys.openai ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                    </Button>
+                  </div>
                 </div>
+                {testResults.openai && (
+                  <div className={`text-xs ${testResults.openai.success ? 'text-green-400' : 'text-red-400'}`}>
+                    {testResults.openai.message} {testResults.openai.responseTime && `(${testResults.openai.responseTime}ms)`}
+                  </div>
+                )}
               </div>
 
               {/* Claude */}
@@ -771,17 +884,41 @@ How can I assist you today?`,
                     value={apiKeys.claude}
                     onChange={(e) => handleApiKeyChange('claude', e.target.value)}
                     placeholder="sk-ant-..."
-                    className="bg-gray-800 border-gray-700 text-white pr-10"
+                    className="bg-gray-800 border-gray-700 text-white pr-20"
                   />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toggleKeyVisibility('claude')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-                  >
-                    {showKeys.claude ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </Button>
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => testConnection('claude')}
+                      disabled={!apiKeys.claude?.trim() || testingProviders.claude}
+                      className="text-gray-400 hover:text-white h-6 px-1"
+                    >
+                      {testingProviders.claude ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : testResults.claude?.success ? (
+                        <CheckCircle className="w-3 h-3 text-green-400" />
+                      ) : testResults.claude?.success === false ? (
+                        <XCircle className="w-3 h-3 text-red-400" />
+                      ) : (
+                        <Wifi className="w-3 h-3" />
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleKeyVisibility('claude')}
+                      className="text-gray-400 hover:text-white h-6 px-1"
+                    >
+                      {showKeys.claude ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                    </Button>
+                  </div>
                 </div>
+                {testResults.claude && (
+                  <div className={`text-xs ${testResults.claude.success ? 'text-green-400' : 'text-red-400'}`}>
+                    {testResults.claude.message} {testResults.claude.responseTime && `(${testResults.claude.responseTime}ms)`}
+                  </div>
+                )}
               </div>
 
               {/* Gemini */}
@@ -793,39 +930,89 @@ How can I assist you today?`,
                     value={apiKeys.gemini}
                     onChange={(e) => handleApiKeyChange('gemini', e.target.value)}
                     placeholder="AI..."
-                    className="bg-gray-800 border-gray-700 text-white pr-10"
+                    className="bg-gray-800 border-gray-700 text-white pr-20"
                   />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toggleKeyVisibility('gemini')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-                  >
-                    {showKeys.gemini ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </Button>
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => testConnection('gemini')}
+                      disabled={!apiKeys.gemini?.trim() || testingProviders.gemini}
+                      className="text-gray-400 hover:text-white h-6 px-1"
+                    >
+                      {testingProviders.gemini ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : testResults.gemini?.success ? (
+                        <CheckCircle className="w-3 h-3 text-green-400" />
+                      ) : testResults.gemini?.success === false ? (
+                        <XCircle className="w-3 h-3 text-red-400" />
+                      ) : (
+                        <Wifi className="w-3 h-3" />
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleKeyVisibility('gemini')}
+                      className="text-gray-400 hover:text-white h-6 px-1"
+                    >
+                      {showKeys.gemini ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                    </Button>
+                  </div>
                 </div>
+                {testResults.gemini && (
+                  <div className={`text-xs ${testResults.gemini.success ? 'text-green-400' : 'text-red-400'}`}>
+                    {testResults.gemini.message} {testResults.gemini.responseTime && `(${testResults.gemini.responseTime}ms)`}
+                  </div>
+                )}
               </div>
 
               {/* Groq */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Groq API Key</label>
+                <label className="text-sm font-medium text-gray-300 flex items-center">
+                  Groq API Key <Lightning className="w-3 h-3 ml-1 text-yellow-400" /> <span className="text-xs text-yellow-400 ml-1">Super Fast!</span>
+                </label>
                 <div className="relative">
                   <Input
                     type={showKeys.groq ? 'text' : 'password'}
                     value={apiKeys.groq}
                     onChange={(e) => handleApiKeyChange('groq', e.target.value)}
                     placeholder="gsk_..."
-                    className="bg-gray-800 border-gray-700 text-white pr-10"
+                    className="bg-gray-800 border-gray-700 text-white pr-20"
                   />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toggleKeyVisibility('groq')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-                  >
-                    {showKeys.groq ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </Button>
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => testConnection('groq')}
+                      disabled={!apiKeys.groq?.trim() || testingProviders.groq}
+                      className="text-gray-400 hover:text-white h-6 px-1"
+                    >
+                      {testingProviders.groq ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : testResults.groq?.success ? (
+                        <CheckCircle className="w-3 h-3 text-green-400" />
+                      ) : testResults.groq?.success === false ? (
+                        <XCircle className="w-3 h-3 text-red-400" />
+                      ) : (
+                        <Lightning className="w-3 h-3" />
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleKeyVisibility('groq')}
+                      className="text-gray-400 hover:text-white h-6 px-1"
+                    >
+                      {showKeys.groq ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                    </Button>
+                  </div>
                 </div>
+                {testResults.groq && (
+                  <div className={`text-xs ${testResults.groq.success ? 'text-green-400' : 'text-red-400'}`}>
+                    {testResults.groq.message} {testResults.groq.responseTime && `(${testResults.groq.responseTime}ms)`}
+                  </div>
+                )}
               </div>
             </div>
 
