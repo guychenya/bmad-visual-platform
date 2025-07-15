@@ -340,7 +340,11 @@ How can I assist you today?`,
         .filter(m => m.role !== 'system')
         .map(m => ({ role: m.role, content: m.content }));
 
-      const response = await fetch('/api/chat', {
+      // Use streaming for supported providers (OpenAI, Groq)
+      const useStreaming = ['openai', 'groq'].includes(selectedProvider);
+      const endpoint = useStreaming ? '/api/chat/stream' : '/api/chat';
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -360,10 +364,8 @@ How can I assist you today?`,
         })
       });
 
-      const data = await response.json();
-      
-      if (data.success) {
-        // Add assistant message with typing simulation
+      if (useStreaming && response.ok) {
+        // Handle streaming response
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
@@ -376,23 +378,88 @@ How can I assist you today?`,
         
         setMessages(prev => [...prev, assistantMessage]);
         
-        // Simulate typing
-        simulateTyping(data.response, (partialText) => {
-          setMessages(prev => prev.map(msg => 
-            msg.id === assistantMessage.id 
-              ? { ...msg, content: partialText }
-              : msg
-          ));
-        });
+        // Process streaming response
+        const reader = response.body?.getReader();
+        if (reader) {
+          const decoder = new TextDecoder();
+          let buffer = '';
+          
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split('\n');
+              
+              // Keep the last incomplete line in buffer
+              buffer = lines.pop() || '';
+              
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  const data = line.slice(6);
+                  if (data === '[DONE]') break;
+                  
+                  try {
+                    const parsed = JSON.parse(data);
+                    if (parsed.content) {
+                      setMessages(prev => prev.map(msg => 
+                        msg.id === assistantMessage.id 
+                          ? { ...msg, content: msg.content + parsed.content }
+                          : msg
+                      ));
+                    }
+                  } catch (e) {
+                    // Skip invalid JSON
+                  }
+                }
+              }
+            }
+          } catch (streamError) {
+            console.error('Streaming error:', streamError);
+          } finally {
+            // Mark streaming as complete
+            setMessages(prev => prev.map(msg => 
+              msg.id === assistantMessage.id 
+                ? { ...msg, isStreaming: false }
+                : msg
+            ));
+          }
+        }
       } else {
-        // Handle error case
-        const errorMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          role: 'system',
-          content: `❌ Error: ${data.error || 'Unknown error'}`,
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, errorMessage]);
+        // Handle non-streaming response
+        const data = await response.json();
+        
+        if (data.success) {
+          const assistantMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: '',
+            timestamp: new Date(),
+            agentId: selectedAgent.id,
+            agentName: selectedAgent.name,
+            isStreaming: true
+          };
+          
+          setMessages(prev => [...prev, assistantMessage]);
+          
+          // Simulate typing for non-streaming responses
+          simulateTyping(data.response, (partialText) => {
+            setMessages(prev => prev.map(msg => 
+              msg.id === assistantMessage.id 
+                ? { ...msg, content: partialText }
+                : msg
+            ));
+          });
+        } else {
+          const errorMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            role: 'system',
+            content: `❌ Error: ${data.error || 'Unknown error'}`,
+            timestamp: new Date()
+          };
+          setMessages(prev => [...prev, errorMessage]);
+        }
       }
     } catch (error) {
       console.error('Error sending message:', error);

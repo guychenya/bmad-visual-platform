@@ -19,7 +19,7 @@ interface ChatRequest {
   };
 }
 
-// OpenAI API Integration
+// OpenAI API Integration (Non-streaming for fallback)
 async function chatWithOpenAI(model: string, messages: ChatMessage[], apiKey?: string): Promise<string> {
   const key = apiKey?.trim() || process.env.OPENAI_API_KEY?.trim();
   if (!key || key === 'your_openai_api_key_here') {
@@ -84,7 +84,7 @@ async function chatWithClaude(model: string, messages: ChatMessage[], apiKey?: s
   return data.content[0]?.text || 'No response generated';
 }
 
-// Groq API Integration
+// Groq API Integration (Non-streaming for fallback)
 async function chatWithGroq(model: string, messages: ChatMessage[], apiKey?: string): Promise<string> {
   const key = apiKey?.trim() || process.env.GROQ_API_KEY?.trim();
   if (!key || key === 'your_groq_api_key_here') {
@@ -98,7 +98,7 @@ async function chatWithGroq(model: string, messages: ChatMessage[], apiKey?: str
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: model || 'llama3-8b-8192',
+      model: model || 'llama3-70b-8192', // Use the faster 70B model
       messages: messages,
       max_tokens: 2000,
       temperature: 0.7,
