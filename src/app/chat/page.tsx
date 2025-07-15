@@ -222,6 +222,8 @@ export default function ModernChatPage() {
   const [darkMode, setDarkMode] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -339,15 +341,39 @@ export default function ModernChatPage() {
   };
 
   // Voice recording functionality
-  const handleVoiceRecording = () => {
+  const handleVoiceRecording = async () => {
     if (isRecording) {
       setIsRecording(false);
-      // TODO: Stop recording and process audio
+      // Stop recording and process audio
       console.log('Stopping voice recording...');
+      playSound('receive');
+      
+      // TODO: Process recorded audio and convert to text
+      const simulatedTranscription = "Voice message transcribed successfully";
+      setInputValue(simulatedTranscription);
     } else {
-      setIsRecording(true);
-      // TODO: Start recording audio
-      console.log('Starting voice recording...');
+      try {
+        // Check if browser supports speech recognition
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+          alert('Speech recognition not supported in this browser. Try Chrome or Edge.');
+          return;
+        }
+        
+        setIsRecording(true);
+        playSound('send');
+        console.log('Starting voice recording...');
+        
+        // TODO: Implement actual speech recognition
+        // For now, just simulate recording for 3 seconds
+        setTimeout(() => {
+          if (isRecording) {
+            handleVoiceRecording();
+          }
+        }, 3000);
+      } catch (error) {
+        console.error('Voice recording error:', error);
+        setIsRecording(false);
+      }
     }
   };
 
@@ -981,7 +1007,7 @@ How can I assist you today?`,
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowSettings(true)}
+                onClick={() => setShowSidebar(true)}
                 className={`h-9 w-9 rounded-lg transition-all duration-200 ${
                   darkMode
                     ? 'hover:bg-gray-700 text-gray-300 hover:text-white'
@@ -1192,23 +1218,22 @@ How can I assist you today?`,
               <span className="text-xs">Switch Agent</span>
             </Button>
             
-            {/* Sound Toggle */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSoundEnabled(!soundEnabled)}
-              className={`h-8 w-8 rounded-lg transition-all duration-200 ${
-                darkMode
-                  ? 'hover:bg-gray-700 text-gray-300 hover:text-white'
-                  : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              {soundEnabled ? <Volume2 className="w-3 h-3" /> : <VolumeX className="w-3 h-3" />}
-            </Button>
           </div>
           
           <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
-            {selectedAgent.name} • {apiStatus.demoMode ? 'Demo' : 'Live AI'}
+            {selectedAgent.name} • 
+            {apiStatus.demoMode ? (
+              <button 
+                onClick={() => setShowSidebar(true)}
+                className={`ml-1 underline hover:no-underline transition-colors ${
+                  darkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'
+                }`}
+              >
+                Demo Mode - Setup API
+              </button>
+            ) : (
+              <span className="ml-1">Live AI</span>
+            )}
           </div>
         </div>
 
@@ -1277,7 +1302,7 @@ How can I assist you today?`,
               onChange={handleInputChange}
               placeholder={`Message ${selectedAgent.name}... (@ for agents, / for apps)`}
               disabled={isLoading}
-              className={`transition-all duration-200 pr-12 py-3 rounded-2xl ${
+              className={`transition-all duration-200 pr-16 py-3 rounded-2xl ${
                 darkMode
                   ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
                   : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
@@ -1303,15 +1328,19 @@ How can I assist you today?`,
               variant="ghost"
               size="sm"
               onClick={handleVoiceRecording}
-              className={`absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 rounded-full transition-all duration-200 ${
+              className={`absolute right-3 top-1/2 transform -translate-y-1/2 h-10 w-10 rounded-full transition-all duration-200 ${
                 isRecording
-                  ? 'bg-red-500 text-white hover:bg-red-600'
+                  ? 'bg-red-500 text-white hover:bg-red-600 shadow-lg'
                   : darkMode
                   ? 'hover:bg-gray-600 text-gray-400 hover:text-white'
                   : 'hover:bg-slate-200 text-slate-500 hover:text-slate-700'
               }`}
+              title={isRecording ? 'Stop recording' : 'Start voice recording'}
             >
-              <Mic className={`w-4 h-4 ${isRecording ? 'animate-pulse' : ''}`} />
+              <Mic className={`w-5 h-5 ${isRecording ? 'animate-pulse' : ''}`} />
+              {isRecording && (
+                <div className="absolute inset-0 rounded-full border-2 border-red-300 animate-ping"></div>
+              )}
             </Button>
           </div>
           
@@ -1330,7 +1359,224 @@ How can I assist you today?`,
         </form>
       </div>
 
-      {/* Settings Modal */}
+      {/* Claude/OpenAI Style Floating Sidebar */}
+      {showSidebar && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
+            onClick={() => setShowSidebar(false)}
+          />
+          
+          {/* Sidebar */}
+          <div className={`fixed left-0 top-0 h-full w-80 z-50 transform transition-transform duration-300 ease-in-out ${
+            showSidebar ? 'translate-x-0' : '-translate-x-full'
+          } ${darkMode ? 'bg-gray-900' : 'bg-white'} border-r ${darkMode ? 'border-gray-700' : 'border-slate-200'} shadow-xl`}>
+            
+            {/* Sidebar Header */}
+            <div className={`flex items-center justify-between p-4 border-b ${darkMode ? 'border-gray-700' : 'border-slate-200'}`}>
+              <div className="flex items-center space-x-3">
+                <div className={`w-10 h-10 rounded-xl ${selectedAgent.gradient} flex items-center justify-center text-white font-bold shadow-lg`}>
+                  {selectedAgent.avatar}
+                </div>
+                <div>
+                  <h2 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                    BMad Settings
+                  </h2>
+                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                    Configure your AI experience
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSidebar(false)}
+                className={`h-8 w-8 rounded-lg ${darkMode ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-slate-100 text-slate-600'}`}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Sidebar Content */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-6">
+              
+              {/* API Configuration Section */}
+              <div>
+                <h3 className={`text-sm font-medium mb-3 ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>
+                  API Configuration
+                </h3>
+                <div className={`p-3 rounded-lg border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-slate-50 border-slate-200'}`}>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Key className="w-4 h-4 text-blue-500" />
+                    <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>
+                      API Keys
+                    </span>
+                  </div>
+                  <p className={`text-xs mb-3 ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                    Add your AI service API keys to enable real responses
+                  </p>
+                  
+                  {/* API Keys List */}
+                  <div className="space-y-3">
+                    {['OpenAI', 'Claude', 'Gemini', 'Groq'].map((provider) => (
+                      <div key={provider} className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                            provider === 'OpenAI' ? 'bg-green-100 text-green-600' :
+                            provider === 'Claude' ? 'bg-orange-100 text-orange-600' :
+                            provider === 'Gemini' ? 'bg-blue-100 text-blue-600' :
+                            'bg-purple-100 text-purple-600'
+                          }`}>
+                            {provider === 'OpenAI' ? '🤖' : 
+                             provider === 'Claude' ? '🧠' :
+                             provider === 'Gemini' ? '💎' : '⚡'}
+                          </div>
+                          <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>
+                            {provider}
+                          </span>
+                        </div>
+                        <Badge variant={apiKeys[provider.toLowerCase() as keyof typeof apiKeys] ? 'default' : 'secondary'}>
+                          {apiKeys[provider.toLowerCase() as keyof typeof apiKeys] ? 'Connected' : 'Not Set'}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <Button
+                    onClick={() => setShowSettings(true)}
+                    className="w-full mt-3 bg-blue-500 hover:bg-blue-600 text-white"
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Configure API Keys
+                  </Button>
+                </div>
+              </div>
+
+              {/* Chat Settings */}
+              <div>
+                <h3 className={`text-sm font-medium mb-3 ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>
+                  Chat Settings
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Volume2 className="w-4 h-4 text-gray-500" />
+                      <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>
+                        Sound Effects
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSoundEnabled(!soundEnabled)}
+                      className={`h-8 w-12 rounded-full ${
+                        soundEnabled ? 'bg-blue-500' : darkMode ? 'bg-gray-700' : 'bg-slate-200'
+                      }`}
+                    >
+                      <div className={`w-4 h-4 rounded-full bg-white transition-transform duration-200 ${
+                        soundEnabled ? 'translate-x-4' : 'translate-x-0'
+                      }`} />
+                    </Button>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      {darkMode ? <Sun className="w-4 h-4 text-gray-500" /> : <Moon className="w-4 h-4 text-gray-500" />}
+                      <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>
+                        Dark Mode
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDarkMode(!darkMode)}
+                      className={`h-8 w-12 rounded-full ${
+                        darkMode ? 'bg-blue-500' : 'bg-slate-200'
+                      }`}
+                    >
+                      <div className={`w-4 h-4 rounded-full bg-white transition-transform duration-200 ${
+                        darkMode ? 'translate-x-4' : 'translate-x-0'
+                      }`} />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Current Agent */}
+              <div>
+                <h3 className={`text-sm font-medium mb-3 ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>
+                  Current Agent
+                </h3>
+                <div className={`p-3 rounded-lg border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-slate-50 border-slate-200'}`}>
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-10 h-10 rounded-full ${selectedAgent.gradient} flex items-center justify-center text-white font-medium`}>
+                      {selectedAgent.avatar}
+                    </div>
+                    <div>
+                      <div className={`font-medium ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                        {selectedAgent.name}
+                      </div>
+                      <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                        {selectedAgent.title}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {selectedAgent.specialties.map((specialty, idx) => (
+                      <span
+                        key={idx}
+                        className={`text-xs px-2 py-1 rounded-full ${
+                          darkMode ? 'bg-gray-700 text-gray-300' : 'bg-slate-200 text-slate-600'
+                        }`}
+                      >
+                        {specialty}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Usage Stats */}
+              <div>
+                <h3 className={`text-sm font-medium mb-3 ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>
+                  Session Stats
+                </h3>
+                <div className={`p-3 rounded-lg border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-slate-50 border-slate-200'}`}>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                        Messages
+                      </span>
+                      <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>
+                        {messages.length}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                        Active Agent
+                      </span>
+                      <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>
+                        {selectedAgent.name}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                        Mode
+                      </span>
+                      <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-slate-700'}`}>
+                        {apiStatus.demoMode ? 'Demo' : 'Live AI'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Original Settings Modal */}
       {showSettings && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
