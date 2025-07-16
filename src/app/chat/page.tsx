@@ -546,20 +546,74 @@ export default function ModernChatPage() {
     
     // Check for @ symbol to show agent picker
     const atIndex = value.lastIndexOf('@', cursorPosition - 1);
-    if (atIndex !== -1 && (atIndex === 0 || value[atIndex - 1] === ' ')) {
-      const afterAt = value.substring(atIndex + 1, cursorPosition);
-      if (!afterAt.includes(' ')) {
-        setShowAgentPicker(true);
-        setSelectedAgentIndex(0); // Reset selection when showing picker
-        // Position picker above input, WhatsApp style
-        const rect = e.target.getBoundingClientRect();
-        setAgentPickerPosition({ 
-          x: rect.left + 10, 
-          y: rect.top - 320 // More space for WhatsApp-style list
-        });
+    
+    console.log('@ Detection Debug:', {
+      value,
+      cursorPosition,
+      atIndex,
+      showAgentPicker
+    });
+    
+    if (atIndex !== -1) {
+      // More flexible @ detection - allow @ at start or after space/newline
+      const charBeforeAt = atIndex > 0 ? value[atIndex - 1] : ' ';
+      const isValidTrigger = /[\s\n\r]/.test(charBeforeAt) || atIndex === 0;
+      
+      if (isValidTrigger) {
+        const afterAt = value.substring(atIndex + 1, cursorPosition);
+        // Only show picker if we haven't typed a space after @
+        if (!afterAt.includes(' ') && !afterAt.includes('\n')) {
+          console.log('Showing agent picker!', { afterAt });
+          setShowAgentPicker(true);
+          setSelectedAgentIndex(0); // Reset selection when showing picker
+          
+          // Position picker with enhanced safety checks
+          const rect = e.target.getBoundingClientRect();
+          const viewportHeight = window.innerHeight;
+          const viewportWidth = window.innerWidth;
+          const modalWidth = Math.min(500, viewportWidth * 0.9);
+          const modalHeight = 350; // Slightly taller for better visibility
+          
+          console.log('Input rect:', rect);
+          console.log('Viewport:', { viewportWidth, viewportHeight });
+          
+          // Calculate optimal x position (prevent horizontal overflow)
+          let x = Math.max(20, rect.left + 10);
+          if (x + modalWidth > viewportWidth - 20) {
+            x = Math.max(20, viewportWidth - modalWidth - 20);
+          }
+          
+          // Calculate optimal y position with better logic
+          let y = rect.top - modalHeight - 10; // Try above first
+          
+          // If modal would be cut off at top, position below input instead
+          if (y < 20) {
+            y = rect.bottom + 10;
+            
+            // If still cut off at bottom, use fallback positioning
+            if (y + modalHeight > viewportHeight - 20) {
+              // Try positioning above input again with less margin
+              y = Math.max(20, rect.top - modalHeight + 20);
+              
+              // If still doesn't fit, use center positioning
+              if (y < 20) {
+                y = Math.max(20, (viewportHeight - modalHeight) / 2);
+              }
+            }
+          }
+          
+          console.log('Final position:', { x, y });
+          setAgentPickerPosition({ x, y });
+        }
       }
-    } else {
-      setShowAgentPicker(false);
+    }
+    
+    // Only hide if we're clearly not in an @ context
+    if (atIndex === -1 || cursorPosition <= atIndex) {
+      if (showAgentPicker) {
+        console.log('Hiding agent picker');
+        setShowAgentPicker(false);
+      }
     }
     
     // Check for / symbol to show slash commands
@@ -2918,21 +2972,31 @@ ${att.content ? `- Content: ${att.content.substring(0, 200)}${att.content.length
       {/* Agent Picker Modal - WhatsApp Style */}
       {showAgentPicker && (
         <div 
-          className={`fixed z-50 rounded-xl shadow-xl w-[500px] transition-colors duration-200 ${
+          className={`fixed z-[9999] rounded-xl shadow-2xl w-[500px] max-w-[90vw] transition-all duration-200 border-2 ${
             darkMode
-              ? 'bg-gray-800 border border-gray-700'
-              : 'bg-white border border-slate-200'
+              ? 'bg-gray-800 border-blue-500'
+              : 'bg-white border-blue-500'
           }`}
-          style={{ left: agentPickerPosition.x, top: agentPickerPosition.y }}
+          style={{ 
+            left: agentPickerPosition.x, 
+            top: agentPickerPosition.y,
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(59, 130, 246, 0.5)'
+          }}
+          onClick={(e) => e.stopPropagation()}
         >
           <div className="p-4">
+            {/* Debug indicator */}
+            <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-1 rounded">
+              AGENT PICKER VISIBLE
+            </div>
+            
             <div className={`text-sm font-medium uppercase tracking-wider mb-4 px-2 flex items-center ${
               darkMode ? 'text-gray-400' : 'text-slate-500'
             }`}>
               <User className="w-4 h-4 mr-2" />
               Select Agent
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {BMAD_AGENTS.map((agent, index) => (
                 <div
                   key={agent.id}
