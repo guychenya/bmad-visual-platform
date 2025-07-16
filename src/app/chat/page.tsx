@@ -1995,8 +1995,8 @@ ${att.content ? `- Content: ${att.content.substring(0, 200)}${att.content.length
         
         {/* Agent Selector */}
         {showAgentSelector && (
-          <div className="border-t border-gray-700/50 p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="border-t border-gray-700/50 p-3 max-h-80 overflow-y-auto">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
               {BMAD_AGENTS.map((agent) => (
                 <Card 
                   key={agent.id}
@@ -2005,23 +2005,22 @@ ${att.content ? `- Content: ${att.content.substring(0, 200)}${att.content.length
                   }`}
                   onClick={() => handleAgentSwitch(agent)}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-10 h-10 rounded-full ${agent.gradient} flex items-center justify-center text-white`}>
+                  <CardContent className="p-3">
+                    <div className="flex flex-col items-center text-center space-y-2">
+                      <div className={`w-8 h-8 rounded-full ${agent.gradient} flex items-center justify-center text-white`}>
                         {agent.icon}
                       </div>
-                      <div className="flex-1">
-                        <h3 className="font-medium text-white">{agent.name}</h3>
-                        <p className="text-sm text-gray-400">{agent.title}</p>
+                      <div>
+                        <h3 className="font-medium text-white text-sm">{agent.name}</h3>
+                        <p className="text-xs text-gray-400 truncate">{agent.title}</p>
                       </div>
                     </div>
-                    <p className="text-xs text-gray-500 mt-2">{agent.description}</p>
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {agent.specialties.map((specialty) => (
+                    <div className="flex flex-wrap gap-1 mt-2 justify-center">
+                      {agent.specialties.slice(0, 2).map((specialty) => (
                         <Badge
                           key={specialty}
                           variant="secondary"
-                          className="text-xs bg-gray-700/50 text-gray-300"
+                          className="text-[10px] px-1 py-0 bg-gray-700/50 text-gray-300"
                         >
                           {specialty}
                         </Badge>
