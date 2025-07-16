@@ -380,6 +380,309 @@ export interface Database {
           created_at?: string
         }
       }
+      // Quality Compliance Dashboard Tables
+      compliance_metrics: {
+        Row: {
+          id: string
+          project_id: string
+          metric_type: string
+          value: number
+          target_value: number | null
+          unit: string
+          period: string
+          date: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          metric_type: string
+          value: number
+          target_value?: number | null
+          unit: string
+          period: string
+          date: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          metric_type?: string
+          value?: number
+          target_value?: number | null
+          unit?: string
+          period?: string
+          date?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      capas: {
+        Row: {
+          id: string
+          project_id: string
+          capa_number: string
+          title: string
+          description: string | null
+          type: string
+          status: string
+          priority: string
+          due_date: string | null
+          assigned_to: string | null
+          created_by: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          capa_number: string
+          title: string
+          description?: string | null
+          type: string
+          status?: string
+          priority?: string
+          due_date?: string | null
+          assigned_to?: string | null
+          created_by: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          capa_number?: string
+          title?: string
+          description?: string | null
+          type?: string
+          status?: string
+          priority?: string
+          due_date?: string | null
+          assigned_to?: string | null
+          created_by?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      training_records: {
+        Row: {
+          id: string
+          project_id: string
+          user_id: string
+          training_name: string
+          training_type: string
+          status: string
+          completion_date: string | null
+          due_date: string | null
+          score: number | null
+          certificate_url: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          user_id: string
+          training_name: string
+          training_type: string
+          status?: string
+          completion_date?: string | null
+          due_date?: string | null
+          score?: number | null
+          certificate_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          user_id?: string
+          training_name?: string
+          training_type?: string
+          status?: string
+          completion_date?: string | null
+          due_date?: string | null
+          score?: number | null
+          certificate_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      audits: {
+        Row: {
+          id: string
+          project_id: string
+          audit_number: string
+          area: string
+          type: string
+          status: string
+          auditor: string
+          start_date: string
+          end_date: string | null
+          findings_count: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          audit_number: string
+          area: string
+          type: string
+          status?: string
+          auditor: string
+          start_date: string
+          end_date?: string | null
+          findings_count?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          audit_number?: string
+          area?: string
+          type?: string
+          status?: string
+          auditor?: string
+          start_date?: string
+          end_date?: string | null
+          findings_count?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      audit_findings: {
+        Row: {
+          id: string
+          audit_id: string
+          finding_type: string
+          severity: string
+          title: string
+          description: string
+          requirement: string | null
+          corrective_action: string | null
+          status: string
+          due_date: string | null
+          assigned_to: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          audit_id: string
+          finding_type: string
+          severity: string
+          title: string
+          description: string
+          requirement?: string | null
+          corrective_action?: string | null
+          status?: string
+          due_date?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          audit_id?: string
+          finding_type?: string
+          severity?: string
+          title?: string
+          description?: string
+          requirement?: string | null
+          corrective_action?: string | null
+          status?: string
+          due_date?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      compliance_areas: {
+        Row: {
+          id: string
+          project_id: string
+          area_name: string
+          description: string | null
+          score: number
+          max_score: number
+          last_assessment: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          area_name: string
+          description?: string | null
+          score: number
+          max_score: number
+          last_assessment?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          area_name?: string
+          description?: string | null
+          score?: number
+          max_score?: number
+          last_assessment?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      compliance_documents: {
+        Row: {
+          id: string
+          project_id: string
+          document_name: string
+          document_type: string
+          file_url: string
+          file_size: number
+          mime_type: string
+          uploaded_by: string
+          category: string | null
+          version: string | null
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          document_name: string
+          document_type: string
+          file_url: string
+          file_size: number
+          mime_type: string
+          uploaded_by: string
+          category?: string | null
+          version?: string | null
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          document_name?: string
+          document_type?: string
+          file_url?: string
+          file_size?: number
+          mime_type?: string
+          uploaded_by?: string
+          category?: string | null
+          version?: string | null
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
   }
 }

@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +36,6 @@ import {
   Upload,
   FileText,
   Github,
-  Image,
   Volume2,
   VolumeX,
   Check,
@@ -45,7 +45,17 @@ import {
   Paperclip,
   Camera,
   FileImage,
-  Video
+  Video,
+  MessageSquare,
+  Users,
+  Lightbulb,
+  Building2,
+  Code2,
+  TestTube,
+  Rocket,
+  ShieldCheck,
+  BarChart,
+  Target
 } from 'lucide-react';
 
 interface Message {
@@ -248,6 +258,15 @@ export default function ModernChatPage() {
     mimeType: string;
   }[]>([]);
 
+  const [chatReferences, setChatReferences] = useState<{
+    id: string;
+    title: string;
+    messageCount: number;
+    agent: BMadAgent;
+    timestamp: Date;
+    summary: string;
+  }[]>([]);
+
   // Chat history and navigation state
   const [chatHistory, setChatHistory] = useState<{
     id: string;
@@ -331,6 +350,7 @@ export default function ModernChatPage() {
   const [isDragOver, setIsDragOver] = useState(false);
   const [dragOverType, setDragOverType] = useState<'chat' | 'file' | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [showChatMenu, setShowChatMenu] = useState<string | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -348,20 +368,33 @@ export default function ModernChatPage() {
       agent: selectedAgent
     };
     
-    setChatHistory(prev => [newChat, ...prev]);
+    setChatHistory(prev => {
+      const updatedHistory = [newChat, ...prev];
+      saveChatHistory(updatedHistory);
+      return updatedHistory;
+    });
     setCurrentChatId(newChatId);
     setMessages([]);
+    
+    // Auto-focus input for new chat
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 100);
   };
 
-  const saveCurrentChat = () => {
+  const saveCurrentChat = useCallback(() => {
     if (!currentChatId) return;
     
-    setChatHistory(prev => prev.map(chat => 
-      chat.id === currentChatId 
-        ? { ...chat, messages: [...messages], timestamp: new Date() }
-        : chat
-    ));
-  };
+    setChatHistory(prev => {
+      const updatedHistory = prev.map(chat => 
+        chat.id === currentChatId 
+          ? { ...chat, messages: [...messages], timestamp: new Date() }
+          : chat
+      );
+      saveChatHistory(updatedHistory);
+      return updatedHistory;
+    });
+  }, [currentChatId, messages]);
 
   const loadChat = (chatId: string) => {
     const chat = chatHistory.find(c => c.id === chatId);
@@ -369,6 +402,11 @@ export default function ModernChatPage() {
       setCurrentChatId(chatId);
       setMessages(chat.messages);
       setSelectedAgent(chat.agent);
+      
+      // Auto-focus input when loading chat
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
     }
   };
 
@@ -836,6 +874,39 @@ export default function ModernChatPage() {
     }
   };
 
+  const loadChatHistory = () => {
+    if (typeof window !== 'undefined') {
+      const savedHistory = localStorage.getItem('bmad-chat-history');
+      if (savedHistory) {
+        try {
+          const history = JSON.parse(savedHistory);
+          // Convert timestamp strings back to Date objects
+          const processedHistory = history.map((chat: any) => ({
+            ...chat,
+            timestamp: new Date(chat.timestamp),
+            messages: chat.messages.map((msg: any) => ({
+              ...msg,
+              timestamp: new Date(msg.timestamp)
+            }))
+          }));
+          setChatHistory(processedHistory);
+        } catch (error) {
+          console.error('Error loading chat history:', error);
+        }
+      }
+    }
+  };
+
+  const saveChatHistory = useCallback((history: typeof chatHistory) => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('bmad-chat-history', JSON.stringify(history));
+      } catch (error) {
+        console.error('Error saving chat history:', error);
+      }
+    }
+  }, []);
+
   const saveApiKeys = () => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('bmad-api-keys', JSON.stringify(apiKeys));
@@ -950,10 +1021,20 @@ export default function ModernChatPage() {
     if (chatData) {
       try {
         const chat = JSON.parse(chatData);
-        const chatContent = chat.messages.map((m: any) => `**${m.role === 'user' ? 'User' : 'Assistant'}:** ${m.content}`).join('\n\n');
-        setInputValue(prev => prev + (prev ? '\n\n---\n\n' : '') + `**Chat History: ${chat.title}**\n\n${chatContent}`);
+        
+        // Create a chat reference card instead of pasting text
+        const chatReference = {
+          id: chat.id,
+          title: chat.title,
+          messageCount: chat.messages.length,
+          agent: chat.agent || BMAD_AGENTS[0],
+          timestamp: new Date(chat.timestamp || Date.now()),
+          summary: chat.messages.length > 0 ? chat.messages[0].content.substring(0, 100) + '...' : 'No messages'
+        };
+        
+        setChatReferences(prev => [...prev, chatReference]);
         setDragOverType(null);
-        console.log('Chat content added to input!'); // Debug log
+        console.log('Chat reference added!'); // Debug log
         return;
       } catch (error) {
         console.error('Error parsing chat data:', error);
@@ -990,12 +1071,7 @@ export default function ModernChatPage() {
       
       setCurrentAttachments(prev => [...prev, attachment]);
       
-      if (file.type.startsWith('text/')) {
-        setInputValue(prev => prev + (prev ? '\n\n' : '') + `**File: ${file.name}**\n\n${result}`);
-      } else {
-        // For non-text files, just add a reference
-        setInputValue(prev => prev + (prev ? '\n\n' : '') + `📎 **${file.name}** (${(file.size / 1024).toFixed(1)} KB)`);
-      }
+      // Don't add to input - just show as attachment card
     };
     
     if (file.type.startsWith('text/')) {
@@ -1014,13 +1090,59 @@ export default function ModernChatPage() {
       };
       
       setCurrentAttachments(prev => [...prev, attachment]);
-      setInputValue(prev => prev + (prev ? '\n\n' : '') + `📎 **${file.name}** (${(file.size / 1024).toFixed(1)} KB)`);
+      // Don't add to input - just show as attachment card
+    }
+  };
+
+  const removeChatReference = (id: string) => {
+    setChatReferences(prev => prev.filter(ref => ref.id !== id));
+  };
+
+  const deleteChat = (chatId: string) => {
+    setChatHistory(prev => {
+      const updatedHistory = prev.filter(chat => chat.id !== chatId);
+      saveChatHistory(updatedHistory);
+      return updatedHistory;
+    });
+    // If the deleted chat was the current one, clear the current chat
+    if (currentChatId === chatId) {
+      setCurrentChatId(null);
+      setMessages([]);
+    }
+    setShowChatMenu(null);
+  };
+
+  // Get icon for agent based on their role
+  const getAgentIcon = (agent: BMadAgent) => {
+    const iconClass = "w-8 h-8";
+    switch (agent.id) {
+      case 'bmad-orchestrator':
+        return <Users className={iconClass} />;
+      case 'analyst':
+        return <BarChart className={iconClass} />;
+      case 'architect':
+        return <Building2 className={iconClass} />;
+      case 'dev':
+        return <Code2 className={iconClass} />;
+      case 'qa':
+        return <TestTube className={iconClass} />;
+      case 'sm':
+        return <Target className={iconClass} />;
+      case 'deploy':
+        return <Rocket className={iconClass} />;
+      case 'security':
+        return <ShieldCheck className={iconClass} />;
+      case 'ui-ux':
+        return <Palette className={iconClass} />;
+      default:
+        return <Lightbulb className={iconClass} />;
     }
   };
 
   useEffect(() => {
     const initializeBMad = async () => {
       loadApiKeys();
+      loadChatHistory();
       await checkApiStatus();
       
       // Add welcome message
@@ -1052,9 +1174,9 @@ How can I assist you today?`,
     };
     
     initializeBMad();
-  }, [selectedAgent]);
+  }, [selectedAgent, apiStatus.demoMode]);
 
-  const checkApiStatus = async () => {
+  const checkApiStatus = useCallback(async () => {
     try {
       // Try POST with API keys first
       const response = await fetch('/api/chat/status', {
@@ -1108,7 +1230,7 @@ How can I assist you today?`,
         validatedConnections: {}
       });
     }
-  };
+  }, [apiKeys]);
 
   useEffect(() => {
     scrollToBottom();
@@ -1121,13 +1243,50 @@ How can I assist you today?`,
       const stage = determineStage(messages);
       const deliverables = generateDeliverables(messages, stage);
       
-      setChatHistory(prev => prev.map(chat => 
-        chat.id === currentChatId 
-          ? { ...chat, stage, messages: [...messages], deliverables }
-          : chat
-      ));
+      setChatHistory(prev => {
+        const updatedHistory = prev.map(chat => 
+          chat.id === currentChatId 
+            ? { ...chat, stage, messages: [...messages], deliverables }
+            : chat
+        );
+        saveChatHistory(updatedHistory);
+        return updatedHistory;
+      });
     }
-  }, [messages, currentChatId]);
+  }, [messages, currentChatId, saveCurrentChat]);
+
+  // Close chat menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setShowChatMenu(null);
+    };
+
+    if (showChatMenu) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [showChatMenu]);
+
+  // Global ESC key handler to close all popups
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowAgentPicker(false);
+        setShowSlashCommands(false);
+        setShowAttachmentMenu(false);
+        setShowChatMenu(null);
+        setShowSettings(false);
+        
+        // Refocus input after closing popups
+        requestAnimationFrame(() => {
+          inputRef.current?.focus();
+        });
+      }
+    };
+
+    document.addEventListener('keydown', handleGlobalKeyDown);
+    return () => document.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -1180,10 +1339,39 @@ How can I assist you today?`,
       }
     }
     
+    // Prepare chat context from references
+    let messageContent = inputValue.trim();
+    
+    // Add visual chat reference cards to the message content for LLM processing
+    if (chatReferences.length > 0) {
+      const referencesContent = chatReferences.map(ref => `
+📋 **Referenced Conversation: "${ref.title}"**
+- Agent: ${ref.agent.name}
+- Messages: ${ref.messageCount}
+- Summary: ${ref.summary}
+- Timestamp: ${ref.timestamp.toLocaleString()}
+---`).join('\n');
+      
+      messageContent = `${referencesContent}\n\n${messageContent}`;
+    }
+    
+    // Add file attachment information to message content for LLM processing
+    if (currentAttachments.length > 0) {
+      const attachmentsContent = currentAttachments.map(att => `
+📎 **Attached File: "${att.name}"**
+- Type: ${att.type}
+- Size: ${(att.size / 1024).toFixed(1)} KB
+- MIME Type: ${att.mimeType}
+${att.content ? `- Content: ${att.content.substring(0, 200)}${att.content.length > 200 ? '...' : ''}` : ''}
+---`).join('\n');
+      
+      messageContent = `${attachmentsContent}\n\n${messageContent}`;
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: inputValue.trim(),
+      content: messageContent,
       timestamp: new Date(),
       attachments: currentAttachments.length > 0 ? currentAttachments.map(att => ({
         type: att.type,
@@ -1196,8 +1384,15 @@ How can I assist you today?`,
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setCurrentAttachments([]);
+    setChatReferences([]);
     setIsLoading(true);
     setIsTyping(true);
+
+    // Auto-focus input for rapid-fire conversations - immediate focus
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+      inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
 
     // Play send sound
     playSound('send');
@@ -1452,6 +1647,12 @@ How can I assist you today?`,
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+      
+      // Auto-focus input after AI response is complete for rapid-fire conversations
+      requestAnimationFrame(() => {
+        inputRef.current?.focus();
+        inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
     }
   };
 
@@ -1509,7 +1710,7 @@ How can I assist you today?`,
               {chatHistory.map((chat) => (
                 <div key={chat.id} className="p-2 border-b border-gray-700/30">
                   <div 
-                    className={`flex items-center justify-between p-2 rounded-lg cursor-grab active:cursor-grabbing transition-colors ${
+                    className={`group flex items-center justify-between p-2 rounded-lg cursor-grab active:cursor-grabbing transition-colors ${
                       currentChatId === chat.id 
                         ? 'bg-blue-500/20 border border-blue-500/50' 
                         : darkMode ? 'hover:bg-gray-700' : 'hover:bg-slate-200'
@@ -1541,8 +1742,10 @@ How can I assist you today?`,
                     style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
                   >
                     <div className="flex items-center space-x-2 flex-1 min-w-0">
-                      <div className={`w-6 h-6 rounded-full ${chat.agent.gradient} flex items-center justify-center text-xs text-white`}>
-                        {chat.agent.avatar}
+                      <div className={`w-6 h-6 flex items-center justify-center ${
+                        darkMode ? 'text-gray-400' : 'text-slate-600'
+                      }`}>
+                        {React.cloneElement(getAgentIcon(chat.agent), { className: 'w-5 h-5' })}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className={`text-sm font-medium truncate ${
@@ -1566,6 +1769,44 @@ How can I assist you today?`,
                         chat.stage === 'deployment' ? 'bg-green-500' :
                         'bg-gray-500'
                       }`} />
+                      
+                      {/* Chat Menu Button */}
+                      <div className="relative">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowChatMenu(showChatMenu === chat.id ? null : chat.id);
+                          }}
+                          className={`h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity ${
+                            darkMode ? 'hover:bg-gray-600 text-gray-400 hover:text-white' : 'hover:bg-slate-200 text-slate-500 hover:text-slate-700'
+                          }`}
+                        >
+                          <MoreHorizontal className="w-3 h-3" />
+                        </Button>
+                        
+                        {/* Dropdown Menu */}
+                        {showChatMenu === chat.id && (
+                          <div className={`absolute right-0 top-8 rounded-md shadow-lg border py-1 min-w-32 z-50 ${
+                            darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200'
+                          }`}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteChat(chat.id);
+                              }}
+                              className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                                darkMode 
+                                  ? 'text-red-400 hover:bg-gray-700 hover:text-red-300' 
+                                  : 'text-red-600 hover:bg-red-50 hover:text-red-700'
+                              }`}
+                            >
+                              🗑️ Delete Chat
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                   
@@ -1646,8 +1887,10 @@ How can I assist you today?`,
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center space-x-4">
             <div className="relative">
-              <div className={`w-12 h-12 rounded-xl ${selectedAgent.gradient} flex items-center justify-center text-white font-bold shadow-lg`}>
-                {selectedAgent.avatar}
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg ${
+                darkMode ? 'bg-gray-700 text-gray-300' : 'bg-slate-100 text-slate-600'
+              }`}>
+                {React.cloneElement(getAgentIcon(selectedAgent), { className: 'w-7 h-7' })}
               </div>
               <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
             </div>
@@ -1808,7 +2051,7 @@ How can I assist you today?`,
                   {message.role === 'user' ? (
                     <User className="w-4 h-4 text-white" />
                   ) : (
-                    <span className="text-white font-medium">{selectedAgent.avatar}</span>
+                    React.cloneElement(getAgentIcon(selectedAgent), { className: 'w-4 h-4 text-white' })
                   )}
                 </div>
                 
@@ -1843,9 +2086,11 @@ How can I assist you today?`,
                                 <FileImage className="w-4 h-4 text-blue-500 flex-shrink-0" />
                                 <div className="flex-1 min-w-0">
                                   <div className="text-xs font-medium truncate">{attachment.name}</div>
-                                  <img
+                                  <Image
                                     src={attachment.url}
                                     alt={attachment.name}
+                                    width={200}
+                                    height={128}
                                     className="mt-1 max-w-full h-32 object-cover rounded-md"
                                   />
                                 </div>
@@ -1968,8 +2213,10 @@ How can I assist you today?`,
         {isLoading && (
           <div className="flex justify-start">
             <div className="flex items-start space-x-3">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm ${selectedAgent.gradient}`}>
-                <span className="text-white font-medium">{selectedAgent.avatar}</span>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm ${
+                darkMode ? 'bg-gray-700' : 'bg-slate-200'
+              }`}>
+                {React.cloneElement(getAgentIcon(selectedAgent), { className: 'w-4 h-4 text-white' })}
               </div>
               <div className="bg-white border border-slate-200 rounded-2xl px-4 py-3 shadow-sm">
                 <div className="flex space-x-1">
@@ -2018,6 +2265,105 @@ How can I assist you today?`,
                   : 'Release to attach files to your message'
                 }
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* File Attachments */}
+        {currentAttachments.length > 0 && (
+          <div className="mb-3">
+            <div className={`text-xs font-medium mb-2 ${darkMode ? 'text-gray-400' : 'text-slate-600'}`}>
+              Attached Files:
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {currentAttachments.map((attachment, index) => (
+                <div
+                  key={index}
+                  className={`flex items-center space-x-2 p-3 rounded-lg border-2 border-dashed transition-all duration-200 max-w-xs ${
+                    darkMode 
+                      ? 'bg-green-900/20 border-green-500/50 hover:bg-green-800/30' 
+                      : 'bg-green-50 border-green-300 hover:bg-green-100'
+                  }`}
+                >
+                  <div className="flex items-center space-x-1 flex-shrink-0">
+                    <FileText className={`w-4 h-4 ${darkMode ? 'text-green-400' : 'text-green-600'}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-sm font-medium truncate ${darkMode ? 'text-gray-200' : 'text-slate-800'}`}>
+                      {attachment.name}
+                    </div>
+                    <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                      {attachment.type} • {(attachment.size / 1024).toFixed(1)} KB
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setCurrentAttachments(prev => prev.filter((_, i) => i !== index));
+                    }}
+                    className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors ${
+                      darkMode 
+                        ? 'hover:bg-gray-600 text-gray-400 hover:text-white' 
+                        : 'hover:bg-slate-200 text-slate-500 hover:text-slate-700'
+                    }`}
+                    title="Remove file"
+                  >
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Chat References */}
+        {chatReferences.length > 0 && (
+          <div className="mb-3">
+            <div className={`text-xs font-medium mb-2 ${darkMode ? 'text-gray-400' : 'text-slate-600'}`}>
+              Referenced Conversations:
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {chatReferences.map((ref) => (
+                <div
+                  key={ref.id}
+                  className={`flex items-center space-x-2 p-3 rounded-lg border-2 border-dashed transition-all duration-200 max-w-xs ${
+                    darkMode 
+                      ? 'bg-blue-900/20 border-blue-500/50 hover:bg-blue-800/30' 
+                      : 'bg-blue-50 border-blue-300 hover:bg-blue-100'
+                  }`}
+                >
+                  <div className="flex items-center space-x-1 flex-shrink-0">
+                    <MessageSquare className={`w-4 h-4 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                    <div className={`w-5 h-5 flex items-center justify-center ${
+                      darkMode ? 'text-gray-400' : 'text-slate-600'
+                    }`}>
+                      {React.cloneElement(getAgentIcon(ref.agent), { className: 'w-4 h-4' })}
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-sm font-medium truncate ${darkMode ? 'text-gray-200' : 'text-slate-800'}`}>
+                      {ref.title}
+                    </div>
+                    <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+                      {ref.messageCount} messages • {ref.timestamp.toLocaleDateString()}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => removeChatReference(ref.id)}
+                    className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors ${
+                      darkMode 
+                        ? 'hover:bg-gray-600 text-gray-400 hover:text-white' 
+                        : 'hover:bg-slate-200 text-slate-500 hover:text-slate-700'
+                    }`}
+                    title="Remove reference"
+                  >
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -2089,7 +2435,7 @@ How can I assist you today?`,
                 }`}>
                   Attach
                 </div>
-                {attachmentOptions.map((option, index) => (
+                {attachmentOptions.map((option) => (
                   <div
                     key={option.name}
                     onClick={option.action}
@@ -2122,8 +2468,8 @@ How can I assist you today?`,
               ref={inputRef}
               value={inputValue}
               onChange={handleInputChange}
-              placeholder={`Message ${selectedAgent.name}... (@ for agents, / for apps)`}
-              disabled={isLoading}
+              placeholder={isLoading ? `${selectedAgent.name} is typing...` : `Message ${selectedAgent.name}... (@ for agents, / for apps)`}
+              disabled={false}
               onDragOver={handleDragOver}
               onDragEnter={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -2133,13 +2479,12 @@ How can I assist you today?`,
                   ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
                   : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
               } ${isDragOver ? 'ring-2 ring-blue-500 border-blue-500' : ''}`}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey && !isLoading && inputValue.trim()) {
                   e.preventDefault();
                   handleSendMessage(e as any);
+                  return;
                 }
-              }}
-              onKeyDown={(e) => {
                 if (e.key === 'Escape') {
                   setShowAgentPicker(false);
                   setShowSlashCommands(false);
@@ -2315,8 +2660,10 @@ How can I assist you today?`,
                   Active Agent
                 </h3>
                 <div className="flex items-center space-x-3">
-                  <div className={`w-8 h-8 rounded-lg ${selectedAgent.gradient} flex items-center justify-center text-white text-sm font-medium`}>
-                    {selectedAgent.avatar}
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-medium ${
+                    darkMode ? 'bg-gray-700 text-gray-300' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {React.cloneElement(getAgentIcon(selectedAgent), { className: 'w-5 h-5' })}
                   </div>
                   <div>
                     <div className={`text-base font-medium ${darkMode ? 'text-white' : 'text-slate-900'}`}>
@@ -2567,26 +2914,26 @@ How can I assist you today?`,
       {/* Agent Picker Modal - WhatsApp Style */}
       {showAgentPicker && (
         <div 
-          className={`fixed z-50 rounded-xl shadow-xl max-w-sm w-80 transition-colors duration-200 ${
+          className={`fixed z-50 rounded-xl shadow-xl w-[500px] transition-colors duration-200 ${
             darkMode
               ? 'bg-gray-800 border border-gray-700'
               : 'bg-white border border-slate-200'
           }`}
           style={{ left: agentPickerPosition.x, top: agentPickerPosition.y }}
         >
-          <div className="p-2">
-            <div className={`text-xs font-medium uppercase tracking-wider mb-2 px-3 py-2 flex items-center ${
+          <div className="p-4">
+            <div className={`text-sm font-medium uppercase tracking-wider mb-4 px-2 flex items-center ${
               darkMode ? 'text-gray-400' : 'text-slate-500'
             }`}>
-              <User className="w-3 h-3 mr-2" />
-              BMad Agents
+              <User className="w-4 h-4 mr-2" />
+              Select Agent
             </div>
-            <div className="space-y-1 max-h-72 overflow-y-auto">
+            <div className="grid grid-cols-2 gap-3">
               {BMAD_AGENTS.map((agent, index) => (
                 <div
                   key={agent.id}
                   onClick={() => handleAgentSelect(agent)}
-                  className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-all duration-150 ${
+                  className={`flex flex-col items-center p-4 rounded-lg cursor-pointer transition-all duration-150 ${
                     selectedAgentIndex === index
                       ? darkMode
                         ? 'bg-blue-600 text-white'
@@ -2597,33 +2944,23 @@ How can I assist you today?`,
                   }`}
                   style={{ animationDelay: `${index * 30}ms` }}
                 >
-                  <div className={`w-10 h-10 rounded-full ${agent.gradient} flex items-center justify-center text-white text-lg font-medium shadow-md`}>
-                    {agent.avatar}
+                  <div className={`flex items-center justify-center mb-3 ${
+                    selectedAgentIndex === index
+                      ? darkMode ? 'text-white' : 'text-blue-600'
+                      : darkMode ? 'text-gray-400' : 'text-slate-600'
+                  }`}>
+                    {getAgentIcon(agent)}
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="text-center">
                     <div className={`text-sm font-semibold ${
                       darkMode ? 'text-gray-100' : 'text-slate-900'
                     }`}>
                       {agent.name}
                     </div>
-                    <div className={`text-xs truncate ${
+                    <div className={`text-xs ${
                       darkMode ? 'text-gray-400' : 'text-slate-500'
                     }`}>
                       {agent.title}
-                    </div>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {agent.specialties.slice(0, 2).map((specialty, idx) => (
-                        <span
-                          key={idx}
-                          className={`text-xs px-2 py-0.5 rounded-full ${
-                            darkMode
-                              ? 'bg-gray-700 text-gray-300'
-                              : 'bg-slate-100 text-slate-600'
-                          }`}
-                        >
-                          {specialty}
-                        </span>
-                      ))}
                     </div>
                   </div>
                   <div className={`text-xs ${

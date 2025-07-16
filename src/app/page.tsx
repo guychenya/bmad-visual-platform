@@ -183,6 +183,14 @@ export default function VibeDev() {
                 <FileText className="h-5 w-5 mr-2" />
                 Generate PRD
               </Link>
+              
+              <Link 
+                href="/compliance"
+                className="inline-flex items-center px-8 py-4 border border-orange-600 text-orange-300 hover:text-white hover:border-orange-500 rounded-lg text-lg transition-colors hover:bg-orange-600/10"
+              >
+                <BarChart3 className="h-5 w-5 mr-2" />
+                Compliance Dashboard
+              </Link>
             </div>
           </div>
         </div>
