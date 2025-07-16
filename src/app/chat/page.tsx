@@ -263,11 +263,74 @@ export default function ModernChatPage() {
       isReady: boolean;
     }[];
     agent: BMadAgent;
-  }[]>([]);
+  }[]>([
+    // Demo chat for testing drag and drop
+    {
+      id: 'demo-1',
+      title: 'Project Planning Discussion',
+      timestamp: new Date(Date.now() - 86400000), // 1 day ago
+      messages: [
+        {
+          id: 'demo-msg-1',
+          role: 'user',
+          content: 'I need help planning a new web application project.',
+          timestamp: new Date(Date.now() - 86400000),
+        },
+        {
+          id: 'demo-msg-2', 
+          role: 'assistant',
+          content: 'I\'d be happy to help you plan your web application! Let\'s start by understanding your requirements and goals.',
+          timestamp: new Date(Date.now() - 86400000 + 60000),
+        }
+      ],
+      stage: 'discovery' as const,
+      deliverables: [
+        {
+          type: 'document' as const,
+          title: 'Project Requirements',
+          content: 'Initial project scope and requirements',
+          isReady: true
+        }
+      ],
+      agent: BMAD_AGENTS[0] // Use first agent as default
+    },
+    {
+      id: 'demo-2', 
+      title: 'UI/UX Design Chat',
+      timestamp: new Date(Date.now() - 172800000), // 2 days ago
+      messages: [
+        {
+          id: 'demo-msg-3',
+          role: 'user', 
+          content: 'Can you help me improve the user interface design?',
+          timestamp: new Date(Date.now() - 172800000),
+        },
+        {
+          id: 'demo-msg-4',
+          role: 'assistant',
+          content: 'Absolutely! Let\'s discuss your current design challenges and explore some modern UI patterns that could work well for your project.',
+          timestamp: new Date(Date.now() - 172800000 + 30000),
+        }
+      ],
+      stage: 'analysis' as const,
+      deliverables: [
+        {
+          type: 'document' as const,
+          title: 'UI Design Guidelines',
+          content: 'Design system and component guidelines',
+          isReady: true
+        }
+      ],
+      agent: BMAD_AGENTS[1] || BMAD_AGENTS[0] // Use second agent or fallback
+    }
+  ]);
   
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
-  const [showChatHistory, setShowChatHistory] = useState(false);
+  const [showChatHistory, setShowChatHistory] = useState(true);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [dragOverType, setDragOverType] = useState<'chat' | 'file' | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -844,6 +907,117 @@ export default function ModernChatPage() {
     }
   };
 
+  // Drag and drop handlers
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const types = Array.from(e.dataTransfer.types);
+    console.log('Drag over - types:', types); // Debug log
+    
+    if (types.includes('application/chat-history')) {
+      setDragOverType('chat');
+    } else if (types.includes('Files')) {
+      setDragOverType('file');
+    } else {
+      setDragOverType('chat'); // Default to chat for text/plain
+    }
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Use a timeout to prevent flicker when dragging over child elements
+    setTimeout(() => {
+      setIsDragOver(false);
+      setDragOverType(null);
+    }, 100);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    console.log('Drop event triggered!', e.dataTransfer.types); // Debug log
+
+    // Handle chat history drop
+    const chatData = e.dataTransfer.getData('application/chat-history');
+    console.log('Chat data:', chatData); // Debug log
+    
+    if (chatData) {
+      try {
+        const chat = JSON.parse(chatData);
+        const chatContent = chat.messages.map((m: any) => `**${m.role === 'user' ? 'User' : 'Assistant'}:** ${m.content}`).join('\n\n');
+        setInputValue(prev => prev + (prev ? '\n\n---\n\n' : '') + `**Chat History: ${chat.title}**\n\n${chatContent}`);
+        setDragOverType(null);
+        console.log('Chat content added to input!'); // Debug log
+        return;
+      } catch (error) {
+        console.error('Error parsing chat data:', error);
+      }
+    }
+
+    // Handle file drop
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      files.forEach(file => handleFileUpload(file));
+      setDragOverType(null);
+    }
+  };
+
+  const handleFileUpload = async (file: File) => {
+    if (file.size > 50 * 1024 * 1024) { // 50MB limit
+      alert('File size too large. Please select a file under 50MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      const attachment = {
+        type: file.type.startsWith('image/') ? 'image' as const :
+              file.type.startsWith('video/') ? 'video' as const :
+              'document' as const,
+        name: file.name,
+        url: result,
+        content: file.type.startsWith('text/') ? result : `File: ${file.name}`,
+        size: file.size,
+        mimeType: file.type
+      };
+      
+      setCurrentAttachments(prev => [...prev, attachment]);
+      
+      if (file.type.startsWith('text/')) {
+        setInputValue(prev => prev + (prev ? '\n\n' : '') + `**File: ${file.name}**\n\n${result}`);
+      } else {
+        // For non-text files, just add a reference
+        setInputValue(prev => prev + (prev ? '\n\n' : '') + `📎 **${file.name}** (${(file.size / 1024).toFixed(1)} KB)`);
+      }
+    };
+    
+    if (file.type.startsWith('text/')) {
+      reader.readAsText(file);
+    } else if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+      reader.readAsDataURL(file);
+    } else {
+      // For other files, just create a reference
+      const attachment = {
+        type: 'document' as const,
+        name: file.name,
+        url: '',
+        content: `File: ${file.name}`,
+        size: file.size,
+        mimeType: file.type
+      };
+      
+      setCurrentAttachments(prev => [...prev, attachment]);
+      setInputValue(prev => prev + (prev ? '\n\n' : '') + `📎 **${file.name}** (${(file.size / 1024).toFixed(1)} KB)`);
+    }
+  };
+
   useEffect(() => {
     const initializeBMad = async () => {
       loadApiKeys();
@@ -1294,18 +1468,23 @@ How can I assist you today?`,
     }`}>
       {/* Left Sidebar - Chat History */}
       <div className={`${showChatHistory ? 'w-80' : 'w-12'} transition-all duration-300 border-r ${
-        darkMode ? 'border-gray-700 bg-gray-800' : 'border-slate-200 bg-slate-50'
-      } flex flex-col`}>
+        darkMode ? 'border-gray-700 bg-gray-800' : 'border-slate-200 bg-slate-50/80 backdrop-blur-sm'
+      } flex flex-col relative`}>
         {/* Sidebar Header */}
-        <div className="p-3 border-b border-gray-700/50">
+        <div className={`p-3 border-b ${darkMode ? 'border-gray-700/50' : 'border-slate-200'}`}>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setShowChatHistory(!showChatHistory)}
-            className={`w-full justify-start ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-slate-200'}`}
+            className={`w-full justify-start transition-all duration-200 ${
+              darkMode 
+                ? 'hover:bg-gray-700 text-gray-200 hover:text-white hover:shadow-md' 
+                : 'hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-300 hover:border-slate-400 hover:shadow-sm'
+            } ${!showChatHistory ? 'animate-pulse bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20' : ''}`}
+            title={showChatHistory ? 'Collapse chat history' : 'Expand chat history'}
           >
             <BarChart3 className="w-4 h-4 mr-2" />
-            {showChatHistory && <span className="text-sm">Chat History</span>}
+            {showChatHistory && <span className="text-sm font-medium">Chat History</span>}
           </Button>
         </div>
 
@@ -1323,26 +1502,57 @@ How can I assist you today?`,
             </div>
 
             {/* Chat History Tree */}
+            <div className="p-2 text-xs text-center text-gray-500">
+              🫴 Drag chats below into the input field
+            </div>
             <div className="flex-1 overflow-y-auto">
               {chatHistory.map((chat) => (
                 <div key={chat.id} className="p-2 border-b border-gray-700/30">
                   <div 
-                    className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
+                    className={`flex items-center justify-between p-2 rounded-lg cursor-grab active:cursor-grabbing transition-colors ${
                       currentChatId === chat.id 
                         ? 'bg-blue-500/20 border border-blue-500/50' 
                         : darkMode ? 'hover:bg-gray-700' : 'hover:bg-slate-200'
-                    }`}
-                    onClick={() => loadChat(chat.id)}
+                    } ${isDragging ? 'opacity-50' : ''}`}
+                    onClick={(e) => {
+                      if (!isDragging) {
+                        loadChat(chat.id);
+                      }
+                    }}
+                    draggable={true}
+                    onDragStart={(e) => {
+                      console.log('Drag started for chat:', chat.title); // Debug log
+                      setIsDragging(true);
+                      const chatContent = chat.messages.map(m => m.content).join('\n\n');
+                      e.dataTransfer.setData('text/plain', chatContent);
+                      e.dataTransfer.setData('application/chat-history', JSON.stringify({
+                        id: chat.id,
+                        title: chat.title,
+                        messages: chat.messages
+                      }));
+                      e.dataTransfer.effectAllowed = 'copy';
+                      console.log('Data set for transfer:', chat.title); // Debug log
+                    }}
+                    onDragEnd={() => {
+                      console.log('Drag ended'); // Debug log
+                      setTimeout(() => setIsDragging(false), 100); // Small delay to prevent click
+                    }}
+                    title="🫴 Drag to input field to reference this conversation"
+                    style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
                   >
                     <div className="flex items-center space-x-2 flex-1 min-w-0">
                       <div className={`w-6 h-6 rounded-full ${chat.agent.gradient} flex items-center justify-center text-xs text-white`}>
                         {chat.agent.avatar}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium truncate text-gray-200">
+                        <div className={`text-sm font-medium truncate ${
+                          darkMode ? 'text-gray-200' : 'text-slate-900'
+                        }`}>
                           {chat.title}
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className={`text-xs ${
+                          darkMode ? 'text-gray-500' : 'text-slate-500'
+                        }`}>
                           {chat.timestamp.toLocaleDateString()}
                         </div>
                       </div>
@@ -1363,7 +1573,9 @@ How can I assist you today?`,
                   {chat.deliverables.length > 0 && (
                     <div className="mt-2 ml-4 space-y-1">
                       {chat.deliverables.map((deliverable, idx) => (
-                        <div key={idx} className="flex items-center space-x-2 text-xs text-gray-400">
+                        <div key={idx} className={`flex items-center space-x-2 text-xs ${
+                          darkMode ? 'text-gray-400' : 'text-slate-600'
+                        }`}>
                           <FileText className="w-3 h-3" />
                           <span className="truncate">{deliverable.title}</span>
                           {deliverable.isReady && (
@@ -1466,7 +1678,7 @@ How can I assist you today?`,
                     ? (apiStatus.demoMode ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-green-50 text-green-700 border border-green-200')
                     : apiStatus.status === 'testing'
                     ? 'bg-blue-50 text-blue-700 border border-blue-200 animate-pulse'
-                    : 'bg-slate-50 text-slate-700 border border-slate-200'
+                    : 'bg-slate-50 text-slate-800 border border-slate-300'
                 }`}
               >
                 {apiStatus.status === 'ready' && !apiStatus.demoMode && (
@@ -1696,10 +1908,14 @@ How can I assist you today?`,
                               >
                                 {result.title}
                               </a>
-                              <p className="text-xs text-gray-300 leading-relaxed">
+                              <p className={`text-xs leading-relaxed ${
+                darkMode ? 'text-gray-300' : 'text-slate-700'
+              }`}>
                                 {result.snippet}
                               </p>
-                              <span className="text-xs text-gray-500 mt-1 block">
+                              <span className={`text-xs mt-1 block ${
+                darkMode ? 'text-gray-500' : 'text-slate-600'
+              }`}>
                                 {result.source}
                               </span>
                             </div>
@@ -1717,7 +1933,9 @@ How can I assist you today?`,
                       variant="ghost"
                       size="sm"
                       onClick={() => copyToClipboard(message.content, message.id)}
-                      className="text-gray-500 hover:text-gray-300 h-6 px-2 relative"
+                      className={`h-6 px-2 relative transition-colors ${
+                        darkMode ? 'text-gray-500 hover:text-gray-300' : 'text-slate-500 hover:text-slate-700'
+                      }`}
                     >
                       {copyFeedback[message.id] ? (
                         <Check className="w-3 h-3 text-green-400" />
@@ -1768,11 +1986,42 @@ How can I assist you today?`,
       </div>
 
       {/* Input Area with Embedded Controls */}
-      <div className={`border-t p-4 transition-colors duration-200 ${
-        darkMode 
-          ? 'border-gray-700 bg-gray-800' 
-          : 'border-slate-200 bg-white'
-      }`}>
+      <div 
+        className={`border-t p-4 transition-colors duration-200 relative ${
+          darkMode 
+            ? 'border-gray-700 bg-gray-800' 
+            : 'border-slate-200 bg-white'
+        } ${isDragOver ? (darkMode ? 'bg-gray-700 border-blue-500' : 'bg-blue-50 border-blue-400') : ''}`}
+        onDragEnter={handleDragOver}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        {/* Drag overlay */}
+        {isDragOver && (
+          <div className={`absolute inset-0 rounded-lg border-2 border-dashed flex items-center justify-center z-50 ${
+            dragOverType === 'chat' 
+              ? 'bg-blue-100/80 border-blue-400' 
+              : 'bg-green-100/80 border-green-400'
+          } ${darkMode ? 'bg-opacity-20' : ''}`}>
+            <div className={`text-center p-4 ${
+              dragOverType === 'chat' 
+                ? 'text-blue-700' 
+                : 'text-green-700'
+            } ${darkMode ? 'text-opacity-90' : ''}`}>
+              <div className="text-lg font-semibold mb-1">
+                {dragOverType === 'chat' ? '💬 Drop Chat History' : '📁 Drop Files'}
+              </div>
+              <div className="text-sm">
+                {dragOverType === 'chat' 
+                  ? 'Release to add chat history to your message' 
+                  : 'Release to attach files to your message'
+                }
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Chat Controls Row */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-3">
@@ -1793,7 +2042,7 @@ How can I assist you today?`,
             
           </div>
           
-          <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-slate-500'}`}>
+          <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-slate-600'}`}>
             {selectedAgent.name} • 
             {apiStatus.demoMode ? (
               <button 
@@ -1875,11 +2124,15 @@ How can I assist you today?`,
               onChange={handleInputChange}
               placeholder={`Message ${selectedAgent.name}... (@ for agents, / for apps)`}
               disabled={isLoading}
+              onDragOver={handleDragOver}
+              onDragEnter={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
               className={`transition-all duration-200 pr-16 py-3 rounded-2xl ${
                 darkMode
                   ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
                   : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
-              }`}
+              } ${isDragOver ? 'ring-2 ring-blue-500 border-blue-500' : ''}`}
               onKeyPress={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
