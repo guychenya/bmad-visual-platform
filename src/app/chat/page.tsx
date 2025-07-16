@@ -1969,25 +1969,25 @@ ${att.content ? `- Content: ${att.content.substring(0, 200)}${att.content.length
                 variant="ghost"
                 size="sm"
                 onClick={() => setDarkMode(!darkMode)}
-                className={`h-9 w-9 rounded-lg transition-all duration-200 ${
+                className={`h-10 w-10 rounded-lg transition-all duration-200 ${
                   darkMode
                     ? 'hover:bg-gray-700 text-gray-300 hover:text-white'
                     : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
                 }`}
               >
-                {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowSidebar(true)}
-                className={`h-9 w-9 rounded-lg transition-all duration-200 ${
+                className={`h-10 w-10 rounded-lg transition-all duration-200 ${
                   darkMode
                     ? 'hover:bg-gray-700 text-gray-300 hover:text-white'
                     : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <Settings className="w-4 h-4" />
+                <Settings className="w-5 h-5" />
               </Button>
             </div>
           </div>
