@@ -1389,10 +1389,10 @@ ${att.content ? `- Content: ${att.content.substring(0, 200)}${att.content.length
     setIsTyping(true);
 
     // Auto-focus input for rapid-fire conversations - immediate focus
-    requestAnimationFrame(() => {
+    setTimeout(() => {
       inputRef.current?.focus();
       inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    });
+    }, 100);
 
     // Play send sound
     playSound('send');
@@ -1594,6 +1594,11 @@ ${att.content ? `- Content: ${att.content.substring(0, 200)}${att.content.length
                 ? { ...msg, isStreaming: false }
                 : msg
             ));
+            
+            // Ensure focus returns to input after streaming completes
+            setTimeout(() => {
+              inputRef.current?.focus();
+            }, 300);
           }
         }
       } else {
@@ -1649,10 +1654,10 @@ ${att.content ? `- Content: ${att.content.substring(0, 200)}${att.content.length
       setIsLoading(false);
       
       // Auto-focus input after AI response is complete for rapid-fire conversations
-      requestAnimationFrame(() => {
+      setTimeout(() => {
         inputRef.current?.focus();
         inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      });
+      }, 200);
     }
   };
 
