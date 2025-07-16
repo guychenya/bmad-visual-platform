@@ -1,0 +1,17 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[build.environment]
+  NEXT_TELEMETRY_DISABLED = "1"
+  NEXT_PUBLIC_SUPABASE_URL = "https://placeholder.supabase.co"
+  NEXT_PUBLIC_SUPABASE_ANON_KEY = "placeholder_key"
+  NEXT_PUBLIC_BYPASS_AUTH = "true"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
