@@ -108,6 +108,28 @@ export default function VibeDev() {
             </div>
             
             <div className="flex items-center space-x-4">
+              {/* Navigation Links */}
+              <nav className="hidden md:flex items-center space-x-6">
+                <Link 
+                  href="/compliance" 
+                  className="text-gray-300 hover:text-white transition-colors font-medium"
+                >
+                  Compliance Dashboard
+                </Link>
+                <Link 
+                  href="/chat" 
+                  className="text-gray-300 hover:text-white transition-colors font-medium"
+                >
+                  AI Chat
+                </Link>
+                <Link 
+                  href="/dashboard" 
+                  className="text-gray-300 hover:text-white transition-colors font-medium"
+                >
+                  Dashboard
+                </Link>
+              </nav>
+              
               <div className={`px-3 py-1 rounded-full text-xs font-medium ${
                 hasApiKey 
                   ? 'bg-green-900/50 text-green-300 border border-green-700/50' 
@@ -186,7 +208,7 @@ export default function VibeDev() {
               
               <Link 
                 href="/compliance"
-                className="inline-flex items-center px-8 py-4 border border-orange-600 text-orange-300 hover:text-white hover:border-orange-500 rounded-lg text-lg transition-colors hover:bg-orange-600/10"
+                className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white rounded-lg text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200"
               >
                 <BarChart3 className="h-5 w-5 mr-2" />
                 Compliance Dashboard
