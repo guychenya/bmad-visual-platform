@@ -111,10 +111,16 @@ export default function VibeDev() {
               {/* Navigation Links */}
               <nav className="hidden md:flex items-center space-x-6">
                 <Link 
+                  href="/features" 
+                  className="text-gray-300 hover:text-white transition-colors font-medium"
+                >
+                  Features
+                </Link>
+                <Link 
                   href="/compliance" 
                   className="text-gray-300 hover:text-white transition-colors font-medium"
                 >
-                  Compliance Dashboard
+                  Compliance
                 </Link>
                 <Link 
                   href="/chat" 
