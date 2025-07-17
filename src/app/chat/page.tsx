@@ -572,9 +572,9 @@ export default function ModernChatPage() {
           const viewportHeight = window.innerHeight;
           const viewportWidth = window.innerWidth;
           const modalWidth = Math.min(500, viewportWidth * 0.9); // Match actual modal width
-          // Calculate actual modal height based on content
-          // Header: ~60px, Grid: 9 agents in 2 cols = 5 rows * 70px = 350px, Footer: ~50px, Padding: ~32px
-          const modalHeight = Math.min(492, viewportHeight * 0.8); // Total ~492px or 80% of viewport
+          // Calculate actual modal height based on content (reduced sizes)
+          // Header: ~40px, Grid: 9 agents in 2 cols = 5 rows * 55px = 275px, Footer: ~35px, Padding: ~24px
+          const modalHeight = Math.min(374, viewportHeight * 0.7); // Total ~374px or 70% of viewport
           
           console.log('Input rect:', rect);
           console.log('Viewport:', { viewportWidth, viewportHeight });
@@ -1172,7 +1172,7 @@ export default function ModernChatPage() {
 
   // Get icon for agent based on their role
   const getAgentIcon = (agent: BMadAgent) => {
-    const iconClass = "w-8 h-8";
+    const iconClass = "w-5 h-5";
     switch (agent.id) {
       case 'bmad-orchestrator':
         return <Users className={iconClass} />;
@@ -2978,7 +2978,7 @@ ${att.content ? `- Content: ${att.content.substring(0, 200)}${att.content.length
       {/* Agent Picker Modal - WhatsApp Style */}
       {showAgentPicker && (
         <div 
-          className={`fixed z-[9999] rounded-xl shadow-2xl w-[500px] max-w-[90vw] max-h-[80vh] overflow-y-auto transition-all duration-200 border-2 ${
+          className={`fixed z-[9999] rounded-xl shadow-2xl w-[500px] max-w-[90vw] max-h-[70vh] overflow-y-auto transition-all duration-200 border-2 ${
             darkMode
               ? 'bg-gray-800 border-blue-500'
               : 'bg-white border-blue-500'
@@ -2990,24 +2990,19 @@ ${att.content ? `- Content: ${att.content.substring(0, 200)}${att.content.length
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="p-4">
-            {/* Debug indicator */}
-            <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-1 rounded">
-              AGENT PICKER VISIBLE
-            </div>
-            
-            <div className={`text-sm font-medium uppercase tracking-wider mb-4 px-2 flex items-center ${
+          <div className="p-3">
+            <div className={`text-xs font-medium uppercase tracking-wider mb-3 px-2 flex items-center ${
               darkMode ? 'text-gray-400' : 'text-slate-500'
             }`}>
-              <User className="w-4 h-4 mr-2" />
+              <User className="w-3 h-3 mr-2" />
               Select Agent
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {BMAD_AGENTS.map((agent, index) => (
                 <div
                   key={agent.id}
                   onClick={() => handleAgentSelect(agent)}
-                  className={`flex flex-col items-center p-4 rounded-lg cursor-pointer transition-all duration-150 ${
+                  className={`flex flex-col items-center p-3 rounded-lg cursor-pointer transition-all duration-150 ${
                     selectedAgentIndex === index
                       ? darkMode
                         ? 'bg-blue-600 text-white'
@@ -3018,7 +3013,7 @@ ${att.content ? `- Content: ${att.content.substring(0, 200)}${att.content.length
                   }`}
                   style={{ animationDelay: `${index * 30}ms` }}
                 >
-                  <div className={`flex items-center justify-center mb-3 ${
+                  <div className={`flex items-center justify-center mb-2 ${
                     selectedAgentIndex === index
                       ? darkMode ? 'text-white' : 'text-blue-600'
                       : darkMode ? 'text-gray-400' : 'text-slate-600'
@@ -3026,7 +3021,7 @@ ${att.content ? `- Content: ${att.content.substring(0, 200)}${att.content.length
                     {getAgentIcon(agent)}
                   </div>
                   <div className="text-center">
-                    <div className={`text-sm font-semibold ${
+                    <div className={`text-xs font-semibold ${
                       darkMode ? 'text-gray-100' : 'text-slate-900'
                     }`}>
                       {agent.name}
@@ -3045,7 +3040,7 @@ ${att.content ? `- Content: ${att.content.substring(0, 200)}${att.content.length
                 </div>
               ))}
             </div>
-            <div className={`text-xs p-3 text-center border-t mt-2 ${
+            <div className={`text-xs p-2 text-center border-t mt-2 ${
               darkMode 
                 ? 'text-gray-500 border-gray-700' 
                 : 'text-slate-400 border-slate-200'
@@ -3130,7 +3125,7 @@ ${att.content ? `- Content: ${att.content.substring(0, 200)}${att.content.length
           ? 'text-gray-500 border-gray-700 bg-gray-800' 
           : 'text-slate-400 border-slate-200 bg-slate-50'
       }`}>
-        v1.1.0 • BMad Visual Platform
+        v1.1.1 • BMad Visual Platform
       </div>
     </div>
   );
