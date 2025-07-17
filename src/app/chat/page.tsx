@@ -571,31 +571,39 @@ export default function ModernChatPage() {
           const rect = e.target.getBoundingClientRect();
           const viewportHeight = window.innerHeight;
           const viewportWidth = window.innerWidth;
-          const modalWidth = Math.min(425, viewportWidth * 0.85); // Reduced by 15%
-          const modalHeight = 300; // Reduced by ~15% for better fit
+          const modalWidth = Math.min(500, viewportWidth * 0.9); // Match actual modal width
+          // Calculate actual modal height based on content
+          // Header: ~60px, Grid: 9 agents in 2 cols = 5 rows * 70px = 350px, Footer: ~50px, Padding: ~32px
+          const modalHeight = Math.min(492, viewportHeight * 0.8); // Total ~492px or 80% of viewport
           
           console.log('Input rect:', rect);
           console.log('Viewport:', { viewportWidth, viewportHeight });
+          console.log('Modal dimensions:', { modalWidth, modalHeight });
           
           // Center the popup horizontally on screen
           let x = Math.max(20, (viewportWidth - modalWidth) / 2);
           
-          // Calculate optimal y position - raise it much higher to show all agents
-          let y = rect.top - modalHeight - 80; // Raised even higher (80px vs 50px)
+          // Calculate optimal y position - prioritize showing full modal
+          let y = rect.top - modalHeight - 60; // Space above input
           
-          // If modal would be cut off at top, use safe center positioning
+          // If modal would be cut off at top, try below input first
           if (y < 20) {
-            y = Math.max(20, (viewportHeight - modalHeight) / 4); // Upper quarter of screen
+            y = rect.bottom + 20; // Below input with margin
             
-            // Ensure we don't go below a safe top margin
-            if (y < 40) {
-              y = 40; // Safe top margin
+            // If still doesn't fit below, use center positioning
+            if (y + modalHeight > viewportHeight - 40) {
+              y = Math.max(20, (viewportHeight - modalHeight) / 2);
+              
+              // Final fallback - ensure at least it starts visible
+              if (y < 20) {
+                y = 20;
+              }
             }
-            
-            // Final check to ensure full visibility
-            if (y + modalHeight > viewportHeight - 80) {
-              y = Math.max(40, viewportHeight - modalHeight - 80);
-            }
+          }
+          
+          // Ensure modal doesn't extend beyond bottom of viewport
+          if (y + modalHeight > viewportHeight - 40) {
+            y = Math.max(20, viewportHeight - modalHeight - 40);
           }
           
           console.log('Final position:', { x, y });
@@ -1717,11 +1725,13 @@ ${att.content ? `- Content: ${att.content.substring(0, 200)}${att.content.length
   };
 
   return (
-    <div className={`h-screen flex transition-colors duration-200 ${
+    <div className={`h-screen flex flex-col transition-colors duration-200 ${
       darkMode 
         ? 'bg-gray-900' 
         : 'bg-white'
     }`}>
+      {/* Main Chat Interface */}
+      <div className="flex-1 flex overflow-hidden">
       {/* Left Sidebar - Chat History */}
       <div className={`${showChatHistory ? 'w-80' : 'w-12'} transition-all duration-300 border-r ${
         darkMode ? 'border-gray-700 bg-gray-800' : 'border-slate-200 bg-slate-50/80 backdrop-blur-sm'
@@ -2968,7 +2978,7 @@ ${att.content ? `- Content: ${att.content.substring(0, 200)}${att.content.length
       {/* Agent Picker Modal - WhatsApp Style */}
       {showAgentPicker && (
         <div 
-          className={`fixed z-[9999] rounded-xl shadow-2xl w-[500px] max-w-[90vw] transition-all duration-200 border-2 ${
+          className={`fixed z-[9999] rounded-xl shadow-2xl w-[500px] max-w-[90vw] max-h-[80vh] overflow-y-auto transition-all duration-200 border-2 ${
             darkMode
               ? 'bg-gray-800 border-blue-500'
               : 'bg-white border-blue-500'
@@ -3111,6 +3121,16 @@ ${att.content ? `- Content: ${att.content.substring(0, 200)}${att.content.length
           </div>
         </div>
       )}
+      </div>
+      </div>
+      
+      {/* Version Indicator */}
+      <div className={`text-xs py-2 px-4 text-center border-t ${
+        darkMode 
+          ? 'text-gray-500 border-gray-700 bg-gray-800' 
+          : 'text-slate-400 border-slate-200 bg-slate-50'
+      }`}>
+        v1.1.0 • BMad Visual Platform
       </div>
     </div>
   );
