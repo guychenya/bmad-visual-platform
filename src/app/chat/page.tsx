@@ -577,27 +577,30 @@ export default function ModernChatPage() {
           console.log('Input rect:', rect);
           console.log('Viewport:', { viewportWidth, viewportHeight });
           
-          // Calculate optimal x position (prevent horizontal overflow)
-          let x = Math.max(20, rect.left + 10);
+          // Calculate optimal x position (prefer right alignment with more offset)
+          let x = Math.max(20, rect.right - modalWidth + 50); // Align closer to right edge
           if (x + modalWidth > viewportWidth - 20) {
             x = Math.max(20, viewportWidth - modalWidth - 20);
           }
+          // Ensure minimum left margin
+          if (x < 20) {
+            x = 20;
+          }
           
-          // Calculate optimal y position with better logic
-          let y = rect.top - modalHeight - 10; // Try above first
+          // Calculate optimal y position - prioritize positioning above input
+          let y = rect.top - modalHeight - 20; // More space above input
           
-          // If modal would be cut off at top, position below input instead
+          // If modal would be cut off at top, try positioning above with less margin
           if (y < 20) {
-            y = rect.bottom + 10;
+            y = rect.top - modalHeight + 40; // Less aggressive positioning above
             
-            // If still cut off at bottom, use fallback positioning
-            if (y + modalHeight > viewportHeight - 20) {
-              // Try positioning above input again with less margin
-              y = Math.max(20, rect.top - modalHeight + 20);
+            // If still cut off at top, position below input
+            if (y < 20) {
+              y = rect.bottom + 10;
               
-              // If still doesn't fit, use center positioning
-              if (y < 20) {
-                y = Math.max(20, (viewportHeight - modalHeight) / 2);
+              // If cut off at bottom, use safe top positioning
+              if (y + modalHeight > viewportHeight - 20) {
+                y = Math.max(20, viewportHeight - modalHeight - 40);
               }
             }
           }
