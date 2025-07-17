@@ -2,6 +2,8 @@
 
 🎉 **Now Ready for Production!** Transform your development workflow with AI-powered agents in a beautiful, intuitive interface. Experience "vibe coding" with the structured power of the BMad Method.
 
+✨ **Latest Update**: Enhanced agent picker popup with improved positioning and visibility - now with better @ symbol integration!
+
 ## 🎭 BMad Framework Chat
 **Production Ready:** Access the BMad chat interface at [/bmad-chat](https://bmad-visual-platform.netlify.app/bmad-chat)
 - 7 specialized BMad agents (Orchestrator, Analyst, Architect, Developer, QA, Scrum Master, UX Expert)
