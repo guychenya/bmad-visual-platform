@@ -580,21 +580,21 @@ export default function ModernChatPage() {
           // Center the popup horizontally on screen
           let x = Math.max(20, (viewportWidth - modalWidth) / 2);
           
-          // Calculate optimal y position - raise it higher above input
-          let y = rect.top - modalHeight - 50; // Raised significantly higher
+          // Calculate optimal y position - raise it much higher to show all agents
+          let y = rect.top - modalHeight - 80; // Raised even higher (80px vs 50px)
           
-          // If modal would be cut off at top, try center-top positioning
+          // If modal would be cut off at top, use safe center positioning
           if (y < 20) {
-            y = Math.max(20, (viewportHeight - modalHeight) / 3); // Upper third of screen
+            y = Math.max(20, (viewportHeight - modalHeight) / 4); // Upper quarter of screen
             
-            // If still doesn't fit well, try above input with minimal margin
-            if (y + modalHeight > viewportHeight - 60) {
-              y = Math.max(20, rect.top - modalHeight - 10);
-              
-              // Last resort: safe positioning from top
-              if (y < 20) {
-                y = 30;
-              }
+            // Ensure we don't go below a safe top margin
+            if (y < 40) {
+              y = 40; // Safe top margin
+            }
+            
+            // Final check to ensure full visibility
+            if (y + modalHeight > viewportHeight - 80) {
+              y = Math.max(40, viewportHeight - modalHeight - 80);
             }
           }
           
