@@ -3125,7 +3125,7 @@ ${att.content ? `- Content: ${att.content.substring(0, 200)}${att.content.length
           ? 'text-gray-500 border-gray-700 bg-gray-800' 
           : 'text-slate-400 border-slate-200 bg-slate-50'
       }`}>
-        v1.1.1 • BMad Visual Platform
+        v1.1 • BMad Visual Platform
       </div>
     </div>
   );
