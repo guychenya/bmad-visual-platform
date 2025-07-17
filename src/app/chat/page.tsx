@@ -2054,7 +2054,7 @@ ${att.content ? `- Content: ${att.content.substring(0, 200)}${att.content.length
               {BMAD_AGENTS.map((agent) => (
                 <Card 
                   key={agent.id}
-                  className={`cursor-pointer transition-all duration-200 hover:scale-105 bg-gray-800/50 border-gray-700/50 hover:border-gray-600 ${
+                  className={`cursor-pointer transition-all duration-200 hover:scale-105 bg-gray-800 border-gray-700 hover:bg-gray-700 ${
                     selectedAgent.id === agent.id ? 'ring-2 ring-blue-500' : ''
                   }`}
                   onClick={() => handleAgentSwitch(agent)}
@@ -2074,7 +2074,7 @@ ${att.content ? `- Content: ${att.content.substring(0, 200)}${att.content.length
                         <Badge
                           key={specialty}
                           variant="secondary"
-                          className="text-[10px] px-1 py-0 bg-gray-700/50 text-gray-300"
+                          className="text-[10px] px-1 py-0 bg-gray-700 text-gray-300"
                         >
                           {specialty}
                         </Badge>
