@@ -571,36 +571,29 @@ export default function ModernChatPage() {
           const rect = e.target.getBoundingClientRect();
           const viewportHeight = window.innerHeight;
           const viewportWidth = window.innerWidth;
-          const modalWidth = Math.min(500, viewportWidth * 0.9);
-          const modalHeight = 350; // Slightly taller for better visibility
+          const modalWidth = Math.min(425, viewportWidth * 0.85); // Reduced by 15%
+          const modalHeight = 300; // Reduced by ~15% for better fit
           
           console.log('Input rect:', rect);
           console.log('Viewport:', { viewportWidth, viewportHeight });
           
-          // Calculate optimal x position (prefer right alignment with more offset)
-          let x = Math.max(20, rect.right - modalWidth + 50); // Align closer to right edge
-          if (x + modalWidth > viewportWidth - 20) {
-            x = Math.max(20, viewportWidth - modalWidth - 20);
-          }
-          // Ensure minimum left margin
-          if (x < 20) {
-            x = 20;
-          }
+          // Center the popup horizontally on screen
+          let x = Math.max(20, (viewportWidth - modalWidth) / 2);
           
-          // Calculate optimal y position - prioritize positioning above input
-          let y = rect.top - modalHeight - 20; // More space above input
+          // Calculate optimal y position - raise it higher above input
+          let y = rect.top - modalHeight - 50; // Raised significantly higher
           
-          // If modal would be cut off at top, try positioning above with less margin
+          // If modal would be cut off at top, try center-top positioning
           if (y < 20) {
-            y = rect.top - modalHeight + 40; // Less aggressive positioning above
+            y = Math.max(20, (viewportHeight - modalHeight) / 3); // Upper third of screen
             
-            // If still cut off at top, position below input
-            if (y < 20) {
-              y = rect.bottom + 10;
+            // If still doesn't fit well, try above input with minimal margin
+            if (y + modalHeight > viewportHeight - 60) {
+              y = Math.max(20, rect.top - modalHeight - 10);
               
-              // If cut off at bottom, use safe top positioning
-              if (y + modalHeight > viewportHeight - 20) {
-                y = Math.max(20, viewportHeight - modalHeight - 40);
+              // Last resort: safe positioning from top
+              if (y < 20) {
+                y = 30;
               }
             }
           }
