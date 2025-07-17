@@ -629,7 +629,35 @@ export default function ModernChatPage() {
         setSelectedSlashIndex(0); // Reset selection when showing commands
         // Position commands relative to input
         const rect = e.target.getBoundingClientRect();
-        setSlashCommandsPosition({ x: rect.left + 10, y: rect.top - 200 });
+        
+        // Position slash commands with same logic as agent picker
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
+        const modalWidth = Math.min(320, viewportWidth * 0.9);
+        const modalHeight = Math.min(280, viewportHeight * 0.6);
+        
+        // Center horizontally
+        let x = Math.max(20, (viewportWidth - modalWidth) / 2);
+        
+        // Try above input first
+        let y = rect.top - modalHeight - 60;
+        
+        // If doesn't fit above, try below
+        if (y < 20) {
+          y = rect.bottom + 20;
+          
+          // If doesn't fit below, center
+          if (y + modalHeight > viewportHeight - 40) {
+            y = Math.max(20, (viewportHeight - modalHeight) / 2);
+          }
+        }
+        
+        // Final bounds check
+        if (y + modalHeight > viewportHeight - 40) {
+          y = Math.max(20, viewportHeight - modalHeight - 40);
+        }
+        
+        setSlashCommandsPosition({ x, y });
       }
     } else {
       setShowSlashCommands(false);
@@ -3054,15 +3082,15 @@ ${att.content ? `- Content: ${att.content.substring(0, 200)}${att.content.length
       {/* Slash Commands Modal */}
       {showSlashCommands && (
         <div 
-          className={`fixed z-50 rounded-xl shadow-xl max-w-sm w-80 transition-colors duration-200 ${
+          className={`fixed z-[9999] rounded-xl shadow-2xl w-80 max-w-[90vw] max-h-[60vh] overflow-y-auto transition-all duration-200 border-2 ${
             darkMode
-              ? 'bg-gray-800 border border-gray-700'
-              : 'bg-white border border-slate-200'
+              ? 'bg-gray-800 border-blue-500'
+              : 'bg-white border-blue-500'
           }`}
           style={{ left: slashCommandsPosition.x, top: slashCommandsPosition.y }}
         >
-          <div className="p-2">
-            <div className={`text-xs font-medium uppercase tracking-wider mb-2 px-3 py-2 flex items-center ${
+          <div className="p-3">
+            <div className={`text-xs font-medium uppercase tracking-wider mb-3 px-2 flex items-center ${
               darkMode ? 'text-gray-400' : 'text-slate-500'
             }`}>
               <Zap className="w-3 h-3 mr-2" />
@@ -3073,7 +3101,7 @@ ${att.content ? `- Content: ${att.content.substring(0, 200)}${att.content.length
                 <div
                   key={command.name}
                   onClick={() => handleSlashCommand(command.name, command.action)}
-                  className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-all duration-150 ${
+                  className={`flex items-center space-x-2 p-2 rounded-lg cursor-pointer transition-all duration-150 ${
                     selectedSlashIndex === index
                       ? darkMode
                         ? 'bg-blue-600 text-white'
@@ -3084,15 +3112,15 @@ ${att.content ? `- Content: ${att.content.substring(0, 200)}${att.content.length
                   }`}
                   style={{ animationDelay: `${index * 30}ms` }}
                 >
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center shadow-md ${
-                    darkMode
-                      ? 'bg-gray-700 text-gray-300'
-                      : 'bg-slate-100 text-slate-600'
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                    selectedSlashIndex === index
+                      ? darkMode ? 'text-white' : 'text-blue-600'
+                      : darkMode ? 'text-gray-400' : 'text-slate-600'
                   }`}>
                     {command.icon}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className={`text-sm font-semibold ${
+                    <div className={`text-xs font-semibold ${
                       darkMode ? 'text-gray-100' : 'text-slate-900'
                     }`}>
                       /{command.name}
@@ -3106,7 +3134,7 @@ ${att.content ? `- Content: ${att.content.substring(0, 200)}${att.content.length
                 </div>
               ))}
             </div>
-            <div className={`text-xs p-3 text-center border-t mt-2 ${
+            <div className={`text-xs p-2 text-center border-t mt-2 ${
               darkMode 
                 ? 'text-gray-500 border-gray-700' 
                 : 'text-slate-400 border-slate-200'
@@ -3125,7 +3153,7 @@ ${att.content ? `- Content: ${att.content.substring(0, 200)}${att.content.length
           ? 'text-gray-500 border-gray-700 bg-gray-800' 
           : 'text-slate-400 border-slate-200 bg-slate-50'
       }`}>
-        v1.1 • BMad Visual Platform
+        v1.2 • BMad Visual Platform • {new Date().toLocaleString()}
       </div>
     </div>
   );
